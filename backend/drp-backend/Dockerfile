@@ -12,6 +12,4 @@ WORKDIR /app
 
 COPY --from=builder /app/target/universal/stage ./stage
 
-ENV PLAY_HTTP_SECRET_KEY=${PLAY_HTTP_SECRET_KEY}
-
-CMD ./stage/bin/drp-backend -Dhttp.port=${PORT} -Dplay.http.secret.key=${PLAY_HTTP_SECRET_KEY}
+CMD ./stage/bin/play-scala-seed -Dhttp.port=${PORT} -Dplay.http.secret.key=${PLAY_HTTP_SECRET_KEY}
