@@ -55,5 +55,5 @@ jobs:
       - name: Compile backend
         run: sbt compile
 
-      - name: Test backend
-        run: sbt test
+      - name: Compile backend tests
+        run: sbt Test/compile

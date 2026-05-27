@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type SupportRequest = {
   id: number;
@@ -34,7 +34,7 @@ export default function Home() {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  async function fetchRequests() {
+  const fetchRequests = useCallback(async () => {
     const response = await fetch(`${apiUrl}/support-requests`);
 
     if (!response.ok) {
@@ -43,13 +43,11 @@ export default function Home() {
 
     const data: SupportRequest[] = await response.json();
     setRequests(data);
-  }
+  }, [apiUrl]);
 
   useEffect(() => {
-    fetchRequests().catch(() => {
-      setStatusMessage("Could not connect to backend.");
-    });
-  }, []);
+    void fetchRequests();
+  }, [fetchRequests]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
