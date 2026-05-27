@@ -46,8 +46,12 @@ export default function Home() {
   }, [apiUrl]);
 
   useEffect(() => {
+  const timeoutId = window.setTimeout(() => {
     void fetchRequests();
-  }, [fetchRequests]);
+  }, 0);
+
+  return () => window.clearTimeout(timeoutId);
+}, [fetchRequests]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
