@@ -2,17 +2,19 @@
 
 DRP_07 is a full-stack prototype for exploring how bereaved young adults can request reliable, convenient formal support from people and organisations with relevant shared experience.
 
-The current product surface is intentionally small: a Next.js frontend lets someone submit a support request, and a Scala Play backend stores and returns those requests from PostgreSQL.
+The current product surface is a walking skeleton of the peer-support chat experience: a Next.js frontend opens “Monday Group”, loads seeded participants and messages from the Scala Play backend, and lets the user send group messages that persist in PostgreSQL.
+
+The older support-request API still exists in the backend, but the frontend now focuses on the peer-support group flow.
 
 ## Tech stack
 
 | Area | Technology | Current use |
 | --- | --- | --- |
-| Frontend | Next.js 16, React 19, TypeScript | App Router client page for submitting and viewing support requests |
+| Frontend | Next.js 16, React 19, TypeScript | App Router client page for the Monday Group chat room |
 | Styling | Tailwind CSS 4 | Utility-first styling through `frontend/app/globals.css` |
-| Backend | Play Framework 3, Scala 2.13 | JSON API, health check, and the original Play seed page |
+| Backend | Play Framework 3, Scala 2.13 | JSON API for groups, participants, messages, reflections, support requests, and health checks |
 | Backend DI | Guice | Eager startup binding for database migrations |
-| Database | PostgreSQL | Stores support requests |
+| Database | PostgreSQL | Stores support groups, participants, messages, reflections, and support requests |
 | Persistence | Slick 3.5 | Repository layer for PostgreSQL reads and writes |
 | Migrations | Flyway 9 | Runs `conf/db/migration` migrations at backend startup |
 | Backend tests | ScalaTest + Play test | Seed controller tests |
@@ -32,7 +34,7 @@ The current product surface is intentionally small: a Next.js frontend lets some
 │   ├── build.sbt               # Main backend build
 │   └── Dockerfile              # Backend container build
 └── frontend/                   # Next.js frontend
-    ├── app/page.tsx            # Support request form and saved request list
+    ├── app/page.tsx            # Monday Group chat room screen
     ├── app/layout.tsx          # App shell and metadata
     ├── app/globals.css         # Tailwind/global CSS
     └── package.json            # Frontend scripts and dependencies
@@ -77,6 +79,10 @@ NEXT_PUBLIC_API_URL=http://localhost:9000
 
 The frontend uses this value when calling:
 
+- `GET /groups/1`
+- `GET /groups/1/participants`
+- `GET /groups/1/messages`
+- `POST /groups/1/messages`
 - `GET /support-requests`
 - `POST /support-requests`
 
@@ -104,7 +110,7 @@ On startup, the backend eagerly runs Flyway migrations from:
 backend/drp-backend/conf/db/migration
 ```
 
-The first migration creates the `support_requests` table.
+The migrations create the original `support_requests` table plus the peer-support walking skeleton tables and seed data.
 
 ### 3. Start the frontend
 
@@ -203,9 +209,108 @@ The backend saves new requests with:
 - `status`: `open`
 - `createdAt`: current backend timestamp
 
+### Get support group
+
+```http
+GET /groups/1
+```
+
+Returns the seeded Monday Group metadata.
+
+Example response:
+
+```json
+{
+  "id": 1,
+  "name": "Monday Group",
+  "facilitatorName": "Sean",
+  "scheduledDurationMinutes": 30,
+  "createdAt": "2026-05-28T12:00:00"
+}
+```
+
+### List participants
+
+```http
+GET /groups/1/participants
+```
+
+Returns seeded participant profiles with frontend-friendly fields such as `displayName`, `aboutMe`, and `funFact`.
+
+### List group messages
+
+```http
+GET /groups/1/messages
+```
+
+Returns group chat messages sorted oldest first.
+
+### Create group message
+
+```http
+POST /groups/1/messages
+Content-Type: application/json
+```
+
+Request body:
+
+```json
+{
+  "senderName": "You",
+  "senderInitials": "Y",
+  "body": "I am glad to be here."
+}
+```
+
+Empty message bodies return `400`.
+
+### Create facilitator direct message
+
+```http
+POST /groups/1/facilitator-messages
+Content-Type: application/json
+```
+
+Request body:
+
+```json
+{
+  "senderName": "You",
+  "body": "Could I ask something privately?"
+}
+```
+
+This route persists direct messages in `group_messages` with `messageType` set to `facilitator_direct`. The frontend button is currently visible but not wired.
+
+### Create reflection
+
+```http
+POST /groups/1/reflections
+Content-Type: application/json
+```
+
+Request body:
+
+```json
+{
+  "privateNote": "I need a minute to breathe.",
+  "facilitatorNote": "Please check in with me after the group."
+}
+```
+
+If both fields are empty, the backend returns `400`.
+
+### Share reflection
+
+```http
+PATCH /reflections/:reflectionId/share
+```
+
+Marks a reflection as shared with the facilitator.
+
 ## Data model
 
-The first migration creates:
+The first migration creates the original support request table:
 
 ```sql
 CREATE TABLE support_requests (
@@ -220,6 +325,15 @@ CREATE TABLE support_requests (
 ```
 
 The API exposes `support_type` as `supportType` and `created_at` as `createdAt`.
+
+The second migration creates and seeds:
+
+- `support_groups`
+- `participants`
+- `group_messages`
+- `reflections`
+
+Seed data includes one group, `Monday Group`, facilitated by `Sean`, seven participants, and initial group chat messages.
 
 ## Deployment notes
 
@@ -237,6 +351,8 @@ The backend CORS configuration currently allows:
 - `https://drp-07.vercel.app`
 
 Add any new frontend origin to `backend/drp-backend/conf/application.conf`.
+
+When connecting from a local machine to Railway Postgres, use Railway's public proxy database URL, not the private `postgres.railway.internal` hostname. The private hostname only resolves inside Railway.
 
 ### Backend Docker image
 
@@ -261,9 +377,10 @@ The Dockerfile builds the app with JDK 21, installs sbt through Coursier, stages
 
 ## Current status
 
-- Frontend support request form is wired to the backend API.
-- Frontend displays saved requests returned by the API.
-- Backend supports health checks, creating support requests, and listing support requests.
-- Database schema is managed by Flyway.
+- Frontend Monday Group chat screen is wired to the backend group and message APIs.
+- Group messages persist and reload after refresh.
+- Backend supports health checks, support requests, group metadata, participants, group messages, facilitator direct messages, reflections, and sharing reflections.
+- Database schema and Monday Group seed data are managed by Flyway.
 - Backend startup currently requires a reachable PostgreSQL database because migrations run eagerly.
-- Backend tests are still the default Play seed tests and do not yet cover the support request API.
+- Backend tests are still the default Play seed tests and do not yet cover the peer-support API.
+- Reflection room, participant hover/profile, and facilitator direct-message UI are intentionally not implemented yet.

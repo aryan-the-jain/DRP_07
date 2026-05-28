@@ -12,3 +12,11 @@ GET     /assets/*file               controllers.Assets.versioned(path="/public",
 GET     /health                    controllers.HealthController.health
 GET     /support-requests          controllers.SupportRequestController.index
 POST    /support-requests          controllers.SupportRequestController.create
+
+GET     /groups/:groupId                           controllers.PeerSupportController.group(groupId: Int)
+GET     /groups/:groupId/participants              controllers.PeerSupportController.participants(groupId: Int)
+GET     /groups/:groupId/messages                  controllers.PeerSupportController.messages(groupId: Int)
+POST    /groups/:groupId/messages                  controllers.PeerSupportController.createMessage(groupId: Int)
+POST    /groups/:groupId/facilitator-messages      controllers.PeerSupportController.createFacilitatorMessage(groupId: Int)
+POST    /groups/:groupId/reflections               controllers.PeerSupportController.createReflection(groupId: Int)
+PATCH   /reflections/:reflectionId/share           controllers.PeerSupportController.shareReflection(reflectionId: Int)
