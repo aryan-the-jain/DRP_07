@@ -437,13 +437,6 @@ export default function Home() {
               <div className="rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700">
                 {group?.scheduledDurationMinutes ?? 30} mins remaining
               </div>
-
-              <button
-                type="button"
-                className="rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
-              >
-                Description
-              </button>
             </div>
 
             <button
