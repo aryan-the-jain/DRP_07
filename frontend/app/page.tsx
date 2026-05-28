@@ -77,6 +77,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isExited, setIsExited] = useState(false);
   const participantListRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const isParticipantListOpen =
@@ -348,6 +349,32 @@ export default function Home() {
     }
   }
 
+  if (isExited) {
+    return (
+      <main className="h-screen w-screen overflow-hidden bg-[#faf7f1] flex items-center justify-center text-stone-900 px-4">
+        <article className="w-full max-w-md rounded-3xl border border-stone-200 bg-white p-8 text-center shadow-[0_24px_70px_rgba(68,52,35,0.12)]">
+          <div className="flex justify-center mb-6">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eee6da] text-stone-600 text-2xl font-serif">
+              ♥
+            </div>
+          </div>
+          
+          <h1 className="text-2xl font-semibold text-stone-950 font-serif mb-4">
+            You have gently left the room
+          </h1>
+          
+          <p className="text-sm leading-relaxed text-stone-650 mb-6">
+            Thank you for sharing this space with us today. Take care of yourself.
+          </p>
+          
+          <div className="border-t border-stone-200 pt-5 text-xs text-stone-500 leading-relaxed">
+            It is now safe to close this browser tab.
+          </div>
+        </article>
+      </main>
+    );
+  }
+
   return (
     <main className="h-screen overflow-hidden bg-[#f4f1ec] px-4 py-5 text-stone-900 sm:px-6 lg:px-8">
       <section className="mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden rounded-[1.5rem] border border-stone-200 bg-[#fffdf8] shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
@@ -441,7 +468,10 @@ export default function Home() {
 
             <button
               type="button"
-              onClick={() => window.close()}
+              onClick={() => {
+                window.close();
+                setIsExited(true);
+              }}
               className="rounded-2xl border border-stone-300 bg-stone-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-800"
             >
               Exit
