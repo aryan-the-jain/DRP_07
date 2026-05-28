@@ -2,11 +2,14 @@ type QuietReflectionRoomProps = {
   privateNote: string;
   facilitatorNote: string;
   isSavingReflection: boolean;
+  isSharingReflection: boolean;
+  isReflectionSaved: boolean;
   isReflectionShared: boolean;
   quietSpaceError: string;
   onPrivateNoteChange: (value: string) => void;
   onFacilitatorNoteChange: (value: string) => void;
   onExitQuietSpace: () => void;
+  onSaveReflection: () => void;
   onShareReflection: () => void;
 };
 
@@ -14,40 +17,59 @@ export function QuietReflectionRoom({
   privateNote,
   facilitatorNote,
   isSavingReflection,
+  isSharingReflection,
+  isReflectionSaved,
   isReflectionShared,
   quietSpaceError,
   onPrivateNoteChange,
   onFacilitatorNoteChange,
   onExitQuietSpace,
+  onSaveReflection,
   onShareReflection,
 }: QuietReflectionRoomProps) {
+  const hasReflectionText = Boolean(privateNote.trim() || facilitatorNote.trim());
+  const isReflectionBusy = isSavingReflection || isSharingReflection;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#fffdf8] p-6 sm:p-8">
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 sm:gap-8">
-        <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 pb-4">
           <button
             type="button"
             onClick={onExitQuietSpace}
+            disabled={isReflectionBusy}
             className="rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-stone-200"
           >
             Go Back
           </button>
 
-          <button
-            type="button"
-            onClick={onShareReflection}
-            disabled={
-              isSavingReflection ||
-              (!privateNote.trim() && !facilitatorNote.trim())
-            }
-            className="rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSavingReflection
-              ? "Saving..."
-              : isReflectionShared
-                ? "Shared with facilitator"
-                : "Share with facilitator"}
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onSaveReflection}
+              disabled={isReflectionBusy || !hasReflectionText}
+              className="rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSavingReflection
+                ? "Saving..."
+                : isReflectionSaved
+                  ? "Saved"
+                  : "Save"}
+            </button>
+
+            <button
+              type="button"
+              onClick={onShareReflection}
+              disabled={isReflectionBusy || !hasReflectionText}
+              className="rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSharingReflection
+                ? "Sharing..."
+                : isReflectionShared
+                  ? "Shared with facilitator"
+                  : "Share with facilitator"}
+            </button>
+          </div>
         </div>
 
         <div className="py-2 text-center">
@@ -67,7 +89,7 @@ export function QuietReflectionRoom({
         ) : (
           <>
             {quietSpaceError && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-800 shadow-sm">
+              <div className="self-end rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm leading-relaxed text-stone-650 shadow-sm">
                 {quietSpaceError}
               </div>
             )}
@@ -86,7 +108,7 @@ export function QuietReflectionRoom({
                   placeholder="Type here..."
                   value={privateNote}
                   onChange={(event) => onPrivateNoteChange(event.target.value)}
-                  disabled={isSavingReflection}
+                  disabled={isReflectionBusy}
                   className="min-h-[100px] w-full resize-none rounded-2xl border border-stone-300 bg-white p-4 text-sm text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-200"
                 />
               </div>
@@ -106,7 +128,7 @@ export function QuietReflectionRoom({
                   onChange={(event) =>
                     onFacilitatorNoteChange(event.target.value)
                   }
-                  disabled={isSavingReflection}
+                  disabled={isReflectionBusy}
                   className="min-h-[100px] w-full resize-none rounded-2xl border border-stone-300 bg-white p-4 text-sm text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-200"
                 />
               </div>

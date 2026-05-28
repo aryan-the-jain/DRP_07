@@ -33,7 +33,10 @@ export default function Home() {
   const [privateNote, setPrivateNote] = useState("");
   const [facilitatorNote, setFacilitatorNote] = useState("");
   const [isSavingReflection, setIsSavingReflection] = useState(false);
+  const [isSharingReflection, setIsSharingReflection] = useState(false);
+  const [isReflectionSaved, setIsReflectionSaved] = useState(false);
   const [isReflectionShared, setIsReflectionShared] = useState(false);
+  const [savedReflectionId, setSavedReflectionId] = useState<number | null>(null);
   const [quietSpaceError, setQuietSpaceError] = useState("");
   const [messageBody, setMessageBody] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -188,30 +191,37 @@ export default function Home() {
   }
 
   async function handleExitQuietSpace() {
-    const trimmedPrivate = privateNote.trim();
-    const trimmedFacilitator = facilitatorNote.trim();
-
-    if (trimmedPrivate || trimmedFacilitator) {
-      try {
-        await saveReflection(apiUrl, trimmedPrivate, trimmedFacilitator);
-      } catch {
-        // Quietly fail since this is a draft save.
-      }
-    }
-
     setPrivateNote("");
     setFacilitatorNote("");
+    setSavedReflectionId(null);
+    setIsReflectionSaved(false);
     setIsReflectionShared(false);
     setQuietSpaceError("");
     setActiveTab("group");
   }
 
-  async function handleShareReflection() {
+  function handlePrivateNoteChange(value: string) {
+    setPrivateNote(value);
+    setSavedReflectionId(null);
+    setIsReflectionSaved(false);
+    setIsReflectionShared(false);
+    setQuietSpaceError("");
+  }
+
+  function handleFacilitatorNoteChange(value: string) {
+    setFacilitatorNote(value);
+    setSavedReflectionId(null);
+    setIsReflectionSaved(false);
+    setIsReflectionShared(false);
+    setQuietSpaceError("");
+  }
+
+  async function handleSaveReflection() {
     const trimmedPrivate = privateNote.trim();
     const trimmedFacilitator = facilitatorNote.trim();
 
     if (!trimmedPrivate && !trimmedFacilitator) {
-      setQuietSpaceError("Please type something before sharing.");
+      setQuietSpaceError("Please type something before saving.");
       return;
     }
 
@@ -225,20 +235,65 @@ export default function Home() {
         trimmedFacilitator,
       );
 
-      await shareReflection(apiUrl, reflectionData.id);
+      setSavedReflectionId(reflectionData.id);
+      setIsReflectionSaved(true);
+      setIsReflectionShared(false);
+    } catch (error) {
+      setSavedReflectionId(null);
+      setIsReflectionSaved(false);
+      setIsReflectionShared(false);
+      setQuietSpaceError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't save your reflection. Please check your connection and try again.",
+      );
+    } finally {
+      setIsSavingReflection(false);
+    }
+  }
+
+  async function handleShareReflection() {
+    const trimmedPrivate = privateNote.trim();
+    const trimmedFacilitator = facilitatorNote.trim();
+
+    if (!trimmedPrivate && !trimmedFacilitator) {
+      setQuietSpaceError("Please type something before sharing.");
+      return;
+    }
+
+    setIsSharingReflection(true);
+    setQuietSpaceError("");
+
+    try {
+      let reflectionId = savedReflectionId;
+
+      if (!reflectionId) {
+        const reflectionData = await saveReflection(
+          apiUrl,
+          trimmedPrivate,
+          trimmedFacilitator,
+        );
+        reflectionId = reflectionData.id;
+        setSavedReflectionId(reflectionId);
+        setIsReflectionSaved(true);
+      }
+
+      await shareReflection(apiUrl, reflectionId);
 
       setIsReflectionShared(true);
+      setIsReflectionSaved(false);
       setPrivateNote("");
       setFacilitatorNote("");
+      setSavedReflectionId(null);
     } catch (error) {
       setIsReflectionShared(false);
       setQuietSpaceError(
         error instanceof Error
           ? error.message
-          : "Your reflection could not be shared. Please try again.",
+          : "We couldn't share this with the facilitator yet. Your text is still here.",
       );
     } finally {
-      setIsSavingReflection(false);
+      setIsSharingReflection(false);
     }
   }
 
@@ -260,6 +315,8 @@ export default function Home() {
       privateNote={privateNote}
       facilitatorNote={facilitatorNote}
       isSavingReflection={isSavingReflection}
+      isSharingReflection={isSharingReflection}
+      isReflectionSaved={isReflectionSaved}
       isReflectionShared={isReflectionShared}
       quietSpaceError={quietSpaceError}
       selectedParticipant={selectedParticipant}
@@ -276,9 +333,10 @@ export default function Home() {
       onExit={handleExit}
       onSendMessage={handleSendMessage}
       onMessageBodyChange={setMessageBody}
-      onPrivateNoteChange={setPrivateNote}
-      onFacilitatorNoteChange={setFacilitatorNote}
+      onPrivateNoteChange={handlePrivateNoteChange}
+      onFacilitatorNoteChange={handleFacilitatorNoteChange}
       onExitQuietSpace={handleExitQuietSpace}
+      onSaveReflection={handleSaveReflection}
       onShareReflection={handleShareReflection}
     />
   );

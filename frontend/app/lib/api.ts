@@ -82,34 +82,58 @@ export async function saveReflection(
   privateNote: string,
   facilitatorNote: string,
 ): Promise<ReflectionResponse> {
-  const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      privateNote: privateNote || null,
-      facilitatorNote: facilitatorNote || null,
-    }),
-  });
+  try {
+    const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        privateNote: privateNote || null,
+        facilitatorNote: facilitatorNote || null,
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error("Could not save reflection.");
+    if (!response.ok) {
+      throw new Error(
+        "We couldn't save your reflection. Please check your connection and try again.",
+      );
+    }
+
+    return response.json();
+  } catch (error) {
+    if (error instanceof Error && error.message !== "Failed to fetch") {
+      throw error;
+    }
+
+    throw new Error(
+      "We couldn't save your reflection. Please check your connection and try again.",
+    );
   }
-
-  return response.json();
 }
 
 export async function shareReflection(apiUrl: string, reflectionId: number) {
-  const response = await fetch(`${apiUrl}/reflections/${reflectionId}/share`, {
-    method: "PATCH",
-    headers: {
-      Accept: "application/json",
-    },
-  });
+  try {
+    const response = await fetch(`${apiUrl}/reflections/${reflectionId}/share`, {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error("Could not share reflection.");
+    if (!response.ok) {
+      throw new Error(
+        "We couldn't share this with the facilitator yet. Your text is still here.",
+      );
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message !== "Failed to fetch") {
+      throw error;
+    }
+
+    throw new Error(
+      "We couldn't share this with the facilitator yet. Your text is still here.",
+    );
   }
 }

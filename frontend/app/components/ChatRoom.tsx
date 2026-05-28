@@ -20,6 +20,8 @@ type ChatRoomProps = {
   privateNote: string;
   facilitatorNote: string;
   isSavingReflection: boolean;
+  isSharingReflection: boolean;
+  isReflectionSaved: boolean;
   isReflectionShared: boolean;
   quietSpaceError: string;
   selectedParticipant: Participant | null;
@@ -39,6 +41,7 @@ type ChatRoomProps = {
   onPrivateNoteChange: (value: string) => void;
   onFacilitatorNoteChange: (value: string) => void;
   onExitQuietSpace: () => void;
+  onSaveReflection: () => void;
   onShareReflection: () => void;
 };
 
@@ -55,6 +58,8 @@ export function ChatRoom({
   privateNote,
   facilitatorNote,
   isSavingReflection,
+  isSharingReflection,
+  isReflectionSaved,
   isReflectionShared,
   quietSpaceError,
   selectedParticipant,
@@ -74,6 +79,7 @@ export function ChatRoom({
   onPrivateNoteChange,
   onFacilitatorNoteChange,
   onExitQuietSpace,
+  onSaveReflection,
   onShareReflection,
 }: ChatRoomProps) {
   const facilitatorName = group?.facilitatorName ?? "Sean";
@@ -100,11 +106,14 @@ export function ChatRoom({
             privateNote={privateNote}
             facilitatorNote={facilitatorNote}
             isSavingReflection={isSavingReflection}
+            isSharingReflection={isSharingReflection}
+            isReflectionSaved={isReflectionSaved}
             isReflectionShared={isReflectionShared}
             quietSpaceError={quietSpaceError}
             onPrivateNoteChange={onPrivateNoteChange}
             onFacilitatorNoteChange={onFacilitatorNoteChange}
             onExitQuietSpace={onExitQuietSpace}
+            onSaveReflection={onSaveReflection}
             onShareReflection={onShareReflection}
           />
         ) : (
