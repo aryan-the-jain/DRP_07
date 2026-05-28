@@ -339,11 +339,13 @@ export default function Home() {
       setIsReflectionShared(true);
       setPrivateNote("");
       setFacilitatorNote("");
-    } catch {
-      // Graceful offline fallback simulation
-      setIsReflectionShared(true);
-      setPrivateNote("");
-      setFacilitatorNote("");
+    } catch (error) {
+      setIsReflectionShared(false);
+      setQuietSpaceError(
+        error instanceof Error
+          ? error.message
+          : "Your reflection could not be shared. Please try again.",
+      );
     } finally {
       setIsSavingReflection(false);
     }

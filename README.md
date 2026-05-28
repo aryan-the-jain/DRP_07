@@ -2,7 +2,7 @@
 
 DRP_07 is a full-stack prototype for exploring how bereaved young adults can request reliable, convenient formal support from people and organisations with relevant shared experience.
 
-The current product surface is a walking skeleton of the peer-support chat experience: a Next.js frontend opens “Monday Group”, loads seeded participants and messages from the Scala Play backend, and lets the user send group messages that persist in PostgreSQL.
+The current product surface is a walking skeleton of the peer-support chat experience: a Next.js frontend opens “Monday Group”, loads seeded participants and messages from the Scala Play backend, lets the user send group messages, privately message the facilitator, view participant profiles, step into a quiet reflection space, and exit the room calmly.
 
 The older support-request API still exists in the backend, but the frontend now focuses on the peer-support group flow.
 
@@ -10,7 +10,7 @@ The older support-request API still exists in the backend, but the frontend now 
 
 | Area | Technology | Current use |
 | --- | --- | --- |
-| Frontend | Next.js 16, React 19, TypeScript | App Router client page for the Monday Group chat room |
+| Frontend | Next.js 16, React 19, TypeScript | App Router client page for the Monday Group chat, private facilitator messages, participant profiles, quiet reflection space, and exit flow |
 | Styling | Tailwind CSS 4 | Utility-first styling through `frontend/app/globals.css` |
 | Backend | Play Framework 3, Scala 2.13 | JSON API for groups, participants, messages, reflections, support requests, and health checks |
 | Backend DI | Guice | Eager startup binding for database migrations |
@@ -83,6 +83,10 @@ The frontend uses this value when calling:
 - `GET /groups/1/participants`
 - `GET /groups/1/messages`
 - `POST /groups/1/messages`
+- `GET /groups/1/facilitator-messages`
+- `POST /groups/1/facilitator-messages`
+- `POST /groups/1/reflections`
+- `PATCH /reflections/:reflectionId/share`
 - `GET /support-requests`
 - `POST /support-requests`
 
@@ -282,6 +286,14 @@ Request body:
 
 This route persists direct messages in `group_messages` with `messageType` set to `facilitator_direct`. The frontend button is currently visible but not wired.
 
+### List facilitator direct messages
+
+```http
+GET /groups/1/facilitator-messages
+```
+
+Returns private facilitator messages sorted oldest first.
+
 ### Create reflection
 
 ```http
@@ -378,9 +390,11 @@ The Dockerfile builds the app with JDK 21, installs sbt through Coursier, stages
 ## Current status
 
 - Frontend Monday Group chat screen is wired to the backend group and message APIs.
-- Group messages persist and reload after refresh.
-- Backend supports health checks, support requests, group metadata, participants, group messages, facilitator direct messages, reflections, and sharing reflections.
+- Group messages and facilitator direct messages persist and reload after refresh.
+- Participant count opens a participant list, and participant profiles show About me and Fun fact details.
+- Quiet reflection space can save/share reflections with the facilitator.
+- Exit button attempts to close the tab and falls back to a calm “left the room” screen.
+- Backend supports health checks, support requests, group metadata, participants, group messages, facilitator direct messages, listing facilitator direct messages, reflections, and sharing reflections.
 - Database schema and Monday Group seed data are managed by Flyway.
 - Backend startup currently requires a reachable PostgreSQL database because migrations run eagerly.
 - Backend tests are still the default Play seed tests and do not yet cover the peer-support API.
-- Reflection room, participant hover/profile, and facilitator direct-message UI are intentionally not implemented yet.
