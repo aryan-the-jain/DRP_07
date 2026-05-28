@@ -1,61 +1,22 @@
 "use client";
 
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { ChatRoom } from "./components/ChatRoom";
+import { ExitScreen } from "./components/ExitScreen";
 import {
-  FormEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-
-type SupportGroup = {
-  id: number;
-  name: string;
-  facilitatorName: string;
-  scheduledDurationMinutes: number;
-  createdAt: string;
-};
-
-type Participant = {
-  id: number;
-  groupId: number;
-  displayName: string;
-  initials: string;
-  aboutMe: string;
-  funFact: string;
-  role: string;
-  createdAt: string;
-};
-
-type GroupMessage = {
-  id: number;
-  groupId: number;
-  senderName: string;
-  senderRole: string;
-  body: string;
-  messageType: string;
-  createdAt: string;
-};
-
-const groupId = 1;
-const fallbackApiUrl = "http://localhost:9000";
-
-function formatMessageTime(value: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function initialsFor(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
+  fallbackApiUrl,
+  fetchFacilitatorMessages,
+  fetchGroup,
+  fetchGroupMessages,
+  fetchParticipants,
+  groupId,
+  saveReflection,
+  sendMessage,
+  shareReflection,
+} from "./lib/api";
+import { initialsFor } from "./lib/format";
+import { ActiveTab, GroupMessage, Participant, SupportGroup } from "./lib/types";
 
 export default function Home() {
   const [group, setGroup] = useState<SupportGroup | null>(null);
@@ -66,8 +27,10 @@ export default function Home() {
   const [selectedParticipant, setSelectedParticipant] =
     useState<Participant | null>(null);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
-  const [facilitatorMessages, setFacilitatorMessages] = useState<GroupMessage[]>([]);
-  const [activeTab, setActiveTab] = useState<"group" | "facilitator" | "quiet">("group");
+  const [facilitatorMessages, setFacilitatorMessages] = useState<
+    GroupMessage[]
+  >([]);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("group");
   const [privateNote, setPrivateNote] = useState("");
   const [facilitatorNote, setFacilitatorNote] = useState("");
   const [isSavingReflection, setIsSavingReflection] = useState(false);
@@ -88,37 +51,11 @@ export default function Home() {
   }, []);
 
   const loadMessages = useCallback(async () => {
-    const response = await fetch(`${apiUrl}/groups/${groupId}/messages`);
-
-    if (!response.ok) {
-      throw new Error("Could not load messages.");
-    }
-
-    const data: GroupMessage[] = await response.json();
-    setMessages(
-      [...data].sort(
-        (first, second) =>
-          new Date(first.createdAt).getTime() -
-            new Date(second.createdAt).getTime() || first.id - second.id,
-      ),
-    );
+    setMessages(await fetchGroupMessages(apiUrl));
   }, [apiUrl]);
 
   const loadFacilitatorMessages = useCallback(async () => {
-    const response = await fetch(`${apiUrl}/groups/${groupId}/facilitator-messages`);
-
-    if (!response.ok) {
-      throw new Error("Could not load private messages.");
-    }
-
-    const data: GroupMessage[] = await response.json();
-    setFacilitatorMessages(
-      [...data].sort(
-        (first, second) =>
-          new Date(first.createdAt).getTime() -
-            new Date(second.createdAt).getTime() || first.id - second.id,
-      ),
-    );
+    setFacilitatorMessages(await fetchFacilitatorMessages(apiUrl));
   }, [apiUrl]);
 
   const loadRoom = useCallback(async () => {
@@ -126,17 +63,10 @@ export default function Home() {
     setErrorMessage("");
 
     try {
-      const [groupResponse, participantsResponse] = await Promise.all([
-        fetch(`${apiUrl}/groups/${groupId}`),
-        fetch(`${apiUrl}/groups/${groupId}/participants`),
+      const [groupData, participantsData] = await Promise.all([
+        fetchGroup(apiUrl),
+        fetchParticipants(apiUrl),
       ]);
-
-      if (!groupResponse.ok || !participantsResponse.ok) {
-        throw new Error("Could not load Monday Group.");
-      }
-
-      const [groupData, participantsData]: [SupportGroup, Participant[]] =
-        await Promise.all([groupResponse.json(), participantsResponse.json()]);
 
       setGroup(groupData);
       setParticipants(participantsData);
@@ -200,20 +130,28 @@ export default function Home() {
     setIsParticipantListPinned(false);
   }
 
+  function closeParticipantProfile() {
+    setSelectedParticipant(null);
+  }
+
   function findParticipantByName(name: string) {
     const facilitatorName = group?.facilitatorName ?? "Sean";
+
     if (name.toLowerCase() === facilitatorName.toLowerCase()) {
       return {
         id: 0,
         groupId: groupId,
         displayName: facilitatorName,
         initials: initialsFor(facilitatorName),
-        aboutMe: "I am facilitating this peer-support group. I am here to help keep this space safe, calm, and supportive for everyone.",
-        funFact: "I bake bread on weekends and always make sure there is hot tea ready.",
+        aboutMe:
+          "I am facilitating this peer-support group. I am here to help keep this space safe, calm, and supportive for everyone.",
+        funFact:
+          "I bake bread on weekends and always make sure there is hot tea ready.",
         role: "facilitator",
         createdAt: "",
       };
     }
+
     return participants.find(
       (participant) =>
         participant.displayName.toLowerCase() === name.toLowerCase(),
@@ -236,21 +174,7 @@ export default function Home() {
     const endpoint = activeTab === "group" ? "messages" : "facilitator-messages";
 
     try {
-      const response = await fetch(`${apiUrl}/groups/${groupId}/${endpoint}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          senderName: "You",
-          senderInitials: "Y",
-          body: trimmedMessage,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Could not send message.");
-      }
+      await sendMessage(apiUrl, endpoint, trimmedMessage);
 
       setMessageBody("");
       if (activeTab === "group") {
@@ -271,18 +195,9 @@ export default function Home() {
 
     if (trimmedPrivate || trimmedFacilitator) {
       try {
-        await fetch(`${apiUrl}/groups/${groupId}/reflections`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            privateNote: trimmedPrivate || null,
-            facilitatorNote: trimmedFacilitator || null,
-          }),
-        });
+        await saveReflection(apiUrl, trimmedPrivate, trimmedFacilitator);
       } catch {
-        // Quietly fail since this is a draft save
+        // Quietly fail since this is a draft save.
       }
     }
 
@@ -306,35 +221,13 @@ export default function Home() {
     setQuietSpaceError("");
 
     try {
-      const createResponse = await fetch(`${apiUrl}/groups/${groupId}/reflections`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
-        body: JSON.stringify({
-          privateNote: trimmedPrivate || null,
-          facilitatorNote: trimmedFacilitator || null,
-        }),
-      });
+      const reflectionData = await saveReflection(
+        apiUrl,
+        trimmedPrivate,
+        trimmedFacilitator,
+      );
 
-      if (!createResponse.ok) {
-        throw new Error("Could not save reflection.");
-      }
-
-      const reflectionData = await createResponse.json();
-      const reflectionId = reflectionData.id;
-
-      const shareResponse = await fetch(`${apiUrl}/reflections/${reflectionId}/share`, {
-        method: "PATCH",
-        headers: {
-          "Accept": "application/json",
-        },
-      });
-
-      if (!shareResponse.ok) {
-        throw new Error("Could not share reflection.");
-      }
+      await shareReflection(apiUrl, reflectionData.id);
 
       setIsReflectionShared(true);
       setPrivateNote("");
@@ -351,424 +244,49 @@ export default function Home() {
     }
   }
 
+  function handleExit() {
+    window.close();
+    setIsExited(true);
+  }
+
   if (isExited) {
-    return (
-      <main className="h-screen w-screen overflow-hidden bg-[#faf7f1] flex items-center justify-center text-stone-900 px-4">
-        <article className="w-full max-w-md rounded-3xl border border-stone-200 bg-white p-8 text-center shadow-[0_24px_70px_rgba(68,52,35,0.12)]">
-          <div className="flex justify-center mb-6">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eee6da] text-stone-600 text-2xl font-serif">
-              ♥
-            </div>
-          </div>
-          
-          <h1 className="text-2xl font-semibold text-stone-950 font-serif mb-4">
-            You have gently left the room
-          </h1>
-          
-          <p className="text-sm leading-relaxed text-stone-650 mb-6">
-            Thank you for sharing this space with us today. Take care of yourself.
-          </p>
-          
-          <div className="border-t border-stone-200 pt-5 text-xs text-stone-500 leading-relaxed">
-            It is now safe to close this browser tab.
-          </div>
-        </article>
-      </main>
-    );
+    return <ExitScreen />;
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-[#f4f1ec] px-4 py-5 text-stone-900 sm:px-6 lg:px-8">
-      <section className="mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden rounded-[1.5rem] border border-stone-200 bg-[#fffdf8] shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
-        <header className="shrink-0 border-b border-stone-200 bg-[#faf7f1]">
-          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-stretch sm:justify-between sm:p-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="rounded-2xl border border-stone-300 bg-white px-4 py-3">
-                <p className="text-xs font-medium uppercase text-stone-500">
-                  Room
-                </p>
-                <h1 className="text-xl font-semibold text-stone-950 sm:text-2xl">
-                  {group?.name ?? "Monday Group"}
-                </h1>
-              </div>
-
-              <div
-                ref={participantListRef}
-                className="relative"
-                onMouseEnter={() => setIsParticipantListHovered(true)}
-                onMouseLeave={() => setIsParticipantListHovered(false)}
-                onFocus={() => setIsParticipantListHovered(true)}
-              >
-                <button
-                  type="button"
-                  className="rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50 focus:border-stone-500 focus:outline-none focus:ring-4 focus:ring-stone-200"
-                  aria-expanded={isParticipantListOpen}
-                  aria-haspopup="dialog"
-                  onClick={() =>
-                    setIsParticipantListPinned(
-                      (isCurrentlyPinned) => !isCurrentlyPinned,
-                    )
-                  }
-                >
-                  {participants.length || 7} people
-                </button>
-
-                {isParticipantListOpen && (
-                  <div className="absolute left-0 top-full z-30 mt-2 w-72 rounded-2xl border border-stone-200 bg-white p-2 text-stone-800 shadow-[0_18px_45px_rgba(68,52,35,0.16)]">
-                    <div className="flex items-start justify-between gap-3 px-3 py-2">
-                      <div>
-                        <p className="text-xs font-medium uppercase text-stone-500">
-                          In the room
-                        </p>
-                        <p className="mt-1 text-sm text-stone-600">
-                          Click someone to learn a little about them.
-                        </p>
-                      </div>
-
-                      {isParticipantListPinned && (
-                        <button
-                          type="button"
-                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-stone-300 text-base leading-none text-stone-500 transition hover:bg-stone-50 hover:text-stone-800"
-                          aria-label="Close participant list"
-                          onClick={() => setIsParticipantListPinned(false)}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="max-h-72 overflow-y-auto">
-                      {participants.map((participant) => (
-                        <button
-                          key={participant.id}
-                          type="button"
-                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-[#faf7f1] focus:bg-[#faf7f1] focus:outline-none"
-                          onClick={() => openParticipantProfile(participant)}
-                        >
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-xs font-semibold text-stone-700">
-                            {participant.initials}
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block text-sm font-semibold text-stone-950">
-                              {participant.displayName}
-                            </span>
-                            <span className="block text-xs capitalize text-stone-500">
-                              {participant.role}
-                            </span>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700">
-                {group?.scheduledDurationMinutes ?? 30} mins remaining
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                window.close();
-                setIsExited(true);
-              }}
-              className="rounded-2xl border border-stone-300 bg-stone-900 px-5 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-stone-800 hover:scale-[1.02] active:scale-[0.97] cursor-pointer shadow-sm"
-            >
-              Exit
-            </button>
-          </div>
-
-          {activeTab !== "quiet" && (
-            <div className="flex flex-col gap-2 border-t border-stone-200 px-4 py-3 text-sm text-stone-700 sm:flex-row sm:items-center sm:px-5">
-              <span>
-                <strong className="font-semibold text-stone-950">
-                  {group?.facilitatorName ?? "Sean"}
-                </strong>{" "}
-                is facilitating
-              </span>
-              <button
-                type="button"
-                onClick={() => setActiveTab(activeTab === "group" ? "facilitator" : "group")}
-                className="w-fit rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
-              >
-                {activeTab === "group" ? "Directly message them here" : "Go back to group discussion"}
-              </button>
-            </div>
-          )}
-        </header>
-
-        {activeTab === "quiet" ? (
-          <div className="flex min-h-0 flex-1 flex-col bg-[#fffdf8] p-6 sm:p-8 overflow-y-auto">
-            <div className="mx-auto w-full max-w-2xl flex-1 flex flex-col gap-6 sm:gap-8">
-              {/* Actions row: Go Back (left), Share with facilitator (right) */}
-              <div className="flex items-center justify-between border-b border-stone-200 pb-4">
-                <button
-                  type="button"
-                  onClick={handleExitQuietSpace}
-                  className="rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-stone-200 shadow-sm"
-                >
-                  Go Back
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={handleShareReflection}
-                  disabled={isSavingReflection || (!privateNote.trim() && !facilitatorNote.trim())}
-                  className="rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
-                >
-                  {isSavingReflection ? "Saving..." : isReflectionShared ? "Shared with facilitator" : "Share with facilitator"}
-                </button>
-              </div>
-
-              {/* Centered title & subtitle */}
-              <div className="text-center py-2">
-                <h2 className="text-2xl font-semibold text-stone-950 font-serif border-b border-stone-200 pb-2 inline-block">
-                  Quiet Space to Reflect
-                </h2>
-                <p className="mt-3 text-sm text-stone-500 max-w-md mx-auto leading-relaxed">
-                  Take a calm moment for yourself. You can write your thoughts down freely.
-                </p>
-              </div>
-
-              {/* Status messages */}
-              {isReflectionShared ? (
-                <div className="rounded-2xl border border-stone-200 bg-[#faf7f1] p-6 text-center text-sm text-stone-750 leading-relaxed shadow-sm py-8 my-auto">
-                  Message is shared with facilitator.
-                </div>
-              ) : (
-                <>
-                  {quietSpaceError && (
-                    <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800 shadow-sm leading-relaxed">
-                      {quietSpaceError}
-                    </div>
-                  )}
-
-                  {/* Text areas for reflection questions */}
-                  <div className="space-y-6 flex-1 min-h-0">
-                    <div className="flex flex-col gap-2">
-                      <label htmlFor="privateNote" className="text-sm font-semibold text-stone-850">
-                        How are you feeling now?
-                      </label>
-                      <textarea
-                        id="privateNote"
-                        rows={4}
-                        placeholder="Type here..."
-                        value={privateNote}
-                        onChange={(e) => setPrivateNote(e.target.value)}
-                        disabled={isSavingReflection}
-                        className="w-full rounded-2xl border border-stone-300 bg-white p-4 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-200 resize-none transition shadow-sm min-h-[100px]"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <label htmlFor="facilitatorNote" className="text-sm font-semibold text-stone-850">
-                        What has made you come here now?
-                      </label>
-                      <textarea
-                        id="facilitatorNote"
-                        rows={4}
-                        placeholder="Type here..."
-                        value={facilitatorNote}
-                        onChange={(e) => setFacilitatorNote(e.target.value)}
-                        disabled={isSavingReflection}
-                        className="w-full rounded-2xl border border-stone-300 bg-white p-4 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-200 resize-none transition shadow-sm min-h-[100px]"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col bg-[#fffdf8]">
-            <section className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
-              {isLoading ? (
-                <div className="flex h-full min-h-[14rem] items-center justify-center text-sm text-stone-500">
-                  Loading Monday Group...
-                </div>
-              ) : (
-                <div className="mx-auto flex max-w-3xl flex-col gap-5">
-                  {activeTab === "facilitator" && (
-                    <div className="rounded-2xl border border-stone-200 bg-[#faf7f1] p-4 text-sm text-stone-600 shadow-sm leading-6">
-                      <p className="font-semibold text-stone-900 mb-1">
-                        Private conversation with {group?.facilitatorName ?? "Sean"}
-                      </p>
-                      This is a private space to message the facilitator directly. What you share here is only visible to you and {group?.facilitatorName ?? "Sean"}.
-                    </div>
-                  )}
-
-                  {(activeTab === "group" ? messages : facilitatorMessages).length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-stone-300 bg-[#faf7f1] p-6 text-center text-sm text-stone-600">
-                      {activeTab === "group"
-                        ? "No messages yet. You can start gently when you are ready."
-                        : `No private messages yet. You can write to ${group?.facilitatorName ?? "Sean"} here when you are ready.`}
-                    </div>
-                  ) : (
-                    (activeTab === "group" ? messages : facilitatorMessages).map((message) => (
-                      <article key={message.id} className="flex gap-3 sm:gap-4">
-                        <button
-                          type="button"
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-[#e6ddcf] focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-default disabled:hover:border-stone-300 disabled:hover:bg-[#eee6da]"
-                          aria-label={`Open ${message.senderName}'s profile`}
-                          disabled={!findParticipantByName(message.senderName)}
-                          onClick={() => {
-                            const participant = findParticipantByName(
-                              message.senderName,
-                            );
-
-                            if (participant) {
-                              openParticipantProfile(participant);
-                            }
-                          }}
-                        >
-                          {initialsFor(message.senderName)}
-                        </button>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                            <button
-                              type="button"
-                              className="text-sm font-semibold text-stone-950 transition hover:text-stone-700 focus:outline-none focus:underline disabled:cursor-default disabled:hover:text-stone-950"
-                              disabled={!findParticipantByName(message.senderName)}
-                              onClick={() => {
-                                const participant = findParticipantByName(
-                                  message.senderName,
-                                );
-
-                                if (participant) {
-                                  openParticipantProfile(participant);
-                                }
-                              }}
-                            >
-                              {message.senderName}
-                            </button>
-                            <time className="text-xs text-stone-500">
-                              {formatMessageTime(message.createdAt)}
-                            </time>
-                          </div>
-
-                          <div className="w-fit max-w-full rounded-[1.25rem] rounded-tl-sm border border-stone-200 bg-white px-4 py-3 text-sm leading-6 text-stone-800 shadow-sm sm:text-base">
-                            {message.body}
-                          </div>
-                        </div>
-                      </article>
-                    ))
-                  )}
-
-                  <div className="flex justify-center py-4">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("quiet")}
-                      className="rounded-2xl border border-stone-300 bg-[#faf7f1] px-5 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-[#f5efe6]"
-                    >
-                      Step into a quiet space to reflect
-                    </button>
-                  </div>
-                  <div ref={messagesEndRef} aria-hidden="true" />
-                </div>
-              )}
-            </section>
-
-            {selectedParticipant && (
-              <div
-                className="absolute inset-0 z-40 flex items-start justify-center bg-stone-950/10 px-4 py-24 sm:items-center sm:py-6"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="participant-profile-title"
-                onClick={() => setSelectedParticipant(null)}
-              >
-                <article
-                  className="w-full max-w-md rounded-3xl border border-stone-200 bg-white p-5 text-stone-800 shadow-[0_24px_70px_rgba(68,52,35,0.22)]"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700">
-                        {selectedParticipant.initials}
-                      </div>
-                      <div>
-                        <h2
-                          id="participant-profile-title"
-                          className="text-lg font-semibold text-stone-950"
-                        >
-                          {selectedParticipant.displayName}
-                        </h2>
-                        <p className="text-sm capitalize text-stone-500">
-                          {selectedParticipant.role}
-                        </p>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-stone-300 text-lg leading-none text-stone-500 transition hover:border-stone-400 hover:bg-stone-50 hover:text-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-200"
-                      aria-label="Close participant profile"
-                      onClick={() => setSelectedParticipant(null)}
-                    >
-                      ×
-                    </button>
-                  </div>
-
-                  <div className="mt-5 space-y-4">
-                    <section className="rounded-2xl bg-[#faf7f1] p-4">
-                      <h3 className="text-xs font-semibold uppercase text-stone-500">
-                        About me
-                      </h3>
-                      <p className="mt-2 text-sm leading-6 text-stone-700">
-                        {selectedParticipant.aboutMe}
-                      </p>
-                    </section>
-
-                    <section className="rounded-2xl bg-[#faf7f1] p-4">
-                      <h3 className="text-xs font-semibold uppercase text-stone-500">
-                        Fun fact
-                      </h3>
-                      <p className="mt-2 text-sm leading-6 text-stone-700">
-                        {selectedParticipant.funFact}
-                      </p>
-                    </section>
-                  </div>
-                </article>
-              </div>
-            )}
-
-            <footer className="shrink-0 border-t border-stone-200 bg-[#faf7f1] px-4 py-4 sm:px-5">
-              <form
-                onSubmit={handleSendMessage}
-                className="mx-auto flex max-w-4xl items-center gap-3"
-              >
-                <label className="sr-only" htmlFor="message">
-                  Message
-                </label>
-                <input
-                  id="message"
-                  className="min-h-12 flex-1 rounded-full border border-stone-300 bg-white px-5 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-200"
-                  placeholder={activeTab === "group" ? "Type message..." : `Type a private message to ${group?.facilitatorName ?? "Sean"}...`}
-                  value={messageBody}
-                  onChange={(event) => setMessageBody(event.target.value)}
-                  disabled={isSending || isLoading}
-                />
-                <button
-                  type="submit"
-                  disabled={isSending || isLoading}
-                  className="flex h-12 min-w-12 items-center justify-center rounded-full bg-stone-900 px-5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Send message"
-                >
-                  {isSending ? "..." : "Send"}
-                </button>
-              </form>
-
-              {errorMessage && (
-                <p className="mx-auto mt-3 max-w-4xl text-sm text-red-700">
-                  {errorMessage}
-                </p>
-              )}
-            </footer>
-          </div>
-        )}
-      </section>
-    </main>
+    <ChatRoom
+      activeTab={activeTab}
+      group={group}
+      participants={participants}
+      messages={messages}
+      facilitatorMessages={facilitatorMessages}
+      isLoading={isLoading}
+      isSending={isSending}
+      errorMessage={errorMessage}
+      messageBody={messageBody}
+      privateNote={privateNote}
+      facilitatorNote={facilitatorNote}
+      isSavingReflection={isSavingReflection}
+      isReflectionShared={isReflectionShared}
+      quietSpaceError={quietSpaceError}
+      selectedParticipant={selectedParticipant}
+      isParticipantListOpen={isParticipantListOpen}
+      isParticipantListPinned={isParticipantListPinned}
+      participantListRef={participantListRef}
+      messagesEndRef={messagesEndRef}
+      findParticipantByName={findParticipantByName}
+      onParticipantListHoverChange={setIsParticipantListHovered}
+      onParticipantListPinnedChange={setIsParticipantListPinned}
+      onOpenParticipantProfile={openParticipantProfile}
+      onCloseParticipantProfile={closeParticipantProfile}
+      onSetActiveTab={setActiveTab}
+      onExit={handleExit}
+      onSendMessage={handleSendMessage}
+      onMessageBodyChange={setMessageBody}
+      onPrivateNoteChange={setPrivateNote}
+      onFacilitatorNoteChange={setFacilitatorNote}
+      onExitQuietSpace={handleExitQuietSpace}
+      onShareReflection={handleShareReflection}
+    />
   );
 }
