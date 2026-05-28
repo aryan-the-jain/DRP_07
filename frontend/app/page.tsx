@@ -448,21 +448,23 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="flex flex-col gap-2 border-t border-stone-200 px-4 py-3 text-sm text-stone-700 sm:flex-row sm:items-center sm:px-5">
-            <span>
-              <strong className="font-semibold text-stone-950">
-                {group?.facilitatorName ?? "Sean"}
-              </strong>{" "}
-              is facilitating
-            </span>
-            <button
-              type="button"
-              onClick={() => setActiveTab(activeTab === "group" ? "facilitator" : "group")}
-              className="w-fit rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
-            >
-              {activeTab === "group" ? "Directly message them here" : "Go back to group discussion"}
-            </button>
-          </div>
+          {activeTab !== "quiet" && (
+            <div className="flex flex-col gap-2 border-t border-stone-200 px-4 py-3 text-sm text-stone-700 sm:flex-row sm:items-center sm:px-5">
+              <span>
+                <strong className="font-semibold text-stone-950">
+                  {group?.facilitatorName ?? "Sean"}
+                </strong>{" "}
+                is facilitating
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveTab(activeTab === "group" ? "facilitator" : "group")}
+                className="w-fit rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
+              >
+                {activeTab === "group" ? "Directly message them here" : "Go back to group discussion"}
+              </button>
+            </div>
+          )}
         </header>
 
         {activeTab === "quiet" ? (
