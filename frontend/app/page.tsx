@@ -3,7 +3,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatRoom } from "./components/ChatRoom";
-import { ExitScreen } from "./components/ExitScreen";
 import {
   fallbackApiUrl,
   fetchFacilitatorMessages,
@@ -40,7 +39,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [isExited, setIsExited] = useState(false);
   const participantListRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const isParticipantListOpen =
@@ -246,11 +244,6 @@ export default function Home() {
 
   function handleExit() {
     window.close();
-    setIsExited(true);
-  }
-
-  if (isExited) {
-    return <ExitScreen />;
   }
 
   return (
