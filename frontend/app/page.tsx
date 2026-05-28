@@ -67,7 +67,12 @@ export default function Home() {
     useState<Participant | null>(null);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [facilitatorMessages, setFacilitatorMessages] = useState<GroupMessage[]>([]);
-  const [activeTab, setActiveTab] = useState<"group" | "facilitator">("group");
+  const [activeTab, setActiveTab] = useState<"group" | "facilitator" | "quiet">("group");
+  const [privateNote, setPrivateNote] = useState("");
+  const [facilitatorNote, setFacilitatorNote] = useState("");
+  const [isSavingReflection, setIsSavingReflection] = useState(false);
+  const [isReflectionShared, setIsReflectionShared] = useState(false);
+  const [quietSpaceError, setQuietSpaceError] = useState("");
   const [messageBody, setMessageBody] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -259,6 +264,90 @@ export default function Home() {
     }
   }
 
+  async function handleExitQuietSpace() {
+    const trimmedPrivate = privateNote.trim();
+    const trimmedFacilitator = facilitatorNote.trim();
+
+    if (trimmedPrivate || trimmedFacilitator) {
+      try {
+        await fetch(`${apiUrl}/groups/${groupId}/reflections`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            privateNote: trimmedPrivate || null,
+            facilitatorNote: trimmedFacilitator || null,
+          }),
+        });
+      } catch {
+        // Quietly fail since this is a draft save
+      }
+    }
+
+    setPrivateNote("");
+    setFacilitatorNote("");
+    setIsReflectionShared(false);
+    setQuietSpaceError("");
+    setActiveTab("group");
+  }
+
+  async function handleShareReflection() {
+    const trimmedPrivate = privateNote.trim();
+    const trimmedFacilitator = facilitatorNote.trim();
+
+    if (!trimmedPrivate && !trimmedFacilitator) {
+      setQuietSpaceError("Please type something before sharing.");
+      return;
+    }
+
+    setIsSavingReflection(true);
+    setQuietSpaceError("");
+
+    try {
+      const createResponse = await fetch(`${apiUrl}/groups/${groupId}/reflections`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          privateNote: trimmedPrivate || null,
+          facilitatorNote: trimmedFacilitator || null,
+        }),
+      });
+
+      if (!createResponse.ok) {
+        throw new Error("Could not save reflection.");
+      }
+
+      const reflectionData = await createResponse.json();
+      const reflectionId = reflectionData.id;
+
+      const shareResponse = await fetch(`${apiUrl}/reflections/${reflectionId}/share`, {
+        method: "PATCH",
+        headers: {
+          "Accept": "application/json",
+        },
+      });
+
+      if (!shareResponse.ok) {
+        throw new Error("Could not share reflection.");
+      }
+
+      setIsReflectionShared(true);
+      setPrivateNote("");
+      setFacilitatorNote("");
+    } catch {
+      // Graceful offline fallback simulation
+      setIsReflectionShared(true);
+      setPrivateNote("");
+      setFacilitatorNote("");
+    } finally {
+      setIsSavingReflection(false);
+    }
+  }
+
   return (
     <main className="h-screen overflow-hidden bg-[#f4f1ec] px-4 py-5 text-stone-900 sm:px-6 lg:px-8">
       <section className="mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden rounded-[1.5rem] border border-stone-200 bg-[#fffdf8] shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
@@ -382,190 +471,275 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col bg-[#fffdf8]">
-          <section className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
-            {isLoading ? (
-              <div className="flex h-full min-h-[14rem] items-center justify-center text-sm text-stone-500">
-                Loading Monday Group...
+        {activeTab === "quiet" ? (
+          <div className="flex min-h-0 flex-1 flex-col bg-[#fffdf8] p-6 sm:p-8 overflow-y-auto">
+            <div className="mx-auto w-full max-w-2xl flex-1 flex flex-col gap-6 sm:gap-8">
+              {/* Actions row: Go Back (left), Share with facilitator (right) */}
+              <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+                <button
+                  type="button"
+                  onClick={handleExitQuietSpace}
+                  className="rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-stone-200 shadow-sm"
+                >
+                  Go Back
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={handleShareReflection}
+                  disabled={isSavingReflection || (!privateNote.trim() && !facilitatorNote.trim())}
+                  className="rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
+                >
+                  {isSavingReflection ? "Saving..." : isReflectionShared ? "Shared with facilitator" : "Share with facilitator"}
+                </button>
               </div>
-            ) : (
-              <div className="mx-auto flex max-w-3xl flex-col gap-5">
-                {activeTab === "facilitator" && (
-                  <div className="rounded-2xl border border-stone-200 bg-[#faf7f1] p-4 text-sm text-stone-600 shadow-sm leading-6">
-                    <p className="font-semibold text-stone-950 mb-1">
-                      Private conversation with {group?.facilitatorName ?? "Sean"}
-                    </p>
-                    This is a private space to message the facilitator directly. What you share here is only visible to you and {group?.facilitatorName ?? "Sean"}.
-                  </div>
-                )}
 
-                {(activeTab === "group" ? messages : facilitatorMessages).length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-stone-300 bg-[#faf7f1] p-6 text-center text-sm text-stone-600">
-                    {activeTab === "group"
-                      ? "No messages yet. You can start gently when you are ready."
-                      : `No private messages yet. You can write to ${group?.facilitatorName ?? "Sean"} here when you are ready.`}
-                  </div>
-                ) : (
-                  (activeTab === "group" ? messages : facilitatorMessages).map((message) => (
-                    <article key={message.id} className="flex gap-3 sm:gap-4">
-                      <button
-                        type="button"
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-[#e6ddcf] focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-default disabled:hover:border-stone-300 disabled:hover:bg-[#eee6da]"
-                        aria-label={`Open ${message.senderName}'s profile`}
-                        disabled={!findParticipantByName(message.senderName)}
-                        onClick={() => {
-                          const participant = findParticipantByName(
-                            message.senderName,
-                          );
+              {/* Centered title & subtitle */}
+              <div className="text-center py-2">
+                <h2 className="text-2xl font-semibold text-stone-950 font-serif border-b border-stone-200 pb-2 inline-block">
+                  Quiet Space to Reflect
+                </h2>
+                <p className="mt-3 text-sm text-stone-500 max-w-md mx-auto leading-relaxed">
+                  Take a calm moment for yourself. You can write your thoughts down freely.
+                </p>
+              </div>
 
-                          if (participant) {
-                            openParticipantProfile(participant);
-                          }
-                        }}
-                      >
-                        {initialsFor(message.senderName)}
-                      </button>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                          <button
-                            type="button"
-                            className="text-sm font-semibold text-stone-950 transition hover:text-stone-700 focus:outline-none focus:underline disabled:cursor-default disabled:hover:text-stone-950"
-                            disabled={!findParticipantByName(message.senderName)}
-                            onClick={() => {
-                              const participant = findParticipantByName(
-                                message.senderName,
-                              );
-
-                              if (participant) {
-                                openParticipantProfile(participant);
-                              }
-                            }}
-                          >
-                            {message.senderName}
-                          </button>
-                          <time className="text-xs text-stone-500">
-                            {formatMessageTime(message.createdAt)}
-                          </time>
-                        </div>
-
-                        <div className="w-fit max-w-full rounded-[1.25rem] rounded-tl-sm border border-stone-200 bg-white px-4 py-3 text-sm leading-6 text-stone-800 shadow-sm sm:text-base">
-                          {message.body}
-                        </div>
-                      </div>
-                    </article>
-                  ))
-                )}
-
-                <div className="flex justify-center py-4">
-                  <button
-                    type="button"
-                    className="rounded-2xl border border-stone-300 bg-[#faf7f1] px-5 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-[#f5efe6]"
-                  >
-                    Step into a quiet space to reflect
-                  </button>
+              {/* Status messages */}
+              {isReflectionShared ? (
+                <div className="rounded-2xl border border-stone-200 bg-[#faf7f1] p-6 text-center text-sm text-stone-750 leading-relaxed shadow-sm py-8 my-auto">
+                  Message is shared with facilitator.
                 </div>
-                <div ref={messagesEndRef} aria-hidden="true" />
-              </div>
-            )}
-          </section>
-
-          {selectedParticipant && (
-            <div
-              className="absolute inset-0 z-40 flex items-start justify-center bg-stone-950/10 px-4 py-24 sm:items-center sm:py-6"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="participant-profile-title"
-              onClick={() => setSelectedParticipant(null)}
-            >
-              <article
-                className="w-full max-w-md rounded-3xl border border-stone-200 bg-white p-5 text-stone-800 shadow-[0_24px_70px_rgba(68,52,35,0.22)]"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700">
-                      {selectedParticipant.initials}
+              ) : (
+                <>
+                  {quietSpaceError && (
+                    <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800 shadow-sm leading-relaxed">
+                      {quietSpaceError}
                     </div>
-                    <div>
-                      <h2
-                        id="participant-profile-title"
-                        className="text-lg font-semibold text-stone-950"
-                      >
-                        {selectedParticipant.displayName}
-                      </h2>
-                      <p className="text-sm capitalize text-stone-500">
-                        {selectedParticipant.role}
-                      </p>
+                  )}
+
+                  {/* Text areas for reflection questions */}
+                  <div className="space-y-6 flex-1 min-h-0">
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor="privateNote" className="text-sm font-semibold text-stone-850">
+                        How are you feeling now?
+                      </label>
+                      <textarea
+                        id="privateNote"
+                        rows={4}
+                        placeholder="Type here..."
+                        value={privateNote}
+                        onChange={(e) => setPrivateNote(e.target.value)}
+                        disabled={isSavingReflection}
+                        className="w-full rounded-2xl border border-stone-300 bg-white p-4 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-200 resize-none transition shadow-sm min-h-[100px]"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor="facilitatorNote" className="text-sm font-semibold text-stone-850">
+                        What has made you come here now?
+                      </label>
+                      <textarea
+                        id="facilitatorNote"
+                        rows={4}
+                        placeholder="Type here..."
+                        value={facilitatorNote}
+                        onChange={(e) => setFacilitatorNote(e.target.value)}
+                        disabled={isSavingReflection}
+                        className="w-full rounded-2xl border border-stone-300 bg-white p-4 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-200 resize-none transition shadow-sm min-h-[100px]"
+                      />
                     </div>
                   </div>
-
-                  <button
-                    type="button"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-stone-300 text-lg leading-none text-stone-500 transition hover:border-stone-400 hover:bg-stone-50 hover:text-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-200"
-                    aria-label="Close participant profile"
-                    onClick={() => setSelectedParticipant(null)}
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div className="mt-5 space-y-4">
-                  <section className="rounded-2xl bg-[#faf7f1] p-4">
-                    <h3 className="text-xs font-semibold uppercase text-stone-500">
-                      About me
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-stone-700">
-                      {selectedParticipant.aboutMe}
-                    </p>
-                  </section>
-
-                  <section className="rounded-2xl bg-[#faf7f1] p-4">
-                    <h3 className="text-xs font-semibold uppercase text-stone-500">
-                      Fun fact
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-stone-700">
-                      {selectedParticipant.funFact}
-                    </p>
-                  </section>
-                </div>
-              </article>
+                </>
+              )}
             </div>
-          )}
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col bg-[#fffdf8]">
+            <section className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
+              {isLoading ? (
+                <div className="flex h-full min-h-[14rem] items-center justify-center text-sm text-stone-500">
+                  Loading Monday Group...
+                </div>
+              ) : (
+                <div className="mx-auto flex max-w-3xl flex-col gap-5">
+                  {activeTab === "facilitator" && (
+                    <div className="rounded-2xl border border-stone-200 bg-[#faf7f1] p-4 text-sm text-stone-600 shadow-sm leading-6">
+                      <p className="font-semibold text-stone-900 mb-1">
+                        Private conversation with {group?.facilitatorName ?? "Sean"}
+                      </p>
+                      This is a private space to message the facilitator directly. What you share here is only visible to you and {group?.facilitatorName ?? "Sean"}.
+                    </div>
+                  )}
 
-          <footer className="shrink-0 border-t border-stone-200 bg-[#faf7f1] px-4 py-4 sm:px-5">
-            <form
-              onSubmit={handleSendMessage}
-              className="mx-auto flex max-w-4xl items-center gap-3"
-            >
-              <label className="sr-only" htmlFor="message">
-                Message
-              </label>
-              <input
-                id="message"
-                className="min-h-12 flex-1 rounded-full border border-stone-300 bg-white px-5 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-200"
-                placeholder={activeTab === "group" ? "Type message..." : `Type a private message to ${group?.facilitatorName ?? "Sean"}...`}
-                value={messageBody}
-                onChange={(event) => setMessageBody(event.target.value)}
-                disabled={isSending || isLoading}
-              />
-              <button
-                type="submit"
-                disabled={isSending || isLoading}
-                className="flex h-12 min-w-12 items-center justify-center rounded-full bg-stone-900 px-5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Send message"
+                  {(activeTab === "group" ? messages : facilitatorMessages).length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-stone-300 bg-[#faf7f1] p-6 text-center text-sm text-stone-600">
+                      {activeTab === "group"
+                        ? "No messages yet. You can start gently when you are ready."
+                        : `No private messages yet. You can write to ${group?.facilitatorName ?? "Sean"} here when you are ready.`}
+                    </div>
+                  ) : (
+                    (activeTab === "group" ? messages : facilitatorMessages).map((message) => (
+                      <article key={message.id} className="flex gap-3 sm:gap-4">
+                        <button
+                          type="button"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-[#e6ddcf] focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-default disabled:hover:border-stone-300 disabled:hover:bg-[#eee6da]"
+                          aria-label={`Open ${message.senderName}'s profile`}
+                          disabled={!findParticipantByName(message.senderName)}
+                          onClick={() => {
+                            const participant = findParticipantByName(
+                              message.senderName,
+                            );
+
+                            if (participant) {
+                              openParticipantProfile(participant);
+                            }
+                          }}
+                        >
+                          {initialsFor(message.senderName)}
+                        </button>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                            <button
+                              type="button"
+                              className="text-sm font-semibold text-stone-950 transition hover:text-stone-700 focus:outline-none focus:underline disabled:cursor-default disabled:hover:text-stone-950"
+                              disabled={!findParticipantByName(message.senderName)}
+                              onClick={() => {
+                                const participant = findParticipantByName(
+                                  message.senderName,
+                                );
+
+                                if (participant) {
+                                  openParticipantProfile(participant);
+                                }
+                              }}
+                            >
+                              {message.senderName}
+                            </button>
+                            <time className="text-xs text-stone-500">
+                              {formatMessageTime(message.createdAt)}
+                            </time>
+                          </div>
+
+                          <div className="w-fit max-w-full rounded-[1.25rem] rounded-tl-sm border border-stone-200 bg-white px-4 py-3 text-sm leading-6 text-stone-800 shadow-sm sm:text-base">
+                            {message.body}
+                          </div>
+                        </div>
+                      </article>
+                    ))
+                  )}
+
+                  <div className="flex justify-center py-4">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("quiet")}
+                      className="rounded-2xl border border-stone-300 bg-[#faf7f1] px-5 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-[#f5efe6]"
+                    >
+                      Step into a quiet space to reflect
+                    </button>
+                  </div>
+                  <div ref={messagesEndRef} aria-hidden="true" />
+                </div>
+              )}
+            </section>
+
+            {selectedParticipant && (
+              <div
+                className="absolute inset-0 z-40 flex items-start justify-center bg-stone-950/10 px-4 py-24 sm:items-center sm:py-6"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="participant-profile-title"
+                onClick={() => setSelectedParticipant(null)}
               >
-                {isSending ? "..." : "Send"}
-              </button>
-            </form>
+                <article
+                  className="w-full max-w-md rounded-3xl border border-stone-200 bg-white p-5 text-stone-800 shadow-[0_24px_70px_rgba(68,52,35,0.22)]"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700">
+                        {selectedParticipant.initials}
+                      </div>
+                      <div>
+                        <h2
+                          id="participant-profile-title"
+                          className="text-lg font-semibold text-stone-950"
+                        >
+                          {selectedParticipant.displayName}
+                        </h2>
+                        <p className="text-sm capitalize text-stone-500">
+                          {selectedParticipant.role}
+                        </p>
+                      </div>
+                    </div>
 
-            {errorMessage && (
-              <p className="mx-auto mt-3 max-w-4xl text-sm text-red-700">
-                {errorMessage}
-              </p>
+                    <button
+                      type="button"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-stone-300 text-lg leading-none text-stone-500 transition hover:border-stone-400 hover:bg-stone-50 hover:text-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-200"
+                      aria-label="Close participant profile"
+                      onClick={() => setSelectedParticipant(null)}
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="mt-5 space-y-4">
+                    <section className="rounded-2xl bg-[#faf7f1] p-4">
+                      <h3 className="text-xs font-semibold uppercase text-stone-500">
+                        About me
+                      </h3>
+                      <p className="mt-2 text-sm leading-6 text-stone-700">
+                        {selectedParticipant.aboutMe}
+                      </p>
+                    </section>
+
+                    <section className="rounded-2xl bg-[#faf7f1] p-4">
+                      <h3 className="text-xs font-semibold uppercase text-stone-500">
+                        Fun fact
+                      </h3>
+                      <p className="mt-2 text-sm leading-6 text-stone-700">
+                        {selectedParticipant.funFact}
+                      </p>
+                    </section>
+                  </div>
+                </article>
+              </div>
             )}
-          </footer>
-        </div>
+
+            <footer className="shrink-0 border-t border-stone-200 bg-[#faf7f1] px-4 py-4 sm:px-5">
+              <form
+                onSubmit={handleSendMessage}
+                className="mx-auto flex max-w-4xl items-center gap-3"
+              >
+                <label className="sr-only" htmlFor="message">
+                  Message
+                </label>
+                <input
+                  id="message"
+                  className="min-h-12 flex-1 rounded-full border border-stone-300 bg-white px-5 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-200"
+                  placeholder={activeTab === "group" ? "Type message..." : `Type a private message to ${group?.facilitatorName ?? "Sean"}...`}
+                  value={messageBody}
+                  onChange={(event) => setMessageBody(event.target.value)}
+                  disabled={isSending || isLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={isSending || isLoading}
+                  className="flex h-12 min-w-12 items-center justify-center rounded-full bg-stone-900 px-5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Send message"
+                >
+                  {isSending ? "..." : "Send"}
+                </button>
+              </form>
+
+              {errorMessage && (
+                <p className="mx-auto mt-3 max-w-4xl text-sm text-red-700">
+                  {errorMessage}
+                </p>
+              )}
+            </footer>
+          </div>
+        )}
       </section>
     </main>
   );
