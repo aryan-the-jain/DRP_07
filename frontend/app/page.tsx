@@ -472,7 +472,7 @@ export default function Home() {
                 window.close();
                 setIsExited(true);
               }}
-              className="rounded-2xl border border-stone-300 bg-stone-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-800"
+              className="rounded-2xl border border-stone-300 bg-stone-900 px-5 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-stone-800 hover:scale-[1.02] active:scale-[0.97] cursor-pointer shadow-sm"
             >
               Exit
             </button>
