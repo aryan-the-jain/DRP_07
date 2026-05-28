@@ -35,6 +35,12 @@ class PeerSupportController @Inject() (
     }
   }
 
+  def facilitatorMessages(groupId: Int): Action[AnyContent] = Action.async {
+    peerSupportRepository.facilitatorMessagesForGroup(groupId).map { messages =>
+      Ok(Json.toJson(messages))
+    }
+  }
+
   def createMessage(groupId: Int): Action[JsValue] = Action.async(parse.json) {
     request =>
       request.body.validate[CreateGroupMessage] match {

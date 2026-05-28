@@ -127,6 +127,17 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
     )
   }
 
+  def facilitatorMessagesForGroup(groupId: Int): Future[Seq[GroupMessage]] = {
+    db.run(
+      groupMessages
+        .filter(message =>
+          message.groupId === groupId && message.messageType === "facilitator_direct"
+        )
+        .sortBy(message => (message.createdAt.asc, message.id.asc))
+        .result
+    )
+  }
+
   def createGroupMessage(
       groupId: Int,
       request: CreateGroupMessage
