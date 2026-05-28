@@ -60,12 +60,20 @@ function initialsFor(name: string) {
 export default function Home() {
   const [group, setGroup] = useState<SupportGroup | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [isParticipantListHovered, setIsParticipantListHovered] =
+    useState(false);
+  const [isParticipantListPinned, setIsParticipantListPinned] = useState(false);
+  const [selectedParticipant, setSelectedParticipant] =
+    useState<Participant | null>(null);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [messageBody, setMessageBody] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const participantListRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const isParticipantListOpen =
+    isParticipantListHovered || isParticipantListPinned;
 
   const apiUrl = useMemo(() => {
     return process.env.NEXT_PUBLIC_API_URL ?? fallbackApiUrl;
@@ -127,6 +135,53 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [messages]);
 
+  useEffect(() => {
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsParticipantListHovered(false);
+        setIsParticipantListPinned(false);
+        setSelectedParticipant(null);
+      }
+    }
+
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, []);
+
+  useEffect(() => {
+    function closeParticipantListOnOutsideClick(event: MouseEvent) {
+      if (
+        isParticipantListPinned &&
+        participantListRef.current &&
+        !participantListRef.current.contains(event.target as Node)
+      ) {
+        setIsParticipantListPinned(false);
+      }
+    }
+
+    document.addEventListener("mousedown", closeParticipantListOnOutsideClick);
+
+    return () =>
+      document.removeEventListener(
+        "mousedown",
+        closeParticipantListOnOutsideClick,
+      );
+  }, [isParticipantListPinned]);
+
+  function openParticipantProfile(participant: Participant) {
+    setSelectedParticipant(participant);
+    setIsParticipantListHovered(false);
+    setIsParticipantListPinned(false);
+  }
+
+  function findParticipantByName(name: string) {
+    return participants.find(
+      (participant) =>
+        participant.displayName.toLowerCase() === name.toLowerCase(),
+    );
+  }
+
   async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -181,8 +236,75 @@ export default function Home() {
                 </h1>
               </div>
 
-              <div className="rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700">
-                {participants.length || 7} people
+              <div
+                ref={participantListRef}
+                className="relative"
+                onMouseEnter={() => setIsParticipantListHovered(true)}
+                onMouseLeave={() => setIsParticipantListHovered(false)}
+                onFocus={() => setIsParticipantListHovered(true)}
+              >
+                <button
+                  type="button"
+                  className="rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50 focus:border-stone-500 focus:outline-none focus:ring-4 focus:ring-stone-200"
+                  aria-expanded={isParticipantListOpen}
+                  aria-haspopup="dialog"
+                  onClick={() =>
+                    setIsParticipantListPinned(
+                      (isCurrentlyPinned) => !isCurrentlyPinned,
+                    )
+                  }
+                >
+                  {participants.length || 7} people
+                </button>
+
+                {isParticipantListOpen && (
+                  <div className="absolute left-0 top-full z-30 mt-2 w-72 rounded-2xl border border-stone-200 bg-white p-2 text-stone-800 shadow-[0_18px_45px_rgba(68,52,35,0.16)]">
+                    <div className="flex items-start justify-between gap-3 px-3 py-2">
+                      <div>
+                        <p className="text-xs font-medium uppercase text-stone-500">
+                          In the room
+                        </p>
+                        <p className="mt-1 text-sm text-stone-600">
+                          Click someone to learn a little about them.
+                        </p>
+                      </div>
+
+                      {isParticipantListPinned && (
+                        <button
+                          type="button"
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-stone-300 text-base leading-none text-stone-500 transition hover:bg-stone-50 hover:text-stone-800"
+                          aria-label="Close participant list"
+                          onClick={() => setIsParticipantListPinned(false)}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-72 overflow-y-auto">
+                      {participants.map((participant) => (
+                        <button
+                          key={participant.id}
+                          type="button"
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-[#faf7f1] focus:bg-[#faf7f1] focus:outline-none"
+                          onClick={() => openParticipantProfile(participant)}
+                        >
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-xs font-semibold text-stone-700">
+                            {participant.initials}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold text-stone-950">
+                              {participant.displayName}
+                            </span>
+                            <span className="block text-xs capitalize text-stone-500">
+                              {participant.role}
+                            </span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700">
@@ -236,15 +358,42 @@ export default function Home() {
                 ) : (
                   messages.map((message) => (
                     <article key={message.id} className="flex gap-3 sm:gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700">
+                      <button
+                        type="button"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-[#e6ddcf] focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-default disabled:hover:border-stone-300 disabled:hover:bg-[#eee6da]"
+                        aria-label={`Open ${message.senderName}'s profile`}
+                        disabled={!findParticipantByName(message.senderName)}
+                        onClick={() => {
+                          const participant = findParticipantByName(
+                            message.senderName,
+                          );
+
+                          if (participant) {
+                            openParticipantProfile(participant);
+                          }
+                        }}
+                      >
                         {initialsFor(message.senderName)}
-                      </div>
+                      </button>
 
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                          <h2 className="text-sm font-semibold text-stone-950">
+                          <button
+                            type="button"
+                            className="text-sm font-semibold text-stone-950 transition hover:text-stone-700 focus:outline-none focus:underline disabled:cursor-default disabled:hover:text-stone-950"
+                            disabled={!findParticipantByName(message.senderName)}
+                            onClick={() => {
+                              const participant = findParticipantByName(
+                                message.senderName,
+                              );
+
+                              if (participant) {
+                                openParticipantProfile(participant);
+                              }
+                            }}
+                          >
                             {message.senderName}
-                          </h2>
+                          </button>
                           <time className="text-xs text-stone-500">
                             {formatMessageTime(message.createdAt)}
                           </time>
@@ -270,6 +419,69 @@ export default function Home() {
               </div>
             )}
           </section>
+
+          {selectedParticipant && (
+            <div
+              className="absolute inset-0 z-40 flex items-start justify-center bg-stone-950/10 px-4 py-24 sm:items-center sm:py-6"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="participant-profile-title"
+              onClick={() => setSelectedParticipant(null)}
+            >
+              <article
+                className="w-full max-w-md rounded-3xl border border-stone-200 bg-white p-5 text-stone-800 shadow-[0_24px_70px_rgba(68,52,35,0.22)]"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700">
+                      {selectedParticipant.initials}
+                    </div>
+                    <div>
+                      <h2
+                        id="participant-profile-title"
+                        className="text-lg font-semibold text-stone-950"
+                      >
+                        {selectedParticipant.displayName}
+                      </h2>
+                      <p className="text-sm capitalize text-stone-500">
+                        {selectedParticipant.role}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-stone-300 text-lg leading-none text-stone-500 transition hover:border-stone-400 hover:bg-stone-50 hover:text-stone-800 focus:outline-none focus:ring-4 focus:ring-stone-200"
+                    aria-label="Close participant profile"
+                    onClick={() => setSelectedParticipant(null)}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  <section className="rounded-2xl bg-[#faf7f1] p-4">
+                    <h3 className="text-xs font-semibold uppercase text-stone-500">
+                      About me
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-stone-700">
+                      {selectedParticipant.aboutMe}
+                    </p>
+                  </section>
+
+                  <section className="rounded-2xl bg-[#faf7f1] p-4">
+                    <h3 className="text-xs font-semibold uppercase text-stone-500">
+                      Fun fact
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-stone-700">
+                      {selectedParticipant.funFact}
+                    </p>
+                  </section>
+                </div>
+              </article>
+            </div>
+          )}
 
           <footer className="shrink-0 border-t border-stone-200 bg-[#faf7f1] px-4 py-4 sm:px-5">
             <form
