@@ -1,6 +1,13 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type SupportGroup = {
   id: number;
@@ -58,6 +65,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const apiUrl = useMemo(() => {
     return process.env.NEXT_PUBLIC_API_URL ?? fallbackApiUrl;
@@ -71,7 +79,13 @@ export default function Home() {
     }
 
     const data: GroupMessage[] = await response.json();
-    setMessages(data);
+    setMessages(
+      [...data].sort(
+        (first, second) =>
+          new Date(first.createdAt).getTime() -
+            new Date(second.createdAt).getTime() || first.id - second.id,
+      ),
+    );
   }, [apiUrl]);
 
   const loadRoom = useCallback(async () => {
@@ -108,6 +122,10 @@ export default function Home() {
 
     return () => window.clearTimeout(timeoutId);
   }, [loadRoom]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: "end" });
+  }, [messages]);
 
   async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -149,9 +167,9 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f4f1ec] px-4 py-5 text-stone-900 sm:px-6 lg:px-8">
-      <section className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-6xl flex-col overflow-hidden rounded-[1.5rem] border border-stone-200 bg-[#fffdf8] shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
-        <header className="border-b border-stone-200 bg-[#faf7f1]">
+    <main className="h-screen overflow-hidden bg-[#f4f1ec] px-4 py-5 text-stone-900 sm:px-6 lg:px-8">
+      <section className="mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden rounded-[1.5rem] border border-stone-200 bg-[#fffdf8] shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
+        <header className="shrink-0 border-b border-stone-200 bg-[#faf7f1]">
           <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-stretch sm:justify-between sm:p-5">
             <div className="flex flex-wrap items-center gap-2">
               <div className="rounded-2xl border border-stone-300 bg-white px-4 py-3">
@@ -203,10 +221,10 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="flex flex-1 flex-col bg-[#fffdf8]">
-          <section className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
+        <div className="flex min-h-0 flex-1 flex-col bg-[#fffdf8]">
+          <section className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
             {isLoading ? (
-              <div className="flex min-h-[22rem] items-center justify-center text-sm text-stone-500">
+              <div className="flex h-full min-h-[14rem] items-center justify-center text-sm text-stone-500">
                 Loading Monday Group...
               </div>
             ) : (
@@ -248,11 +266,12 @@ export default function Home() {
                     Step into a quiet space to reflect
                   </button>
                 </div>
+                <div ref={messagesEndRef} aria-hidden="true" />
               </div>
             )}
           </section>
 
-          <footer className="border-t border-stone-200 bg-[#faf7f1] px-4 py-4 sm:px-5">
+          <footer className="shrink-0 border-t border-stone-200 bg-[#faf7f1] px-4 py-4 sm:px-5">
             <form
               onSubmit={handleSendMessage}
               className="mx-auto flex max-w-4xl items-center gap-3"

@@ -122,7 +122,7 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
         .filter(message =>
           message.groupId === groupId && message.messageType === "group"
         )
-        .sortBy(_.createdAt.asc)
+        .sortBy(message => (message.createdAt.asc, message.id.asc))
         .result
     )
   }
