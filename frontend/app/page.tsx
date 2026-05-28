@@ -441,6 +441,7 @@ export default function Home() {
 
             <button
               type="button"
+              onClick={() => window.close()}
               className="rounded-2xl border border-stone-300 bg-stone-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-800"
             >
               Exit
