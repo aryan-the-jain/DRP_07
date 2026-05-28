@@ -13,6 +13,7 @@ type ChatRoomProps = {
   participants: Participant[];
   messages: GroupMessage[];
   facilitatorMessages: GroupMessage[];
+  hasLeftRoom: boolean;
   isLoading: boolean;
   isSending: boolean;
   errorMessage: string;
@@ -51,6 +52,7 @@ export function ChatRoom({
   participants,
   messages,
   facilitatorMessages,
+  hasLeftRoom,
   isLoading,
   isSending,
   errorMessage,
@@ -83,25 +85,40 @@ export function ChatRoom({
   onShareReflection,
 }: ChatRoomProps) {
   const facilitatorName = group?.facilitatorName ?? "Sean";
+  const groupName = group?.name ?? "Monday Group";
 
   return (
     <main className="h-screen overflow-hidden bg-[#f4f1ec] px-4 py-5 text-stone-900 sm:px-6 lg:px-8">
       <section className="mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden rounded-[1.5rem] border border-stone-200 bg-[#fffdf8] shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
-        <ChatHeader
-          activeTab={activeTab}
-          group={group}
-          participants={participants}
-          isParticipantListOpen={isParticipantListOpen}
-          isParticipantListPinned={isParticipantListPinned}
-          participantListRef={participantListRef}
-          onParticipantListHoverChange={onParticipantListHoverChange}
-          onParticipantListPinnedChange={onParticipantListPinnedChange}
-          onOpenParticipantProfile={onOpenParticipantProfile}
-          onSetActiveTab={onSetActiveTab}
-          onExit={onExit}
-        />
+        {hasLeftRoom ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center bg-[#fffdf8] p-6 text-center">
+            <div className="max-w-md rounded-2xl border border-stone-200 bg-white px-6 py-7 shadow-sm">
+              <h1 className="font-serif text-2xl font-semibold text-stone-950">
+                You&apos;ve left {groupName}.
+              </h1>
+              <p className="mt-3 text-sm leading-relaxed text-stone-600">
+                Thank you for taking part. It&apos;s safe to close this tab when
+                you&apos;re ready.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <ChatHeader
+              activeTab={activeTab}
+              group={group}
+              participants={participants}
+              isParticipantListOpen={isParticipantListOpen}
+              isParticipantListPinned={isParticipantListPinned}
+              participantListRef={participantListRef}
+              onParticipantListHoverChange={onParticipantListHoverChange}
+              onParticipantListPinnedChange={onParticipantListPinnedChange}
+              onOpenParticipantProfile={onOpenParticipantProfile}
+              onSetActiveTab={onSetActiveTab}
+              onExit={onExit}
+            />
 
-        {activeTab === "quiet" ? (
+            {activeTab === "quiet" ? (
           <QuietReflectionRoom
             privateNote={privateNote}
             facilitatorNote={facilitatorNote}
@@ -116,38 +133,40 @@ export function ChatRoom({
             onSaveReflection={onSaveReflection}
             onShareReflection={onShareReflection}
           />
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col bg-[#fffdf8]">
-            <MessageList
-              activeTab={activeTab}
-              facilitatorName={facilitatorName}
-              messages={messages}
-              facilitatorMessages={facilitatorMessages}
-              isLoading={isLoading}
-              messagesEndRef={messagesEndRef}
-              findParticipantByName={findParticipantByName}
-              onOpenParticipantProfile={onOpenParticipantProfile}
-              onEnterQuietSpace={() => onSetActiveTab("quiet")}
-            />
+            ) : (
+              <div className="flex min-h-0 flex-1 flex-col bg-[#fffdf8]">
+                <MessageList
+                  activeTab={activeTab}
+                  facilitatorName={facilitatorName}
+                  messages={messages}
+                  facilitatorMessages={facilitatorMessages}
+                  isLoading={isLoading}
+                  messagesEndRef={messagesEndRef}
+                  findParticipantByName={findParticipantByName}
+                  onOpenParticipantProfile={onOpenParticipantProfile}
+                  onEnterQuietSpace={() => onSetActiveTab("quiet")}
+                />
 
-            {selectedParticipant && (
-              <ParticipantProfileModal
-                participant={selectedParticipant}
-                onClose={onCloseParticipantProfile}
-              />
+                {selectedParticipant && (
+                  <ParticipantProfileModal
+                    participant={selectedParticipant}
+                    onClose={onCloseParticipantProfile}
+                  />
+                )}
+
+                <MessageComposer
+                  activeTab={activeTab}
+                  facilitatorName={facilitatorName}
+                  messageBody={messageBody}
+                  isSending={isSending}
+                  isLoading={isLoading}
+                  errorMessage={errorMessage}
+                  onMessageBodyChange={onMessageBodyChange}
+                  onSendMessage={onSendMessage}
+                />
+              </div>
             )}
-
-            <MessageComposer
-              activeTab={activeTab}
-              facilitatorName={facilitatorName}
-              messageBody={messageBody}
-              isSending={isSending}
-              isLoading={isLoading}
-              errorMessage={errorMessage}
-              onMessageBodyChange={onMessageBodyChange}
-              onSendMessage={onSendMessage}
-            />
-          </div>
+          </>
         )}
       </section>
     </main>

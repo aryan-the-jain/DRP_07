@@ -42,6 +42,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [hasLeftRoom, setHasLeftRoom] = useState(false);
   const participantListRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const isParticipantListOpen =
@@ -161,6 +162,10 @@ export default function Home() {
 
   async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (hasLeftRoom) {
+      return;
+    }
 
     const trimmedMessage = messageBody.trim();
 
@@ -298,7 +303,11 @@ export default function Home() {
   }
 
   function handleExit() {
-    window.close();
+    setHasLeftRoom(true);
+    setSelectedParticipant(null);
+    setIsParticipantListHovered(false);
+    setIsParticipantListPinned(false);
+    setMessageBody("");
   }
 
   return (
@@ -308,6 +317,7 @@ export default function Home() {
       participants={participants}
       messages={messages}
       facilitatorMessages={facilitatorMessages}
+      hasLeftRoom={hasLeftRoom}
       isLoading={isLoading}
       isSending={isSending}
       errorMessage={errorMessage}
