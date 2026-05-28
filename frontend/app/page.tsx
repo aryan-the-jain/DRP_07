@@ -66,6 +66,8 @@ export default function Home() {
   const [selectedParticipant, setSelectedParticipant] =
     useState<Participant | null>(null);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
+  const [facilitatorMessages, setFacilitatorMessages] = useState<GroupMessage[]>([]);
+  const [activeTab, setActiveTab] = useState<"group" | "facilitator">("group");
   const [messageBody, setMessageBody] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -96,6 +98,23 @@ export default function Home() {
     );
   }, [apiUrl]);
 
+  const loadFacilitatorMessages = useCallback(async () => {
+    const response = await fetch(`${apiUrl}/groups/${groupId}/facilitator-messages`);
+
+    if (!response.ok) {
+      throw new Error("Could not load private messages.");
+    }
+
+    const data: GroupMessage[] = await response.json();
+    setFacilitatorMessages(
+      [...data].sort(
+        (first, second) =>
+          new Date(first.createdAt).getTime() -
+            new Date(second.createdAt).getTime() || first.id - second.id,
+      ),
+    );
+  }, [apiUrl]);
+
   const loadRoom = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
@@ -115,13 +134,13 @@ export default function Home() {
 
       setGroup(groupData);
       setParticipants(participantsData);
-      await loadMessages();
+      await Promise.all([loadMessages(), loadFacilitatorMessages()]);
     } catch {
       setErrorMessage("We could not load the group room. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  }, [apiUrl, loadMessages]);
+  }, [apiUrl, loadMessages, loadFacilitatorMessages]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -176,6 +195,19 @@ export default function Home() {
   }
 
   function findParticipantByName(name: string) {
+    const facilitatorName = group?.facilitatorName ?? "Sean";
+    if (name.toLowerCase() === facilitatorName.toLowerCase()) {
+      return {
+        id: 0,
+        groupId: groupId,
+        displayName: facilitatorName,
+        initials: initialsFor(facilitatorName),
+        aboutMe: "I am facilitating this peer-support group. I am here to help keep this space safe, calm, and supportive for everyone.",
+        funFact: "I bake bread on weekends and always make sure there is hot tea ready.",
+        role: "facilitator",
+        createdAt: "",
+      };
+    }
     return participants.find(
       (participant) =>
         participant.displayName.toLowerCase() === name.toLowerCase(),
@@ -195,8 +227,10 @@ export default function Home() {
     setIsSending(true);
     setErrorMessage("");
 
+    const endpoint = activeTab === "group" ? "messages" : "facilitator-messages";
+
     try {
-      const response = await fetch(`${apiUrl}/groups/${groupId}/messages`, {
+      const response = await fetch(`${apiUrl}/groups/${groupId}/${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -213,7 +247,11 @@ export default function Home() {
       }
 
       setMessageBody("");
-      await loadMessages();
+      if (activeTab === "group") {
+        await loadMessages();
+      } else {
+        await loadFacilitatorMessages();
+      }
     } catch {
       setErrorMessage("Your message could not be sent. Please try again.");
     } finally {
@@ -336,9 +374,10 @@ export default function Home() {
             </span>
             <button
               type="button"
+              onClick={() => setActiveTab(activeTab === "group" ? "facilitator" : "group")}
               className="w-fit rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
             >
-              Directly message them here
+              {activeTab === "group" ? "Directly message them here" : "Go back to group discussion"}
             </button>
           </div>
         </header>
@@ -351,12 +390,23 @@ export default function Home() {
               </div>
             ) : (
               <div className="mx-auto flex max-w-3xl flex-col gap-5">
-                {messages.length === 0 ? (
+                {activeTab === "facilitator" && (
+                  <div className="rounded-2xl border border-stone-200 bg-[#faf7f1] p-4 text-sm text-stone-600 shadow-sm leading-6">
+                    <p className="font-semibold text-stone-950 mb-1">
+                      Private conversation with {group?.facilitatorName ?? "Sean"}
+                    </p>
+                    This is a private space to message the facilitator directly. What you share here is only visible to you and {group?.facilitatorName ?? "Sean"}.
+                  </div>
+                )}
+
+                {(activeTab === "group" ? messages : facilitatorMessages).length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-stone-300 bg-[#faf7f1] p-6 text-center text-sm text-stone-600">
-                    No messages yet. You can start gently when you are ready.
+                    {activeTab === "group"
+                      ? "No messages yet. You can start gently when you are ready."
+                      : `No private messages yet. You can write to ${group?.facilitatorName ?? "Sean"} here when you are ready.`}
                   </div>
                 ) : (
-                  messages.map((message) => (
+                  (activeTab === "group" ? messages : facilitatorMessages).map((message) => (
                     <article key={message.id} className="flex gap-3 sm:gap-4">
                       <button
                         type="button"
@@ -494,7 +544,7 @@ export default function Home() {
               <input
                 id="message"
                 className="min-h-12 flex-1 rounded-full border border-stone-300 bg-white px-5 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-200"
-                placeholder="Type message..."
+                placeholder={activeTab === "group" ? "Type message..." : `Type a private message to ${group?.facilitatorName ?? "Sean"}...`}
                 value={messageBody}
                 onChange={(event) => setMessageBody(event.target.value)}
                 disabled={isSending || isLoading}
