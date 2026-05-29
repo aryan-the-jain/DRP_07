@@ -226,13 +226,6 @@ export default function Home() {
       }
     }
 
-    if (isReflectionShared) {
-      setPrivateNote("");
-      setFacilitatorNote("");
-      setIsReflectionShared(false);
-      setSavedReflectionId(null);
-    }
-
     setIsReflectionSaved(false);
     setQuietSpaceError("");
     setActiveTab("group");
@@ -241,11 +234,13 @@ export default function Home() {
   function handlePrivateNoteChange(value: string) {
     setPrivateNote(value);
     setQuietSpaceError("");
+    setIsReflectionShared(false);
   }
 
   function handleFacilitatorNoteChange(value: string) {
     setFacilitatorNote(value);
     setQuietSpaceError("");
+    setIsReflectionShared(false);
   }
 
   async function handleShareReflection() {
@@ -261,30 +256,19 @@ export default function Home() {
     setQuietSpaceError("");
 
     try {
-      let reflectionId = savedReflectionId;
-
-      if (!reflectionId) {
-        const reflectionData = await saveReflection(
-          apiUrl,
-          trimmedPrivate,
-          trimmedFacilitator,
-        );
-        reflectionId = reflectionData.id;
-        setSavedReflectionId(reflectionId);
-      }
+      const reflectionData = await saveReflection(
+        apiUrl,
+        trimmedPrivate,
+        trimmedFacilitator,
+      );
+      const reflectionId = reflectionData.id;
+      setSavedReflectionId(reflectionId);
 
       await shareReflection(apiUrl, reflectionId);
-
       setIsReflectionShared(true);
-      setPrivateNote("");
-      setFacilitatorNote("");
-      setSavedReflectionId(null);
     } catch {
       // Graceful offline fallback simulation for presentation/local testing
       setIsReflectionShared(true);
-      setPrivateNote("");
-      setFacilitatorNote("");
-      setSavedReflectionId(null);
     } finally {
       setIsSharingReflection(false);
     }
