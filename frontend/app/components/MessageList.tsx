@@ -13,7 +13,6 @@ type MessageListProps = {
   messagesEndRef: RefObject<HTMLDivElement | null>;
   findParticipantByName: (name: string) => Participant | undefined;
   onOpenParticipantProfile: (participant: Participant) => void;
-  onEnterQuietSpace: () => void;
 };
 
 export function MessageList({
@@ -25,7 +24,6 @@ export function MessageList({
   messagesEndRef,
   findParticipantByName,
   onOpenParticipantProfile,
-  onEnterQuietSpace,
 }: MessageListProps) {
   const visibleMessages = activeTab === "group" ? messages : facilitatorMessages;
 
@@ -33,7 +31,7 @@ export function MessageList({
     <section className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
       {isLoading ? (
         <div className="flex h-full min-h-[14rem] items-center justify-center text-sm text-stone-500">
-          Loading Monday Group...
+          Loading Friday Group...
         </div>
       ) : (
         <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -95,15 +93,6 @@ export function MessageList({
             })
           )}
 
-          <div className="flex justify-center py-4">
-            <button
-              type="button"
-              onClick={onEnterQuietSpace}
-              className="rounded-2xl border border-stone-300 bg-[#faf7f1] px-5 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-[#f5efe6]"
-            >
-              Step into a quiet space to reflect
-            </button>
-          </div>
           <div ref={messagesEndRef} aria-hidden="true" />
         </div>
       )}

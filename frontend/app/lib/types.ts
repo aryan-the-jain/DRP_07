@@ -31,4 +31,10 @@ export type GroupMessage = {
 
 export type ReflectionResponse = {
   id: number;
+  groupId: number;
+  privateNote: string | null;
+  facilitatorNote: string | null;
+  sharedWithFacilitator: boolean;
+  createdAt: string;
+  sharedAt: string | null;
 };

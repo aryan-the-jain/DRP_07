@@ -42,7 +42,6 @@ type ChatRoomProps = {
   onPrivateNoteChange: (value: string) => void;
   onFacilitatorNoteChange: (value: string) => void;
   onExitQuietSpace: () => void;
-  onSaveReflection: () => void;
   onShareReflection: () => void;
 };
 
@@ -81,11 +80,10 @@ export function ChatRoom({
   onPrivateNoteChange,
   onFacilitatorNoteChange,
   onExitQuietSpace,
-  onSaveReflection,
   onShareReflection,
 }: ChatRoomProps) {
   const facilitatorName = group?.facilitatorName ?? "Sean";
-  const groupName = group?.name ?? "Monday Group";
+  const groupName = group?.name ?? "Friday Group";
 
   return (
     <main className="h-screen overflow-hidden bg-[#f4f1ec] px-4 py-5 text-stone-900 sm:px-6 lg:px-8">
@@ -122,15 +120,12 @@ export function ChatRoom({
           <QuietReflectionRoom
             privateNote={privateNote}
             facilitatorNote={facilitatorNote}
-            isSavingReflection={isSavingReflection}
             isSharingReflection={isSharingReflection}
-            isReflectionSaved={isReflectionSaved}
             isReflectionShared={isReflectionShared}
             quietSpaceError={quietSpaceError}
             onPrivateNoteChange={onPrivateNoteChange}
             onFacilitatorNoteChange={onFacilitatorNoteChange}
             onExitQuietSpace={onExitQuietSpace}
-            onSaveReflection={onSaveReflection}
             onShareReflection={onShareReflection}
           />
             ) : (
@@ -144,7 +139,6 @@ export function ChatRoom({
                   messagesEndRef={messagesEndRef}
                   findParticipantByName={findParticipantByName}
                   onOpenParticipantProfile={onOpenParticipantProfile}
-                  onEnterQuietSpace={() => onSetActiveTab("quiet")}
                 />
 
                 {selectedParticipant && (
@@ -153,6 +147,22 @@ export function ChatRoom({
                     onClose={onCloseParticipantProfile}
                   />
                 )}
+
+                {/* Pinned Quiet Space button bar */}
+                <div className="shrink-0 border-t border-stone-200/60 bg-[#fffdf8] py-3.5 flex justify-center">
+                  <div className="relative group w-fit">
+                    <button
+                      type="button"
+                      onClick={() => onSetActiveTab("quiet")}
+                      className="rounded-2xl border border-stone-300 bg-[#faf7f1] px-5 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-[#f5efe6] cursor-pointer"
+                    >
+                      Step into a quiet space to reflect
+                    </button>
+                    <span className="absolute bottom-full mb-3.5 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out z-50 p-3 rounded-xl border border-stone-200 bg-[#faf7f1] shadow-md w-60 text-xs font-normal leading-normal text-stone-600 text-center block">
+                      Take a pause from the conversation. You can write your thoughts down freely and privately here.
+                    </span>
+                  </div>
+                </div>
 
                 <MessageComposer
                   activeTab={activeTab}

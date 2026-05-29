@@ -39,7 +39,7 @@ export function ChatHeader({
           <div className="rounded-2xl border border-stone-300 bg-white px-4 py-3">
             <p className="text-xs font-medium uppercase text-stone-500">Room</p>
             <h1 className="text-xl font-semibold text-stone-950 sm:text-2xl">
-              {group?.name ?? "Monday Group"}
+              {group?.name ?? "Friday Group"}
             </h1>
           </div>
 
@@ -59,13 +59,18 @@ export function ChatHeader({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onExit}
-          className="cursor-pointer rounded-2xl border border-stone-300 bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:scale-[1.02] hover:bg-stone-800 active:scale-[0.97]"
-        >
-          Exit
-        </button>
+        <div className="relative group w-fit">
+          <button
+            type="button"
+            onClick={onExit}
+            className="cursor-pointer rounded-2xl border border-stone-300 bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:scale-[1.02] hover:bg-stone-800 active:scale-[0.97]"
+          >
+            Exit
+          </button>
+          <span className="absolute top-full mt-2.5 right-0 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out z-50 p-3 rounded-xl border border-stone-200 bg-[#faf7f1] shadow-md w-52 text-xs font-normal leading-normal text-stone-600 text-left block">
+            Leave the group session. It is safe to step away at any time.
+          </span>
+        </div>
       </div>
 
       {activeTab !== "quiet" && (
