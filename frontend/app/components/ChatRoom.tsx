@@ -149,7 +149,7 @@ export function ChatRoom({
                 )}
 
                 {/* Pinned Quiet Space button bar */}
-                <div className="shrink-0 border-t border-stone-150 bg-[#fffdf8] py-3.5 flex justify-center">
+                <div className="shrink-0 border-t border-stone-200/60 bg-[#fffdf8] py-3.5 flex justify-center">
                   <div className="relative group w-fit">
                     <button
                       type="button"
