@@ -38,7 +38,7 @@ export function QuietReflectionRoom({
             Go Back
           </button>
 
-          <div className="relative group">
+          <div className="relative group w-fit">
             <button
               type="button"
               onClick={onShareReflection}
@@ -47,9 +47,9 @@ export function QuietReflectionRoom({
             >
               {isSharingReflection ? "Sharing..." : isReflectionShared ? "Shared" : "Share with facilitator"}
             </button>
-            <div className="absolute top-full mt-2.5 right-0 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out z-50 p-3 rounded-xl border border-stone-200 bg-[#faf7f1] shadow-md w-52 text-xs font-normal leading-normal text-stone-600 text-left">
+            <span className="absolute top-full mt-2.5 right-0 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out z-50 p-3 rounded-xl border border-stone-200 bg-[#faf7f1] shadow-md w-52 text-xs font-normal leading-normal text-stone-600 text-left block">
               Send your reflection notes privately to Sean. They will not be shared with the group.
-            </div>
+            </span>
           </div>
         </div>
 
