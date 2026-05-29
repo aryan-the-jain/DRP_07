@@ -8,6 +8,7 @@ import {
   fetchFacilitatorMessages,
   fetchGroup,
   fetchGroupMessages,
+  fetchLatestReflection,
   fetchParticipants,
   groupId,
   saveReflection,
@@ -60,6 +61,20 @@ export default function Home() {
     setFacilitatorMessages(await fetchFacilitatorMessages(apiUrl));
   }, [apiUrl]);
 
+  const loadReflectionDraft = useCallback(async () => {
+    try {
+      const reflection = await fetchLatestReflection(apiUrl);
+      if (reflection) {
+        setPrivateNote(reflection.privateNote ?? "");
+        setFacilitatorNote(reflection.facilitatorNote ?? "");
+        setIsReflectionShared(reflection.sharedWithFacilitator);
+        setSavedReflectionId(reflection.id);
+      }
+    } catch {
+      // Gracefully ignore since it is just a draft load
+    }
+  }, [apiUrl]);
+
   const loadRoom = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
@@ -72,13 +87,13 @@ export default function Home() {
 
       setGroup(groupData);
       setParticipants(participantsData);
-      await Promise.all([loadMessages(), loadFacilitatorMessages()]);
+      await Promise.all([loadMessages(), loadFacilitatorMessages(), loadReflectionDraft()]);
     } catch {
       setErrorMessage("We could not load the group room. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  }, [apiUrl, loadMessages, loadFacilitatorMessages]);
+  }, [apiUrl, loadMessages, loadFacilitatorMessages, loadReflectionDraft]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -196,65 +211,41 @@ export default function Home() {
   }
 
   async function handleExitQuietSpace() {
-    setPrivateNote("");
-    setFacilitatorNote("");
-    setSavedReflectionId(null);
+    const trimmedPrivate = privateNote.trim();
+    const trimmedFacilitator = facilitatorNote.trim();
+
+    if (!isReflectionShared && (trimmedPrivate || trimmedFacilitator)) {
+      try {
+        await saveReflection(
+          apiUrl,
+          trimmedPrivate,
+          trimmedFacilitator,
+        );
+      } catch {
+        // Quietly fail since this is a draft save
+      }
+    }
+
+    if (isReflectionShared) {
+      setPrivateNote("");
+      setFacilitatorNote("");
+      setIsReflectionShared(false);
+      setSavedReflectionId(null);
+    }
+
     setIsReflectionSaved(false);
-    setIsReflectionShared(false);
     setQuietSpaceError("");
     setActiveTab("group");
   }
 
   function handlePrivateNoteChange(value: string) {
     setPrivateNote(value);
-    setSavedReflectionId(null);
-    setIsReflectionSaved(false);
-    setIsReflectionShared(false);
     setQuietSpaceError("");
   }
 
   function handleFacilitatorNoteChange(value: string) {
     setFacilitatorNote(value);
-    setSavedReflectionId(null);
-    setIsReflectionSaved(false);
-    setIsReflectionShared(false);
     setQuietSpaceError("");
-  }
-
-  async function handleSaveReflection() {
-    const trimmedPrivate = privateNote.trim();
-    const trimmedFacilitator = facilitatorNote.trim();
-
-    if (!trimmedPrivate && !trimmedFacilitator) {
-      setQuietSpaceError("Please type something before saving.");
-      return;
-    }
-
-    setIsSavingReflection(true);
-    setQuietSpaceError("");
-
-    try {
-      const reflectionData = await saveReflection(
-        apiUrl,
-        trimmedPrivate,
-        trimmedFacilitator,
-      );
-
-      setSavedReflectionId(reflectionData.id);
-      setIsReflectionSaved(true);
-      setIsReflectionShared(false);
-    } catch (error) {
-      setSavedReflectionId(null);
-      setIsReflectionSaved(false);
-      setIsReflectionShared(false);
-      setQuietSpaceError(
-        error instanceof Error
-          ? error.message
-          : "We couldn't save your reflection. Please check your connection and try again.",
-      );
-    } finally {
-      setIsSavingReflection(false);
-    }
   }
 
   async function handleShareReflection() {
@@ -280,13 +271,11 @@ export default function Home() {
         );
         reflectionId = reflectionData.id;
         setSavedReflectionId(reflectionId);
-        setIsReflectionSaved(true);
       }
 
       await shareReflection(apiUrl, reflectionId);
 
       setIsReflectionShared(true);
-      setIsReflectionSaved(false);
       setPrivateNote("");
       setFacilitatorNote("");
       setSavedReflectionId(null);
@@ -346,7 +335,6 @@ export default function Home() {
       onPrivateNoteChange={handlePrivateNoteChange}
       onFacilitatorNoteChange={handleFacilitatorNoteChange}
       onExitQuietSpace={handleExitQuietSpace}
-      onSaveReflection={handleSaveReflection}
       onShareReflection={handleShareReflection}
     />
   );

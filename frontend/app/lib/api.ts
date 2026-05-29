@@ -137,3 +137,17 @@ export async function shareReflection(apiUrl: string, reflectionId: number) {
     );
   }
 }
+
+export async function fetchLatestReflection(
+  apiUrl: string,
+): Promise<ReflectionResponse | null> {
+  try {
+    const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`);
+    if (response.ok) {
+      return response.json();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
