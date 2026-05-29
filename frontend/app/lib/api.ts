@@ -15,7 +15,7 @@ export async function fetchGroup(apiUrl: string): Promise<SupportGroup> {
   const response = await fetch(`${apiUrl}/groups/${groupId}`);
 
   if (!response.ok) {
-    throw new Error("Could not load Monday Group.");
+    throw new Error("Could not load Friday Group.");
   }
 
   return response.json();
@@ -25,7 +25,7 @@ export async function fetchParticipants(apiUrl: string): Promise<Participant[]> 
   const response = await fetch(`${apiUrl}/groups/${groupId}/participants`);
 
   if (!response.ok) {
-    throw new Error("Could not load Monday Group.");
+    throw new Error("Could not load Friday Group.");
   }
 
   return response.json();

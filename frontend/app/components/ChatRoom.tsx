@@ -83,7 +83,7 @@ export function ChatRoom({
   onShareReflection,
 }: ChatRoomProps) {
   const facilitatorName = group?.facilitatorName ?? "Sean";
-  const groupName = group?.name ?? "Monday Group";
+  const groupName = group?.name ?? "Friday Group";
 
   return (
     <main className="h-screen overflow-hidden bg-[#f4f1ec] px-4 py-5 text-stone-900 sm:px-6 lg:px-8">

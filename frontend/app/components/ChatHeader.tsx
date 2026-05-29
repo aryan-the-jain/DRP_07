@@ -39,7 +39,7 @@ export function ChatHeader({
           <div className="rounded-2xl border border-stone-300 bg-white px-4 py-3">
             <p className="text-xs font-medium uppercase text-stone-500">Room</p>
             <h1 className="text-xl font-semibold text-stone-950 sm:text-2xl">
-              {group?.name ?? "Monday Group"}
+              {group?.name ?? "Friday Group"}
             </h1>
           </div>
 

@@ -33,7 +33,7 @@ export function MessageList({
     <section className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
       {isLoading ? (
         <div className="flex h-full min-h-[14rem] items-center justify-center text-sm text-stone-500">
-          Loading Monday Group...
+          Loading Friday Group...
         </div>
       ) : (
         <div className="mx-auto flex max-w-3xl flex-col gap-5">
