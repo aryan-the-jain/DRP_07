@@ -38,14 +38,19 @@ export function QuietReflectionRoom({
             Go Back
           </button>
 
-          <button
-            type="button"
-            onClick={onShareReflection}
-            disabled={isReflectionBusy || !hasReflectionText || isReflectionShared}
-            className="rounded-2xl border border-stone-300 bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-stone-800 hover:scale-[1.02] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-sm focus:outline-none focus:ring-4 focus:ring-stone-200"
-          >
-            {isSharingReflection ? "Sharing..." : isReflectionShared ? "Shared" : "Share with facilitator"}
-          </button>
+          <div className="relative group">
+            <button
+              type="button"
+              onClick={onShareReflection}
+              disabled={isReflectionBusy || !hasReflectionText || isReflectionShared}
+              className="rounded-2xl border border-stone-300 bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-stone-800 hover:scale-[1.02] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-sm focus:outline-none focus:ring-4 focus:ring-stone-200"
+            >
+              {isSharingReflection ? "Sharing..." : isReflectionShared ? "Shared" : "Share with facilitator"}
+            </button>
+            <div className="absolute top-full mt-2.5 right-0 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out z-50 p-3 rounded-xl border border-stone-200 bg-[#faf7f1] shadow-md w-52 text-xs font-normal leading-normal text-stone-600 text-left">
+              Send your reflection notes privately to Sean. They will not be shared with the group.
+            </div>
+          </div>
         </div>
 
         <div className="py-2 text-center">

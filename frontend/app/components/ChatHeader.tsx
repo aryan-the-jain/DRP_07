@@ -59,13 +59,18 @@ export function ChatHeader({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onExit}
-          className="cursor-pointer rounded-2xl border border-stone-300 bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:scale-[1.02] hover:bg-stone-800 active:scale-[0.97]"
-        >
-          Exit
-        </button>
+        <div className="relative group">
+          <button
+            type="button"
+            onClick={onExit}
+            className="cursor-pointer rounded-2xl border border-stone-300 bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:scale-[1.02] hover:bg-stone-800 active:scale-[0.97]"
+          >
+            Exit
+          </button>
+          <div className="absolute top-full mt-2.5 right-0 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out z-50 p-3 rounded-xl border border-stone-200 bg-[#faf7f1] shadow-md w-52 text-xs font-normal leading-normal text-stone-600 text-left">
+            Leave the group session. It is safe to step away at any time.
+          </div>
+        </div>
       </div>
 
       {activeTab !== "quiet" && (
@@ -76,17 +81,24 @@ export function ChatHeader({
             </strong>{" "}
             is facilitating
           </span>
-          <button
-            type="button"
-            onClick={() =>
-              onSetActiveTab(activeTab === "group" ? "facilitator" : "group")
-            }
-            className="w-fit rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
-          >
-            {activeTab === "group"
-              ? "Directly message them here"
-              : "Go back to group discussion"}
-          </button>
+          <div className="relative group">
+            <button
+              type="button"
+              onClick={() =>
+                onSetActiveTab(activeTab === "group" ? "facilitator" : "group")
+              }
+              className="w-fit rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50 cursor-pointer"
+            >
+              {activeTab === "group"
+                ? "Directly message them here"
+                : "Go back to group discussion"}
+            </button>
+            {activeTab === "group" && (
+              <div className="absolute top-full mt-2 left-0 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out z-50 p-3 rounded-xl border border-stone-200 bg-[#faf7f1] shadow-md w-60 text-xs font-normal leading-normal text-stone-600 text-left">
+                Send a private message to {facilitatorName}, the facilitator. These messages are only seen by you and {facilitatorName}.
+              </div>
+            )}
+          </div>
         </div>
       )}
     </header>
