@@ -84,7 +84,7 @@ export function ChatHeader({
             className="w-fit rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
           >
             {activeTab === "group"
-              ? "Directly message them here"
+              ? "Directly message BOB here"
               : "Go back to group discussion"}
           </button>
         </div>
