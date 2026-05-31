@@ -8,8 +8,9 @@ import java.time.LocalDateTime
 import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
+// TODO: Sort this out.  It's just yucky.
 @Singleton
-class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionContext) {
+class PeerSupportRepository @Inject()(implicit executionContext: ExecutionContext) {
   private val databaseConfig = DatabaseConfig.fromEnvironment()
 
   private val db = Database.forURL(

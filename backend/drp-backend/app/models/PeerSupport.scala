@@ -47,6 +47,7 @@ case class Participant(
     createdAt: LocalDateTime
 )
 
+// TODO: Why doesn't this contain a participant ID?
 case class GroupMessage(
     id: Int,
     groupId: Int,
