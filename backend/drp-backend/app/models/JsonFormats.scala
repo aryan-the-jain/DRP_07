@@ -21,11 +21,7 @@ object JsonFormats {
   implicit val participantWrites: Writes[Participant] =
     Json.writes[Participant]
 
-  implicit val createGroupMessageReads: Reads[CreateGroupMessage] =
-    Json.reads[CreateGroupMessage]
-
-  implicit val createFacilitatorMessageReads: Reads[CreateFacilitatorMessage] =
-    Json.reads[CreateFacilitatorMessage]
+  implicit val createMessageReads: Reads[CreateMessage] = Json.reads[CreateMessage]
 
   implicit val groupMessageWrites: Writes[GroupMessage] =
     Json.writes[GroupMessage]

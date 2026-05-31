@@ -31,12 +31,7 @@ case class GroupMessage(
     createdAt: LocalDateTime
 )
 
-case class CreateGroupMessage(
-    body: String,
-    senderName: Option[String]
-)
-
-case class CreateFacilitatorMessage(
+case class CreateMessage(
     body: String,
     senderName: Option[String]
 )

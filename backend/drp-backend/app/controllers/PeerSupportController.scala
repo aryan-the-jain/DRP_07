@@ -34,37 +34,19 @@ class PeerSupportController @Inject() (
   def facilitatorMessages(groupId: Int): Action[AnyContent] =
     peerSupportRepository.facilitatorMessagesForGroup(groupId).returnOk()
 
-  def createMessage(groupId: Int): Action[JsValue] = Action.async(parse.json) {
-    request =>
-      request.body.validate[CreateGroupMessage] match {
-        case JsSuccess(createMessage, _) if createMessage.body.trim.nonEmpty =>
-          peerSupportRepository
-            .createGroupMessage(groupId, createMessage)
-            .map(savedMessage => Created(Json.toJson(savedMessage)))
-
-        case JsSuccess(_, _) =>
-          Future.successful(BadRequest(Json.obj("error" -> "Message cannot be empty")))
-
-        case JsError(errors) =>
-          Future.successful(BadRequest(Json.obj("error" -> JsError.toJson(errors))))
-      }
+  private def createNew(create: CreateMessage => Future[GroupMessage]): Action[JsValue] = Action.async(parse.json) { req =>
+    req.body.validate[CreateMessage] match {
+      case JsSuccess(createe, _) if createe.body.trim.nonEmpty =>
+        create(createe).map(savedMsg => Created(Json.toJson(savedMsg)))
+      case _ => Future.successful(BadRequest(Json.obj("error" -> "Message failed")))
+    }
   }
 
+  def createMessage(groupId: Int): Action[JsValue] =
+    createNew(peerSupportRepository.createGroupMessage(groupId, _))
+
   def createFacilitatorMessage(groupId: Int): Action[JsValue] =
-    Action.async(parse.json) { request =>
-      request.body.validate[CreateFacilitatorMessage] match {
-        case JsSuccess(createMessage, _) if createMessage.body.trim.nonEmpty =>
-          peerSupportRepository
-            .createFacilitatorMessage(groupId, createMessage)
-            .map(savedMessage => Created(Json.toJson(savedMessage)))
-
-        case JsSuccess(_, _) =>
-          Future.successful(BadRequest(Json.obj("error" -> "Message cannot be empty")))
-
-        case JsError(errors) =>
-          Future.successful(BadRequest(Json.obj("error" -> JsError.toJson(errors))))
-      }
-    }
+    createNew(peerSupportRepository.createFacilitatorMessage(groupId, _))
 
   def createReflection(groupId: Int): Action[JsValue] = Action.async(parse.json) {
     request =>

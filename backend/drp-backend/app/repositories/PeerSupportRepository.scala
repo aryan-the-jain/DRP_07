@@ -140,7 +140,7 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
 
   def createGroupMessage(
       groupId: Int,
-      request: CreateGroupMessage
+      request: CreateMessage
   ): Future[GroupMessage] = {
     createMessage(
       groupId = groupId,
@@ -153,7 +153,7 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
 
   def createFacilitatorMessage(
       groupId: Int,
-      request: CreateFacilitatorMessage
+      request: CreateMessage
   ): Future[GroupMessage] = {
     createMessage(
       groupId = groupId,
