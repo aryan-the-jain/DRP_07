@@ -9,6 +9,16 @@ object JsonFormats {
   implicit val localDateTimeWrites: Writes[LocalDateTime] =
     Writes(time => JsString(time.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
 
+  implicit val roleWrites: Writes[Role] = Writes {
+    case r: Role.PARTICIPANT.type => JsString(r.show)
+    case r: Role.FACILITATOR.type => JsString(r.show)
+  }
+
+  implicit val messageTypeWrites: Writes[MessageType] = Writes {
+    case m: MessageType.GROUP_WIDE.type => JsString(m.show)
+    case m: MessageType.FACILITATOR_DIRECT.type => JsString(m.show)
+  }
+
   implicit val createSupportRequestReads: Reads[CreateSupportRequest] =
     Json.reads[CreateSupportRequest]
 

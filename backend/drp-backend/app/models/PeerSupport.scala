@@ -2,6 +2,32 @@ package models
 
 import java.time.LocalDateTime
 
+sealed abstract class Role {
+    val show: String
+}
+
+object Role {
+    case object PARTICIPANT extends Role {
+        val show: String = "participant"
+    }
+    case object FACILITATOR extends Role {
+        val show: String = "facilitator"
+    }
+}
+
+sealed abstract class MessageType {
+    val show: String
+}
+
+object MessageType {
+    case object GROUP_WIDE extends MessageType {
+        val show: String = "group"
+    }
+    case object FACILITATOR_DIRECT extends MessageType {
+        val show: String = "facilitator_direct"
+    }
+}
+
 case class SupportGroup(
     id: Int,
     name: String,
@@ -25,9 +51,9 @@ case class GroupMessage(
     id: Int,
     groupId: Int,
     senderName: String,
-    senderRole: String,
+    senderRole: Role,
     body: String,
-    messageType: String,
+    messageType: MessageType,
     createdAt: LocalDateTime
 )
 

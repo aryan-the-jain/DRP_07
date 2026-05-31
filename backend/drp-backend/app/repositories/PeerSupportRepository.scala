@@ -54,15 +54,38 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
       )
   }
 
+  // TODO: Encapsulate in GroupMessagesTable.
+  implicit val roleColumnType: BaseColumnType[Role] = MappedColumnType.base[Role, String](
+    {
+      case r: Role.PARTICIPANT.type => r.show
+      case r: Role.FACILITATOR.type => r.show
+    },
+    {
+      case Role.PARTICIPANT.show => Role.PARTICIPANT
+      case Role.FACILITATOR.show => Role.FACILITATOR
+    }
+  )
+
+  implicit val messageColumnType: BaseColumnType[MessageType] = MappedColumnType.base[MessageType, String](
+    {
+      case m: MessageType.GROUP_WIDE.type => m.show
+      case m: MessageType.FACILITATOR_DIRECT.type => m.show
+    },
+    {
+      case MessageType.GROUP_WIDE.show => MessageType.GROUP_WIDE
+      case MessageType.FACILITATOR_DIRECT.show => MessageType.FACILITATOR_DIRECT
+    }
+  )
+
   private class GroupMessagesTable(tag: Tag)
       extends Table[GroupMessage](tag, "group_messages") {
 
     def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
     def groupId = column[Int]("group_id")
     def senderName = column[String]("sender_name")
-    def senderRole = column[String]("sender_role")
+    def senderRole = column[Role]("sender_role")
     def body = column[String]("body")
-    def messageType = column[String]("message_type")
+    def messageType = column[MessageType]("message_type")
     def createdAt = column[LocalDateTime]("created_at")
 
     def * =
@@ -120,7 +143,7 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
     db.run(
       groupMessages
         .filter(message =>
-          message.groupId === groupId && message.messageType === "group"
+          message.groupId === groupId && message.messageType === LiteralColumn(MessageType.GROUP_WIDE: MessageType)
         )
         .sortBy(message => (message.createdAt.asc, message.id.asc))
         .result
@@ -131,36 +154,10 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
     db.run(
       groupMessages
         .filter(message =>
-          message.groupId === groupId && message.messageType === "facilitator_direct"
+          message.groupId === groupId && message.messageType === LiteralColumn(MessageType.FACILITATOR_DIRECT: MessageType)
         )
         .sortBy(message => (message.createdAt.asc, message.id.asc))
         .result
-    )
-  }
-
-  def createGroupMessage(
-      groupId: Int,
-      request: CreateMessage
-  ): Future[GroupMessage] = {
-    createMessage(
-      groupId = groupId,
-      senderName = request.senderName.getOrElse("You"),
-      senderRole = "participant",
-      body = request.body.trim,
-      messageType = "group"
-    )
-  }
-
-  def createFacilitatorMessage(
-      groupId: Int,
-      request: CreateMessage
-  ): Future[GroupMessage] = {
-    createMessage(
-      groupId = groupId,
-      senderName = request.senderName.getOrElse("You"),
-      senderRole = "participant",
-      body = request.body.trim,
-      messageType = "facilitator_direct"
     )
   }
 
@@ -198,21 +195,19 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
     }
   }
 
-  private def createMessage(
-      groupId: Int,
-      senderName: String,
-      senderRole: String,
-      body: String,
-      messageType: String
+  def createMessage(
+    groupId: Int,
+    request: CreateMessage,
+    messageType: MessageType
   ): Future[GroupMessage] = {
     val message = GroupMessage(
-      id = 0,
-      groupId = groupId,
-      senderName = senderName,
-      senderRole = senderRole,
-      body = body,
-      messageType = messageType,
-      createdAt = LocalDateTime.now()
+      id = 0, // TODO: Why is this hard-coded as 0?!!!!!
+      groupId,
+      request.senderName.getOrElse("You"), // TODO: Remove magic string!!
+      Role.PARTICIPANT,
+      request.body.trim,
+      messageType,
+      LocalDateTime.now()
     )
 
     val insertQuery = (groupMessages returning groupMessages.map(_.id)) += message

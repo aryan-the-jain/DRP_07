@@ -43,10 +43,10 @@ class PeerSupportController @Inject() (
   }
 
   def createMessage(groupId: Int): Action[JsValue] =
-    createNew(peerSupportRepository.createGroupMessage(groupId, _))
+    createNew(peerSupportRepository.createMessage(groupId, _, MessageType.GROUP_WIDE))
 
   def createFacilitatorMessage(groupId: Int): Action[JsValue] =
-    createNew(peerSupportRepository.createFacilitatorMessage(groupId, _))
+    createNew(peerSupportRepository.createMessage(groupId, _, MessageType.FACILITATOR_DIRECT))
 
   def createReflection(groupId: Int): Action[JsValue] = Action.async(parse.json) {
     request =>
