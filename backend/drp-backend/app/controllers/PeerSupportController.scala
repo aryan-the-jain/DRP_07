@@ -9,6 +9,9 @@ import repositories.PeerSupportRepository
 import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
+/* Essentially, each one of these controller functions takes in the given groupId and executes
+   the relevant code in the model.  Provided this is successful, we then wrap the result in a Http
+   200 OK response. */
 @Singleton
 class PeerSupportController @Inject() (
     cc: ControllerComponents,
