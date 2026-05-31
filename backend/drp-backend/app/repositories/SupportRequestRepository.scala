@@ -8,6 +8,7 @@ import java.time.LocalDateTime
 import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
+// TODO: Is any of this used anywhere?
 @Singleton
 class SupportRequestRepository @Inject() ()(implicit executionContext: ExecutionContext) {
   private val databaseConfig = DatabaseConfig.fromEnvironment()

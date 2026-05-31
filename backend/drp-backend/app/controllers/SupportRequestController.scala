@@ -9,6 +9,8 @@ import repositories.SupportRequestRepository
 import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
+/* TODO: We can probably factor this out with `PeerSupportController` via the Template pattern,
+   but this requires knowing what this code is even used for first. */
 @Singleton
 class SupportRequestController @Inject() (
     cc: ControllerComponents,
