@@ -16,30 +16,23 @@ class PeerSupportController @Inject() (
 )(implicit executionContext: ExecutionContext)
     extends AbstractController(cc) {
 
-  def group(groupId: Int): Action[AnyContent] = Action.async {
-    peerSupportRepository.findGroup(groupId).map {
-      case Some(group) => Ok(Json.toJson(group))
-      case None        => NotFound(Json.obj("error" -> "Group not found"))
+  private implicit class GroupRequest[A](req: Future[A]) {
+    def returnOk()(implicit w: Writes[A]): Action[AnyContent] = Action.async {
+      req.map(v => Ok(Json.toJson(v)))
     }
   }
 
-  def participants(groupId: Int): Action[AnyContent] = Action.async {
-    peerSupportRepository.participantsForGroup(groupId).map { participants =>
-      Ok(Json.toJson(participants))
-    }
-  }
+  def group(groupId: Int): Action[AnyContent] =
+    peerSupportRepository.findGroup(groupId).returnOk()
 
-  def messages(groupId: Int): Action[AnyContent] = Action.async {
-    peerSupportRepository.groupMessagesForGroup(groupId).map { messages =>
-      Ok(Json.toJson(messages))
-    }
-  }
+  def participants(groupId: Int): Action[AnyContent] =
+    peerSupportRepository.participantsForGroup(groupId).returnOk()
 
-  def facilitatorMessages(groupId: Int): Action[AnyContent] = Action.async {
-    peerSupportRepository.facilitatorMessagesForGroup(groupId).map { messages =>
-      Ok(Json.toJson(messages))
-    }
-  }
+  def messages(groupId: Int): Action[AnyContent] =
+    peerSupportRepository.groupMessagesForGroup(groupId).returnOk()
+
+  def facilitatorMessages(groupId: Int): Action[AnyContent] =
+    peerSupportRepository.facilitatorMessagesForGroup(groupId).returnOk()
 
   def createMessage(groupId: Int): Action[JsValue] = Action.async(parse.json) {
     request =>
@@ -91,12 +84,8 @@ class PeerSupportController @Inject() (
       }
   }
 
-  def shareReflection(reflectionId: Int): Action[AnyContent] = Action.async {
-    peerSupportRepository.shareReflection(reflectionId).map {
-      case Some(reflection) => Ok(Json.toJson(reflection))
-      case None            => NotFound(Json.obj("error" -> "Reflection not found"))
-    }
-  }
+  def shareReflection(reflectionId: Int): Action[AnyContent] =
+    peerSupportRepository.shareReflection(reflectionId).returnOk()
 
   private def hasReflectionText(reflection: CreateReflection): Boolean = {
     reflection.privateNote.exists(_.trim.nonEmpty) ||
