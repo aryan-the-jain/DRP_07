@@ -34,40 +34,36 @@ class PeerSupportController @Inject() (
   def facilitatorMessages(groupId: Int): Action[AnyContent] =
     peerSupportRepository.facilitatorMessagesForGroup(groupId).returnOk()
 
-  private def createNew(create: CreateMessage => Future[GroupMessage]): Action[JsValue] = Action.async(parse.json) { req =>
-    req.body.validate[CreateMessage] match {
-      case JsSuccess(createe, _) if createe.body.trim.nonEmpty =>
-        create(createe).map(savedMsg => Created(Json.toJson(savedMsg)))
+  def shareReflection(reflectionId: Int): Action[AnyContent] =
+    peerSupportRepository.shareReflection(reflectionId).returnOk()
+
+  /* Validates the request and returns an object of JsSuccess(A, _), where A is CreateMessage or
+     CreateReflection.  If this inner A is well-formed, we then map it into the actual GroupMessage
+     or Reflection, convert it to JSON and return the object.  In the event of an error, we return
+     a generic error message because the frontend will handle it as needed. */
+  private def createNew[A, B](create: A => Future[B], successCond: A => Boolean)
+      (implicit r: Reads[A], w: Writes[B]): Action[JsValue] = Action.async(parse.json) { req =>
+    req.body.validate[A] match {
+      case JsSuccess(createe, _) if successCond(createe) =>
+        create(createe).map(saved => Created(Json.toJson(saved)))
       case _ => Future.successful(BadRequest(Json.obj("error" -> "Message failed")))
     }
   }
 
-  def createMessage(groupId: Int): Action[JsValue] =
-    createNew(peerSupportRepository.createMessage(groupId, _, MessageType.GROUP_WIDE))
+  def createMessage(groupId: Int): Action[JsValue] = createNew(
+      peerSupportRepository.createMessage(groupId, _, MessageType.GROUP_WIDE),
+      (m: CreateMessage) => m.body.trim.nonEmpty
+    )
 
-  def createFacilitatorMessage(groupId: Int): Action[JsValue] =
-    createNew(peerSupportRepository.createMessage(groupId, _, MessageType.FACILITATOR_DIRECT))
+  def createFacilitatorMessage(groupId: Int): Action[JsValue] = createNew(
+    peerSupportRepository.createMessage(groupId, _, MessageType.FACILITATOR_DIRECT),
+    (m: CreateMessage) => m.body.trim.nonEmpty
+  )
 
-  def createReflection(groupId: Int): Action[JsValue] = Action.async(parse.json) {
-    request =>
-      request.body.validate[CreateReflection] match {
-        case JsSuccess(createReflection, _) if hasReflectionText(createReflection) =>
-          peerSupportRepository
-            .createReflection(groupId, createReflection)
-            .map(savedReflection => Created(Json.toJson(savedReflection)))
-
-        case JsSuccess(_, _) =>
-          Future.successful(
-            BadRequest(Json.obj("error" -> "Reflection cannot be empty"))
-          )
-
-        case JsError(errors) =>
-          Future.successful(BadRequest(Json.obj("error" -> JsError.toJson(errors))))
-      }
-  }
-
-  def shareReflection(reflectionId: Int): Action[AnyContent] =
-    peerSupportRepository.shareReflection(reflectionId).returnOk()
+  def createReflection(groupId: Int): Action[JsValue] = createNew(
+    peerSupportRepository.createReflection(groupId, _),
+    (r: CreateReflection) => hasReflectionText(r)
+  )
 
   private def hasReflectionText(reflection: CreateReflection): Boolean = {
     reflection.privateNote.exists(_.trim.nonEmpty) ||
