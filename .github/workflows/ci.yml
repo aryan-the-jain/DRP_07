@@ -3,13 +3,13 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
 
 jobs:
   frontend:
     name: Frontend CI
     runs-on: ubuntu-latest
 
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     defaults:
       run:
         working-directory: frontend
