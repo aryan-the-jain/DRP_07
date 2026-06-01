@@ -3,13 +3,13 @@ package models
 import java.time.LocalDateTime
 
 enum Role(val show: String) {
-    case PARTICIPANT extends Role("participant")
-    case FACILITATOR extends Role("facilitator")
+  case PARTICIPANT extends Role("participant")
+  case FACILITATOR extends Role("facilitator")
 }
 
 enum MessageType(val show: String) {
-    case GROUP_WIDE extends MessageType("group")
-    case FACILITATOR_DIRECT extends MessageType("facilitator_direct")
+  case GROUP_WIDE extends MessageType("group")
+  case FACILITATOR_DIRECT extends MessageType("facilitator_direct")
 }
 
 case class SupportGroup(

@@ -34,9 +34,16 @@ class SupportRequestRepository()(using ExecutionContext) {
 
     def * =
       (id, name, email, supportType, message, status, createdAt) <> (
-        {
-          case (id, name, email, supportType, message, status, createdAt) =>
-            SupportRequest(id, name, email, supportType, message, status, createdAt)
+        { case (id, name, email, supportType, message, status, createdAt) =>
+          SupportRequest(
+            id,
+            name,
+            email,
+            supportType,
+            message,
+            status,
+            createdAt
+          )
         },
         SupportRequest.unapply
       )
