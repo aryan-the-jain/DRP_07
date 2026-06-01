@@ -33,7 +33,10 @@ class SupportRequestRepository @Inject() ()(implicit executionContext: Execution
 
     def * =
       (id, name, email, supportType, message, status, createdAt) <> (
-        SupportRequest.tupled,
+        {
+          case (id, name, email, supportType, message, status, createdAt) =>
+            SupportRequest(id, name, email, supportType, message, status, createdAt)
+        },
         SupportRequest.unapply
       )
   }

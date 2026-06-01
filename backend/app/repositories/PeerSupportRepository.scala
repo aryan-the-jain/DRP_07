@@ -31,7 +31,10 @@ class PeerSupportRepository @Inject()(implicit executionContext: ExecutionContex
 
     def * =
       (id, name, facilitatorName, scheduledDurationMinutes, createdAt) <> (
-        SupportGroup.tupled,
+        {
+          case (id, name, facilitatorName, scheduledDurationMinutes, createdAt) =>
+            SupportGroup(id, name, facilitatorName, scheduledDurationMinutes, createdAt)
+        },
         SupportGroup.unapply
       )
   }
@@ -50,7 +53,10 @@ class PeerSupportRepository @Inject()(implicit executionContext: ExecutionContex
 
     def * =
       (id, groupId, displayName, initials, aboutMe, funFact, role, createdAt) <> (
-        Participant.tupled,
+        {
+          case (id, groupId, displayName, initials, aboutMe, funFact, role, createdAt) =>
+            Participant(id, groupId, displayName, initials, aboutMe, funFact, role, createdAt)
+        },
         Participant.unapply
       )
   }
@@ -91,7 +97,10 @@ class PeerSupportRepository @Inject()(implicit executionContext: ExecutionContex
 
     def * =
       (id, groupId, senderName, senderRole, body, messageType, createdAt) <> (
-        GroupMessage.tupled,
+        {
+          case (id, groupId, senderName, senderRole, body, messageType, createdAt) =>
+            GroupMessage(id, groupId, senderName, senderRole, body, messageType, createdAt)
+        },
         GroupMessage.unapply
       )
   }
@@ -117,7 +126,10 @@ class PeerSupportRepository @Inject()(implicit executionContext: ExecutionContex
         createdAt,
         sharedAt
       ) <> (
-        Reflection.tupled,
+        {
+          case (id, groupId, privateNote, facilitatorNote, sharedWithFacilitator, createdAt, sharedAt) =>
+            Reflection(id, groupId, privateNote, facilitatorNote, sharedWithFacilitator, createdAt, sharedAt)
+        },
         Reflection.unapply
       )
   }
