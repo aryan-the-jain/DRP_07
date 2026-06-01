@@ -62,25 +62,19 @@ class PeerSupportRepository @Inject()(implicit executionContext: ExecutionContex
   }
 
   // TODO: Encapsulate in GroupMessagesTable.
-  implicit val roleColumnType: BaseColumnType[Role] = MappedColumnType.base[Role, String](
+  given roleColumnType: BaseColumnType[Role] = MappedColumnType.base[Role, String](
+    role => role.show,
     {
-      case r: Role.PARTICIPANT.type => r.show
-      case r: Role.FACILITATOR.type => r.show
-    },
-    {
-      case Role.PARTICIPANT.show => Role.PARTICIPANT
-      case Role.FACILITATOR.show => Role.FACILITATOR
+      case value if value == Role.PARTICIPANT.show => Role.PARTICIPANT
+      case value if value == Role.FACILITATOR.show => Role.FACILITATOR
     }
   )
 
-  implicit val messageColumnType: BaseColumnType[MessageType] = MappedColumnType.base[MessageType, String](
+  given messageColumnType: BaseColumnType[MessageType] = MappedColumnType.base[MessageType, String](
+    messageType => messageType.show,
     {
-      case m: MessageType.GROUP_WIDE.type => m.show
-      case m: MessageType.FACILITATOR_DIRECT.type => m.show
-    },
-    {
-      case MessageType.GROUP_WIDE.show => MessageType.GROUP_WIDE
-      case MessageType.FACILITATOR_DIRECT.show => MessageType.FACILITATOR_DIRECT
+      case value if value == MessageType.GROUP_WIDE.show => MessageType.GROUP_WIDE
+      case value if value == MessageType.FACILITATOR_DIRECT.show => MessageType.FACILITATOR_DIRECT
     }
   )
 

@@ -1,7 +1,7 @@
 package controllers
 
 import models._
-import models.JsonFormats._
+import models.JsonFormats.given
 import play.api.libs.json._
 import play.api.mvc._
 import repositories.PeerSupportRepository
@@ -19,11 +19,10 @@ class PeerSupportController @Inject() (
 )(implicit executionContext: ExecutionContext)
     extends AbstractController(cc) {
 
-  private implicit class GroupRequest[A](req: Future[A]) {
-    def returnOk()(implicit w: Writes[A]): Action[AnyContent] = Action.async {
+  extension [A](req: Future[A])
+    def returnOk()(using Writes[A]): Action[AnyContent] = Action.async {
       req.map(v => Ok(Json.toJson(v)))
     }
-  }
 
   def group(groupId: Int): Action[AnyContent] =
     peerSupportRepository.findGroup(groupId).returnOk()
@@ -45,7 +44,7 @@ class PeerSupportController @Inject() (
      or Reflection, convert it to JSON and return the object.  In the event of an error, we return
      a generic error message because the frontend will handle it as needed. */
   private def createNew[A, B](create: A => Future[B], successCond: A => Boolean)
-      (implicit r: Reads[A], w: Writes[B]): Action[JsValue] = Action.async(parse.json) { req =>
+      (using Reads[A], Writes[B]): Action[JsValue] = Action.async(parse.json) { req =>
     req.body.validate[A] match {
       case JsSuccess(createe, _) if successCond(createe) =>
         create(createe).map(saved => Created(Json.toJson(saved)))

@@ -2,30 +2,14 @@ package models
 
 import java.time.LocalDateTime
 
-sealed abstract class Role {
-    val show: String
+enum Role(val show: String) {
+    case PARTICIPANT extends Role("participant")
+    case FACILITATOR extends Role("facilitator")
 }
 
-object Role {
-    case object PARTICIPANT extends Role {
-        val show: String = "participant"
-    }
-    case object FACILITATOR extends Role {
-        val show: String = "facilitator"
-    }
-}
-
-sealed abstract class MessageType {
-    val show: String
-}
-
-object MessageType {
-    case object GROUP_WIDE extends MessageType {
-        val show: String = "group"
-    }
-    case object FACILITATOR_DIRECT extends MessageType {
-        val show: String = "facilitator_direct"
-    }
+enum MessageType(val show: String) {
+    case GROUP_WIDE extends MessageType("group")
+    case FACILITATOR_DIRECT extends MessageType("facilitator_direct")
 }
 
 case class SupportGroup(

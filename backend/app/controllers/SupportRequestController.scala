@@ -1,7 +1,7 @@
 package controllers
 
 import models.CreateSupportRequest
-import models.JsonFormats._
+import models.JsonFormats.given
 import play.api.libs.json._
 import play.api.mvc._
 import repositories.SupportRequestRepository
