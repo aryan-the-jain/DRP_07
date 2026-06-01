@@ -55,5 +55,8 @@ jobs:
       - name: Compile backend
         run: sbt compile
 
+      - name: Lint backend
+        run: sbt scalafmtCheckAll scalafmtSbtCheck
+
       - name: Compile backend tests
         run: sbt Test/compile
