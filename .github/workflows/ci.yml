@@ -40,7 +40,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: backend/drp-backend
+        working-directory: backend/
 
     steps:
       - name: Checkout repository
