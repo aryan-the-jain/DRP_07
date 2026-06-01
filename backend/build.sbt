@@ -1,5 +1,5 @@
 name := """play-scala-seed"""
-organization := "com.example"
+organization := "app.vercel.drp-07"
 
 version := "1.0-SNAPSHOT"
 
