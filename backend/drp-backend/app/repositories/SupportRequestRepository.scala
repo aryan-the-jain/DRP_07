@@ -9,7 +9,9 @@ import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SupportRequestRepository @Inject() ()(implicit executionContext: ExecutionContext) {
+class SupportRequestRepository @Inject() ()(implicit
+    executionContext: ExecutionContext
+) {
   private val databaseConfig = DatabaseConfig.fromEnvironment()
 
   private val db = Database.forURL(

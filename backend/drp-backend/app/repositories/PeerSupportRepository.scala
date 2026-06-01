@@ -9,7 +9,9 @@ import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionContext) {
+class PeerSupportRepository @Inject() ()(implicit
+    executionContext: ExecutionContext
+) {
   private val databaseConfig = DatabaseConfig.fromEnvironment()
 
   private val db = Database.forURL(
@@ -48,7 +50,16 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
     def createdAt = column[LocalDateTime]("created_at")
 
     def * =
-      (id, groupId, displayName, initials, aboutMe, funFact, role, createdAt) <> (
+      (
+        id,
+        groupId,
+        displayName,
+        initials,
+        aboutMe,
+        funFact,
+        role,
+        createdAt
+      ) <> (
         Participant.tupled,
         Participant.unapply
       )
@@ -111,7 +122,9 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
     db.run(
       participants
         .filter(_.groupId === groupId)
-        .sortBy(participant => (participant.role.desc, participant.displayName.asc))
+        .sortBy(participant =>
+          (participant.role.desc, participant.displayName.asc)
+        )
         .result
     )
   }
@@ -179,7 +192,8 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
       sharedAt = None
     )
 
-    val insertQuery = (reflections returning reflections.map(_.id)) += reflection
+    val insertQuery =
+      (reflections returning reflections.map(_.id)) += reflection
 
     db.run(insertQuery).flatMap { newId =>
       db.run(reflections.filter(_.id === newId).result.head)
@@ -189,7 +203,9 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
   def shareReflection(reflectionId: Int): Future[Option[Reflection]] = {
     val query = reflections.filter(_.id === reflectionId)
     val updateAction = query
-      .map(reflection => (reflection.sharedWithFacilitator, reflection.sharedAt))
+      .map(reflection =>
+        (reflection.sharedWithFacilitator, reflection.sharedAt)
+      )
       .update((true, Some(LocalDateTime.now())))
 
     db.run(updateAction).flatMap {
@@ -215,7 +231,8 @@ class PeerSupportRepository @Inject() ()(implicit executionContext: ExecutionCon
       createdAt = LocalDateTime.now()
     )
 
-    val insertQuery = (groupMessages returning groupMessages.map(_.id)) += message
+    val insertQuery =
+      (groupMessages returning groupMessages.map(_.id)) += message
 
     db.run(insertQuery).flatMap { newId =>
       db.run(groupMessages.filter(_.id === newId).result.head)

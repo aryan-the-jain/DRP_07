@@ -50,10 +50,14 @@ class PeerSupportController @Inject() (
             .map(savedMessage => Created(Json.toJson(savedMessage)))
 
         case JsSuccess(_, _) =>
-          Future.successful(BadRequest(Json.obj("error" -> "Message cannot be empty")))
+          Future.successful(
+            BadRequest(Json.obj("error" -> "Message cannot be empty"))
+          )
 
         case JsError(errors) =>
-          Future.successful(BadRequest(Json.obj("error" -> JsError.toJson(errors))))
+          Future.successful(
+            BadRequest(Json.obj("error" -> JsError.toJson(errors)))
+          )
       }
   }
 
@@ -66,17 +70,22 @@ class PeerSupportController @Inject() (
             .map(savedMessage => Created(Json.toJson(savedMessage)))
 
         case JsSuccess(_, _) =>
-          Future.successful(BadRequest(Json.obj("error" -> "Message cannot be empty")))
+          Future.successful(
+            BadRequest(Json.obj("error" -> "Message cannot be empty"))
+          )
 
         case JsError(errors) =>
-          Future.successful(BadRequest(Json.obj("error" -> JsError.toJson(errors))))
+          Future.successful(
+            BadRequest(Json.obj("error" -> JsError.toJson(errors)))
+          )
       }
     }
 
-  def createReflection(groupId: Int): Action[JsValue] = Action.async(parse.json) {
-    request =>
+  def createReflection(groupId: Int): Action[JsValue] =
+    Action.async(parse.json) { request =>
       request.body.validate[CreateReflection] match {
-        case JsSuccess(createReflection, _) if hasReflectionText(createReflection) =>
+        case JsSuccess(createReflection, _)
+            if hasReflectionText(createReflection) =>
           peerSupportRepository
             .createReflection(groupId, createReflection)
             .map(savedReflection => Created(Json.toJson(savedReflection)))
@@ -87,14 +96,16 @@ class PeerSupportController @Inject() (
           )
 
         case JsError(errors) =>
-          Future.successful(BadRequest(Json.obj("error" -> JsError.toJson(errors))))
+          Future.successful(
+            BadRequest(Json.obj("error" -> JsError.toJson(errors)))
+          )
       }
-  }
+    }
 
   def shareReflection(reflectionId: Int): Action[AnyContent] = Action.async {
     peerSupportRepository.shareReflection(reflectionId).map {
       case Some(reflection) => Ok(Json.toJson(reflection))
-      case None            => NotFound(Json.obj("error" -> "Reflection not found"))
+      case None => NotFound(Json.obj("error" -> "Reflection not found"))
     }
   }
 
