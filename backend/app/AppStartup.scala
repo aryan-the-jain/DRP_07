@@ -1,6 +1,6 @@
 import config.FlywayMigration
 
-import javax.inject._
+import javax.inject.*
 
 @Singleton
 final class AppStartup @Inject() (flywayMigration: FlywayMigration) {

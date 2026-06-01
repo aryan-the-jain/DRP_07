@@ -1,19 +1,21 @@
 package controllers
 
 import models.CreateSupportRequest
-import models.JsonFormats._
-import play.api.libs.json._
-import play.api.mvc._
+import models.JsonFormats.given
+import play.api.libs.json.*
+import play.api.mvc.*
 import repositories.SupportRequestRepository
 
-import javax.inject._
+import javax.inject.*
 import scala.concurrent.{ExecutionContext, Future}
 
+/* TODO: We can probably factor this out with `PeerSupportController` via the Template pattern,
+   but this requires knowing what this code is even used for first. */
 @Singleton
 class SupportRequestController @Inject() (
     cc: ControllerComponents,
     supportRequestRepository: SupportRequestRepository
-)(implicit executionContext: ExecutionContext)
+)(using ExecutionContext)
     extends AbstractController(cc) {
 
   def index: Action[AnyContent] = Action.async {

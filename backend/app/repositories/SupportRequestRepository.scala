@@ -2,14 +2,16 @@ package repositories
 
 import config.DatabaseConfig
 import models.{CreateSupportRequest, SupportRequest}
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 import java.time.LocalDateTime
 import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
+// TODO: Is any of this used anywhere?
 @Singleton
-class SupportRequestRepository @Inject() ()(implicit executionContext: ExecutionContext) {
+@Inject
+class SupportRequestRepository()(using ExecutionContext) {
   private val databaseConfig = DatabaseConfig.fromEnvironment()
 
   private val db = Database.forURL(
@@ -32,7 +34,10 @@ class SupportRequestRepository @Inject() ()(implicit executionContext: Execution
 
     def * =
       (id, name, email, supportType, message, status, createdAt) <> (
-        SupportRequest.tupled,
+        {
+          case (id, name, email, supportType, message, status, createdAt) =>
+            SupportRequest(id, name, email, supportType, message, status, createdAt)
+        },
         SupportRequest.unapply
       )
   }
