@@ -1,6 +1,6 @@
 package models
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

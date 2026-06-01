@@ -1,8 +1,8 @@
 package repositories
 
 import config.DatabaseConfig
-import models._
-import slick.jdbc.PostgresProfile.api._
+import models.*
+import slick.jdbc.PostgresProfile.api.*
 
 import java.time.LocalDateTime
 import javax.inject._
@@ -10,7 +10,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Sort this out.  It's just yucky.
 @Singleton
-class PeerSupportRepository @Inject()(implicit executionContext: ExecutionContext) {
+@Inject
+class PeerSupportRepository(using ExecutionContext) {
   private val databaseConfig = DatabaseConfig.fromEnvironment()
 
   private val db = Database.forURL(

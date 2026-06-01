@@ -1,22 +1,23 @@
 package controllers
 
-import models._
+import models.*
 import models.JsonFormats.given
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 import repositories.PeerSupportRepository
 
-import javax.inject._
+import javax.inject.*
 import scala.concurrent.{ExecutionContext, Future}
 
 /* Essentially, each one of these controller functions takes in the given groupId and executes
    the relevant code in the model.  Provided this is successful, we then wrap the result in a Http
    200 OK response. */
 @Singleton
-class PeerSupportController @Inject() (
+@Inject
+class PeerSupportController (
     cc: ControllerComponents,
     peerSupportRepository: PeerSupportRepository
-)(implicit executionContext: ExecutionContext)
+)(using ExecutionContext)
     extends AbstractController(cc) {
 
   extension [A](req: Future[A])
@@ -67,8 +68,7 @@ class PeerSupportController @Inject() (
     (r: CreateReflection) => hasReflectionText(r)
   )
 
-  private def hasReflectionText(reflection: CreateReflection): Boolean = {
+  private def hasReflectionText(reflection: CreateReflection): Boolean =
     reflection.privateNote.exists(_.trim.nonEmpty) ||
     reflection.facilitatorNote.exists(_.trim.nonEmpty)
-  }
 }
