@@ -17,10 +17,6 @@ enum MessageType(val show: String) {
 case class SupportGroup(
     groupId: Int,
     name: String,
-)
-
-case class GroupCalendar(
-    groupId: Int,
     day: DayOfWeek,
     time: LocalTime,
 )
