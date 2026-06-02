@@ -16,9 +16,10 @@ import scala.concurrent.{ExecutionContext, Future}
 @Inject
 class PeerSupportController(
     cc: ControllerComponents,
-    peerSupportRepository: PeerSupportRepository
-)(using ExecutionContext)
-    extends AbstractController(cc) {
+    peerSupportRepository: PeerSupportRepository,
+    executionContext: ExecutionContext
+) extends AbstractController(cc) {
+  private given ExecutionContext = executionContext
 
   extension [A](req: Future[A])
     def returnOk()(using Writes[A]): Action[AnyContent] = Action.async {
