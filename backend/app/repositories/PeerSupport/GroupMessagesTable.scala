@@ -6,15 +6,6 @@ import slick.jdbc.PostgresProfile.api.*
 import java.time.LocalDateTime
 
 class GroupMessagesTable(tag: Tag) extends Table[GroupMessage](tag, "group_messages") {
-  private given roleColumnType: BaseColumnType[Role] =
-    MappedColumnType.base[Role, String](
-      role => role.show,
-      {
-        case value if value == Role.PARTICIPANT.show => Role.PARTICIPANT
-        case value if value == Role.FACILITATOR.show => Role.FACILITATOR
-      }
-    )
-
   private given messageColumnType: BaseColumnType[MessageType] =
     MappedColumnType.base[MessageType, String](
       messageType => messageType.show,
@@ -26,7 +17,7 @@ class GroupMessagesTable(tag: Tag) extends Table[GroupMessage](tag, "group_messa
       }
     )
 
-  def participantId = column[Int]("participantId", O.PrimaryKey, O.AutoInc)
+  def participantId = column[Int]("participant_id", O.PrimaryKey, O.AutoInc)
   def groupId = column[Int]("group_id")
   def body = column[String]("body")
   def messageType = column[MessageType]("message_type")

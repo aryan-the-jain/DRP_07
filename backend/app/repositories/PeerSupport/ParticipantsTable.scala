@@ -6,48 +6,22 @@ import slick.jdbc.PostgresProfile.api.*
 import java.time.LocalDateTime
 
 class ParticipantsTable(tag: Tag) extends Table[Participant](tag, "participants") {
-  def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
-  def groupId = column[Int]("group_id")
-  def displayName = column[String]("display_name")
+  private given roleColumnType: BaseColumnType[Role] =
+    MappedColumnType.base[Role, String](
+      role => role.show,
+      {
+        case value if value == Role.PARTICIPANT.show => Role.PARTICIPANT
+        case value if value == Role.FACILITATOR.show => Role.FACILITATOR
+      }
+    )
+
+  def participantId = column[Int]("participant_id", O.PrimaryKey, O.AutoInc)
+  def name = column[String]("name")
   def initials = column[String]("initials")
+  def country = column[String]("country") // TODO: Should really be an enum.
   def aboutMe = column[String]("about_me")
   def funFact = column[String]("fun_fact")
-  def role = column[String]("role")
-  def createdAt = column[LocalDateTime]("created_at")
+  def role = column[Role]("role")
 
-  def * =
-    (
-      id,
-      groupId,
-      displayName,
-      initials,
-      aboutMe,
-      funFact,
-      role,
-      createdAt
-    ) <> (
-      {
-        case (
-              id,
-              groupId,
-              displayName,
-              initials,
-              aboutMe,
-              funFact,
-              role,
-              createdAt
-            ) =>
-          Participant(
-            id,
-            groupId,
-            displayName,
-            initials,
-            aboutMe,
-            funFact,
-            role,
-            createdAt
-          )
-      },
-      Participant.unapply
-    )
+  def * = (participantId, name, initials, country, aboutMe, funFact, role).mapTo[Participant]
 }
