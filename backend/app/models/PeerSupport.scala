@@ -17,7 +17,6 @@ enum MessageType(val show: String) {
 case class SupportGroup(
     groupId: Int,
     name: String,
-    // scheduledDurationMinutes: Int, // TODO: We need to have a separate table for this.
 )
 
 case class GroupCalendar(
@@ -58,7 +57,7 @@ case class CreateMessage(
 // TODO: Learn what's going on here.
 case class Reflection(
     id: Int,
-    // groupId: Int, // WHY IT'S PRIVATE!
+    groupId: Int, // WHY IT'S PRIVATE!
     privateNote: Option[String],
     facilitatorNote: Option[String],
     sharedWithFacilitator: Boolean,
