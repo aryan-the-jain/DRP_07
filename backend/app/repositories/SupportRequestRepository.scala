@@ -10,7 +10,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Is any of this used anywhere?
 @Singleton
-class SupportRequestRepository @Inject() ()(implicit executionContext: ExecutionContext) {
+class SupportRequestRepository @Inject()(executionContext: ExecutionContext) {
+  private given ExecutionContext = executionContext
+
   private val databaseConfig = DatabaseConfig.fromEnvironment()
 
   private val db = Database.forURL(

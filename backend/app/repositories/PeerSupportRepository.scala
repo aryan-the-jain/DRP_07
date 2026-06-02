@@ -10,7 +10,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: Sort this out.  It's just yucky.
 @Singleton
-class PeerSupportRepository @Inject()(implicit executionContext: ExecutionContext) {
+class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
+  private given ExecutionContext = executionContext
+
   private val databaseConfig = DatabaseConfig.fromEnvironment()
 
   private val db = Database.forURL(
