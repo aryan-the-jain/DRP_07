@@ -1,8 +1,8 @@
 package repositories
 
 import config.DatabaseConfig
-import models._
-import slick.jdbc.PostgresProfile.api._
+import models.*
+import slick.jdbc.PostgresProfile.api.*
 
 import java.time.LocalDateTime
 import javax.inject._

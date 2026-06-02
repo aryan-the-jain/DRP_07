@@ -2,7 +2,7 @@ package repositories
 
 import config.DatabaseConfig
 import models.{CreateSupportRequest, SupportRequest}
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 import java.time.LocalDateTime
 import javax.inject._
