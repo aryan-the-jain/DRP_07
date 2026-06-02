@@ -33,11 +33,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("group");
   const [privateNote, setPrivateNote] = useState("");
   const [facilitatorNote, setFacilitatorNote] = useState("");
-  const [isSavingReflection, setIsSavingReflection] = useState(false);
   const [isSharingReflection, setIsSharingReflection] = useState(false);
-  const [isReflectionSaved, setIsReflectionSaved] = useState(false);
   const [isReflectionShared, setIsReflectionShared] = useState(false);
-  const [savedReflectionId, setSavedReflectionId] = useState<number | null>(null);
   const [quietSpaceError, setQuietSpaceError] = useState("");
   const [messageBody, setMessageBody] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -68,7 +65,6 @@ export default function Home() {
         setPrivateNote(reflection.privateNote ?? "");
         setFacilitatorNote(reflection.facilitatorNote ?? "");
         setIsReflectionShared(reflection.sharedWithFacilitator);
-        setSavedReflectionId(reflection.id);
       }
     } catch {
       // Gracefully ignore since it is just a draft load
@@ -226,7 +222,6 @@ export default function Home() {
       }
     }
 
-    setIsReflectionSaved(false);
     setQuietSpaceError("");
     setActiveTab("group");
   }
@@ -262,7 +257,6 @@ export default function Home() {
         trimmedFacilitator,
       );
       const reflectionId = reflectionData.id;
-      setSavedReflectionId(reflectionId);
 
       await shareReflection(apiUrl, reflectionId);
       setIsReflectionShared(true);
@@ -296,9 +290,7 @@ export default function Home() {
       messageBody={messageBody}
       privateNote={privateNote}
       facilitatorNote={facilitatorNote}
-      isSavingReflection={isSavingReflection}
       isSharingReflection={isSharingReflection}
-      isReflectionSaved={isReflectionSaved}
       isReflectionShared={isReflectionShared}
       quietSpaceError={quietSpaceError}
       selectedParticipant={selectedParticipant}
