@@ -13,8 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
    the relevant code in the model.  Provided this is successful, we then wrap the result in a Http
    200 OK response. */
 @Singleton
-@Inject
-class PeerSupportController(
+class PeerSupportController @Inject() (
     cc: ControllerComponents,
     peerSupportRepository: PeerSupportRepository,
     executionContext: ExecutionContext
