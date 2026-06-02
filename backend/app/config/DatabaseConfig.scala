@@ -12,7 +12,9 @@ object DatabaseConfig {
   def fromEnvironment(): DatabaseConfig = {
     val databaseUrl = sys.env.getOrElse(
       "DATABASE_URL",
-      throw new IllegalStateException("DATABASE_URL environment variable is not set")
+      throw new IllegalStateException(
+        "DATABASE_URL environment variable is not set"
+      )
     )
 
     val uri = new URI(databaseUrl)

@@ -29,12 +29,15 @@ class SupportRequestController @Inject() (
   def create: Action[JsValue] = Action.async(parse.json) { request =>
     request.body.validate[CreateSupportRequest] match {
       case JsSuccess(createSupportRequest, _) =>
-        supportRequestRepository.create(createSupportRequest).map { savedRequest =>
-          Created(Json.toJson(savedRequest))
+        supportRequestRepository.create(createSupportRequest).map {
+          savedRequest =>
+            Created(Json.toJson(savedRequest))
         }
 
       case JsError(errors) =>
-        Future.successful(BadRequest(Json.obj("error" -> JsError.toJson(errors))))
+        Future.successful(
+          BadRequest(Json.obj("error" -> JsError.toJson(errors)))
+        )
     }
   }
 }

@@ -34,8 +34,20 @@ class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
     def * =
       (id, name, facilitatorName, scheduledDurationMinutes, createdAt) <> (
         {
-          case (id, name, facilitatorName, scheduledDurationMinutes, createdAt) =>
-            SupportGroup(id, name, facilitatorName, scheduledDurationMinutes, createdAt)
+          case (
+                id,
+                name,
+                facilitatorName,
+                scheduledDurationMinutes,
+                createdAt
+              ) =>
+            SupportGroup(
+              id,
+              name,
+              facilitatorName,
+              scheduledDurationMinutes,
+              createdAt
+            )
         },
         SupportGroup.unapply
       )
@@ -54,31 +66,62 @@ class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
     def createdAt = column[LocalDateTime]("created_at")
 
     def * =
-      (id, groupId, displayName, initials, aboutMe, funFact, role, createdAt) <> (
+      (
+        id,
+        groupId,
+        displayName,
+        initials,
+        aboutMe,
+        funFact,
+        role,
+        createdAt
+      ) <> (
         {
-          case (id, groupId, displayName, initials, aboutMe, funFact, role, createdAt) =>
-            Participant(id, groupId, displayName, initials, aboutMe, funFact, role, createdAt)
+          case (
+                id,
+                groupId,
+                displayName,
+                initials,
+                aboutMe,
+                funFact,
+                role,
+                createdAt
+              ) =>
+            Participant(
+              id,
+              groupId,
+              displayName,
+              initials,
+              aboutMe,
+              funFact,
+              role,
+              createdAt
+            )
         },
         Participant.unapply
       )
   }
 
   // TODO: Encapsulate in GroupMessagesTable.
-  given roleColumnType: BaseColumnType[Role] = MappedColumnType.base[Role, String](
-    role => role.show,
-    {
-      case value if value == Role.PARTICIPANT.show => Role.PARTICIPANT
-      case value if value == Role.FACILITATOR.show => Role.FACILITATOR
-    }
-  )
+  given roleColumnType: BaseColumnType[Role] =
+    MappedColumnType.base[Role, String](
+      role => role.show,
+      {
+        case value if value == Role.PARTICIPANT.show => Role.PARTICIPANT
+        case value if value == Role.FACILITATOR.show => Role.FACILITATOR
+      }
+    )
 
-  given messageColumnType: BaseColumnType[MessageType] = MappedColumnType.base[MessageType, String](
-    messageType => messageType.show,
-    {
-      case value if value == MessageType.GROUP_WIDE.show => MessageType.GROUP_WIDE
-      case value if value == MessageType.FACILITATOR_DIRECT.show => MessageType.FACILITATOR_DIRECT
-    }
-  )
+  given messageColumnType: BaseColumnType[MessageType] =
+    MappedColumnType.base[MessageType, String](
+      messageType => messageType.show,
+      {
+        case value if value == MessageType.GROUP_WIDE.show =>
+          MessageType.GROUP_WIDE
+        case value if value == MessageType.FACILITATOR_DIRECT.show =>
+          MessageType.FACILITATOR_DIRECT
+      }
+    )
 
   private class GroupMessagesTable(tag: Tag)
       extends Table[GroupMessage](tag, "group_messages") {
@@ -94,8 +137,24 @@ class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
     def * =
       (id, groupId, senderName, senderRole, body, messageType, createdAt) <> (
         {
-          case (id, groupId, senderName, senderRole, body, messageType, createdAt) =>
-            GroupMessage(id, groupId, senderName, senderRole, body, messageType, createdAt)
+          case (
+                id,
+                groupId,
+                senderName,
+                senderRole,
+                body,
+                messageType,
+                createdAt
+              ) =>
+            GroupMessage(
+              id,
+              groupId,
+              senderName,
+              senderRole,
+              body,
+              messageType,
+              createdAt
+            )
         },
         GroupMessage.unapply
       )
@@ -123,8 +182,24 @@ class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
         sharedAt
       ) <> (
         {
-          case (id, groupId, privateNote, facilitatorNote, sharedWithFacilitator, createdAt, sharedAt) =>
-            Reflection(id, groupId, privateNote, facilitatorNote, sharedWithFacilitator, createdAt, sharedAt)
+          case (
+                id,
+                groupId,
+                privateNote,
+                facilitatorNote,
+                sharedWithFacilitator,
+                createdAt,
+                sharedAt
+              ) =>
+            Reflection(
+              id,
+              groupId,
+              privateNote,
+              facilitatorNote,
+              sharedWithFacilitator,
+              createdAt,
+              sharedAt
+            )
         },
         Reflection.unapply
       )
@@ -143,7 +218,9 @@ class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
     db.run(
       participants
         .filter(_.groupId === groupId)
-        .sortBy(participant => (participant.role.desc, participant.displayName.asc))
+        .sortBy(participant =>
+          (participant.role.desc, participant.displayName.asc)
+        )
         .result
     )
   }
@@ -152,7 +229,9 @@ class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
     db.run(
       groupMessages
         .filter(message =>
-          message.groupId === groupId && message.messageType === LiteralColumn(MessageType.GROUP_WIDE: MessageType)
+          message.groupId === groupId && message.messageType === LiteralColumn(
+            MessageType.GROUP_WIDE: MessageType
+          )
         )
         .sortBy(message => (message.createdAt.asc, message.id.asc))
         .result
@@ -163,7 +242,9 @@ class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
     db.run(
       groupMessages
         .filter(message =>
-          message.groupId === groupId && message.messageType === LiteralColumn(MessageType.FACILITATOR_DIRECT: MessageType)
+          message.groupId === groupId && message.messageType === LiteralColumn(
+            MessageType.FACILITATOR_DIRECT: MessageType
+          )
         )
         .sortBy(message => (message.createdAt.asc, message.id.asc))
         .result
@@ -185,7 +266,8 @@ class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
       sharedAt = None
     )
 
-    val insertQuery = (reflections returning reflections.map(_.id)) += reflection
+    val insertQuery =
+      (reflections returning reflections.map(_.id)) += reflection
 
     db.run(insertQuery).flatMap { newId =>
       db.run(reflections.filter(_.id === newId).result.head)
@@ -195,7 +277,9 @@ class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
   def shareReflection(reflectionId: Int): Future[Option[Reflection]] = {
     val query = reflections.filter(_.id === reflectionId)
     val updateAction = query
-      .map(reflection => (reflection.sharedWithFacilitator, reflection.sharedAt))
+      .map(reflection =>
+        (reflection.sharedWithFacilitator, reflection.sharedAt)
+      )
       .update((true, Some(LocalDateTime.now())))
 
     db.run(updateAction).flatMap {
@@ -205,9 +289,9 @@ class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
   }
 
   def createMessage(
-    groupId: Int,
-    request: CreateMessage,
-    messageType: MessageType
+      groupId: Int,
+      request: CreateMessage,
+      messageType: MessageType
   ): Future[GroupMessage] = {
     val message = GroupMessage(
       id = 0, // TODO: Why is this hard-coded as 0?!!!!!
@@ -219,7 +303,8 @@ class PeerSupportRepository @Inject()(executionContext: ExecutionContext) {
       LocalDateTime.now()
     )
 
-    val insertQuery = (groupMessages returning groupMessages.map(_.id)) += message
+    val insertQuery =
+      (groupMessages returning groupMessages.map(_.id)) += message
 
     db.run(insertQuery).flatMap { newId =>
       db.run(groupMessages.filter(_.id === newId).result.head)

@@ -20,9 +20,7 @@ type ChatRoomProps = {
   messageBody: string;
   privateNote: string;
   facilitatorNote: string;
-  isSavingReflection: boolean;
   isSharingReflection: boolean;
-  isReflectionSaved: boolean;
   isReflectionShared: boolean;
   quietSpaceError: string;
   selectedParticipant: Participant | null;
@@ -58,9 +56,7 @@ export function ChatRoom({
   messageBody,
   privateNote,
   facilitatorNote,
-  isSavingReflection,
   isSharingReflection,
-  isReflectionSaved,
   isReflectionShared,
   quietSpaceError,
   selectedParticipant,
