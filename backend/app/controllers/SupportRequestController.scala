@@ -16,8 +16,7 @@ class SupportRequestController @Inject() (
     cc: ControllerComponents,
     supportRequestRepository: SupportRequestRepository,
     executionContext: ExecutionContext
-)
-    extends AbstractController(cc) {
+) extends AbstractController(cc) {
   private given ExecutionContext = executionContext
 
   def index: Action[AnyContent] = Action.async {

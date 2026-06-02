@@ -18,8 +18,7 @@ class PeerSupportController(
     cc: ControllerComponents,
     peerSupportRepository: PeerSupportRepository,
     executionContext: ExecutionContext
-)
-    extends AbstractController(cc) {
+) extends AbstractController(cc) {
   private given ExecutionContext = executionContext
 
   extension [A](req: Future[A])
