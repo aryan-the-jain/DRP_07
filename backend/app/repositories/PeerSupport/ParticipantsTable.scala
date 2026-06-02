@@ -2,18 +2,11 @@ package repositories.PeerSupport
 
 import models.*
 import slick.jdbc.PostgresProfile.api.*
+import Instances.given
 
 import java.time.LocalDateTime
 
 class ParticipantsTable(tag: Tag) extends Table[Participant](tag, "participants") {
-  private given roleColumnType: BaseColumnType[Role] =
-    MappedColumnType.base[Role, String](
-      role => role.show,
-      {
-        case value if value == Role.PARTICIPANT.show => Role.PARTICIPANT
-        case value if value == Role.FACILITATOR.show => Role.FACILITATOR
-      }
-    )
 
   def participantId = column[Int]("participant_id", O.PrimaryKey, O.AutoInc)
   def name = column[String]("name")

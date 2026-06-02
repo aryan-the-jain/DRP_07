@@ -24,23 +24,17 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
 
   private val supportGroups = TableQuery[SupportGroupsTable]
   private val participants = TableQuery[ParticipantsTable]
+  private val groupParticipants = TableQuery[GroupParticipantsTable]
   private val groupMessages = TableQuery[GroupMessagesTable]
   private val reflections = TableQuery[ReflectionsTable]
 
-  def findGroup(groupId: Int): Future[Option[SupportGroup]] = {
-    db.run(supportGroups.filter(_.id === groupId).result.headOption)
-  }
+  private val groupQuerier = GroupQueries(supportGroups, groupParticipants, participants)
 
-  def participantsForGroup(groupId: Int): Future[Seq[Participant]] = {
-    db.run(
-      participants
-        .filter(_.groupId === groupId)
-        .sortBy(participant =>
-          (participant.role.desc, participant.displayName.asc)
-        )
-        .result
-    )
-  }
+  def findGroup(groupId: Int): Future[Option[(Int, String, String, Int)]] =
+    db.run(groupQuerier.selectGroup(groupId).result.headOption)
+
+  def participantsForGroup(groupId: Int): Future[Seq[(String, String, String, String, String, Role)]] =
+    db.run(groupQuerier.selectParticipants(groupId).result)
 
   def groupMessagesForGroup(groupId: Int): Future[Seq[GroupMessage]] = {
     db.run(

@@ -13,10 +13,11 @@ private class SupportGroupsTable(tag: Tag) extends Table[SupportGroup](tag, "sup
       day => DayOfWeek.valueOf(day)
     )
 
-  def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
+  def groupId = column[Int]("group_id", O.PrimaryKey, O.AutoInc)
   def name = column[String]("name")
   def day = column[DayOfWeek]("day_of_week")
   def time = column[LocalTime]("time")
+  def duration = column[Int]("duration")
 
-  def * = (id, name, day, time).mapTo[SupportGroup]
+  def * = (groupId, name, day, time, duration).mapTo[SupportGroup]
 }

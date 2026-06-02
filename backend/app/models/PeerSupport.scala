@@ -19,6 +19,7 @@ case class SupportGroup(
     name: String,
     day: DayOfWeek,
     time: LocalTime,
+    duration: Int, // TODO: Irontype
 )
 
 case class Participant(
