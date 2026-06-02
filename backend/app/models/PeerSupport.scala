@@ -1,6 +1,8 @@
 package models
 
 import java.time.LocalDateTime
+import java.time.DayOfWeek
+import java.time.LocalTime
 
 enum Role(val show: String) {
   case PARTICIPANT extends Role("participant")
@@ -13,43 +15,50 @@ enum MessageType(val show: String) {
 }
 
 case class SupportGroup(
-    id: Int,
+    groupId: Int,
     name: String,
-    facilitatorName: String,
-    scheduledDurationMinutes: Int,
-    createdAt: LocalDateTime
+    // scheduledDurationMinutes: Int, // TODO: We need to have a separate table for this.
+)
+
+case class GroupCalendar(
+    groupId: Int,
+    day: DayOfWeek,
+    time: LocalTime,
 )
 
 case class Participant(
-    id: Int,
-    groupId: Int,
-    displayName: String,
+    participantId: Int,
+    name: String,
     initials: String,
+    country: String,
     aboutMe: String,
     funFact: String,
-    role: String,
-    createdAt: LocalDateTime
+    role: Role,
 )
 
-// TODO: Why doesn't this contain a participant ID?
-case class GroupMessage(
-    id: Int,
+case class GroupParticipants(
     groupId: Int,
-    senderName: String,
-    senderRole: Role,
+    participantId: Int,
+)
+
+case class GroupMessage(
+    participantId: Int,
+    groupId: Int,
     body: String,
-    messageType: MessageType,
+    messageType: MessageType, // WHYYYYYYYYY
     createdAt: LocalDateTime
 )
 
+// TODO: What is this doing?
 case class CreateMessage(
     body: String,
     senderName: Option[String]
 )
 
+// TODO: Learn what's going on here.
 case class Reflection(
     id: Int,
-    groupId: Int,
+    // groupId: Int, // WHY IT'S PRIVATE!
     privateNote: Option[String],
     facilitatorNote: Option[String],
     sharedWithFacilitator: Boolean,
