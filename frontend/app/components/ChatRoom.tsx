@@ -28,7 +28,7 @@ type ChatRoomProps = {
   isParticipantListPinned: boolean;
   participantListRef: RefObject<HTMLDivElement | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
-  findParticipantByName: (name: string) => Participant | undefined;
+  findParticipantById: (id: number) => Participant | undefined;
   onParticipantListHoverChange: (isHovered: boolean) => void;
   onParticipantListPinnedChange: (isPinned: boolean) => void;
   onOpenParticipantProfile: (participant: Participant) => void;
@@ -64,7 +64,7 @@ export function ChatRoom({
   isParticipantListPinned,
   participantListRef,
   messagesEndRef,
-  findParticipantByName,
+  findParticipantById,
   onParticipantListHoverChange,
   onParticipantListPinnedChange,
   onOpenParticipantProfile,
@@ -133,7 +133,7 @@ export function ChatRoom({
                   facilitatorMessages={facilitatorMessages}
                   isLoading={isLoading}
                   messagesEndRef={messagesEndRef}
-                  findParticipantByName={findParticipantByName}
+                  findParticipantById={findParticipantById}
                   onOpenParticipantProfile={onOpenParticipantProfile}
                 />
 
