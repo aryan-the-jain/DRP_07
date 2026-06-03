@@ -103,7 +103,7 @@ export function QuietReflectionRoom({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--calm-soft)] p-4 sm:p-5">
-      <div className="panel flex min-h-full [border-color:var(--calm)] bg-card px-5 py-5 shadow-[0_18px_50px_rgba(58,52,45,0.10)] sm:px-7 sm:py-6">
+      <div className="panel flex min-h-full shrink-0 [border-color:var(--calm)] bg-card px-5 py-5 shadow-[0_18px_50px_rgba(58,52,45,0.10)] sm:px-7 sm:py-6">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-line pb-3">
             <button
@@ -178,7 +178,7 @@ export function QuietReflectionRoom({
             </div>
           )}
 
-          <div className="min-h-0 flex-1">
+          <div>
             <div className="grid gap-5 lg:grid-cols-[12.5rem_minmax(0,1fr)]">
               <ReflectionTabList
                 activeTab={activeReflectionTab}
