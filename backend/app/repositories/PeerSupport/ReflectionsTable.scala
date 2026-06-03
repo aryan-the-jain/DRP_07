@@ -8,42 +8,28 @@ import java.time.LocalDateTime
 class ReflectionsTable(tag: Tag) extends Table[Reflection](tag, "reflections") {
   def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
   def groupId = column[Int]("group_id")
+  def participantId = column[Int]("participant_id")
   def privateNote = column[Option[String]]("private_note")
   def facilitatorNote = column[Option[String]]("facilitator_note")
-  def sharedWithFacilitator = column[Boolean]("shared_with_facilitator")
+  def freeWriting = column[Option[String]]("free_writing")
+  def sharedGuided = column[Boolean]("shared_guided")
+  def sharedGuidedAt = column[Option[LocalDateTime]]("shared_guided_at")
+  def sharedFreeWriting = column[Boolean]("shared_free_writing")
+  def sharedFreeWritingAt = column[Option[LocalDateTime]]("shared_free_writing_at")
   def createdAt = column[LocalDateTime]("created_at")
-  def sharedAt = column[Option[LocalDateTime]]("shared_at")
 
   def * =
     (
       id,
       groupId,
+      participantId,
       privateNote,
       facilitatorNote,
-      sharedWithFacilitator,
-      createdAt,
-      sharedAt
-    ) <> (
-      {
-        case (
-              id,
-              groupId,
-              privateNote,
-              facilitatorNote,
-              sharedWithFacilitator,
-              createdAt,
-              sharedAt
-            ) =>
-          Reflection(
-            id,
-            groupId,
-            privateNote,
-            facilitatorNote,
-            sharedWithFacilitator,
-            createdAt,
-            sharedAt
-          )
-      },
-      Reflection.unapply
-    )
+      freeWriting,
+      sharedGuided,
+      sharedGuidedAt,
+      sharedFreeWriting,
+      sharedFreeWritingAt,
+      createdAt
+    ).mapTo[Reflection]
 }

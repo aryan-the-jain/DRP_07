@@ -28,6 +28,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   private val facilitatorMessages = TableQuery[FacilitatorMessagesTable]
   private val groupMessages = TableQuery[GroupMessagesTable]
   private val reflections = TableQuery[ReflectionsTable]
+  private val supportLinks = TableQuery[SupportLinksTable]
 
   private val groupQuerier =
     GroupQueries(supportGroups, groupParticipants, participants)
@@ -66,43 +67,126 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
         .result
     ).map(_.map(ReturnFacilitatorMessage.apply))
 
-  // TODO: Refactor
+  /* Upsert the participant's reflection for this group: store every section and
+     mark guided / free writing as shared with the facilitator independently.
+     Sharing is additive — a later draft save never un-shares a shared section.
+     The whole save is one DB write, so the caller can treat success as
+     "persisted". */
   def createReflection(
       groupId: Int,
       request: CreateReflection
   ): Future[Reflection] = {
     val now = LocalDateTime.now()
-    val reflection = Reflection(
-      id = 0,
-      groupId = groupId,
-      privateNote = request.privateNote.map(_.trim).filter(_.nonEmpty),
-      facilitatorNote = request.facilitatorNote.map(_.trim).filter(_.nonEmpty),
-      sharedWithFacilitator = false,
-      createdAt = now,
-      sharedAt = None
+    val privateNote = request.privateNote.map(_.trim).filter(_.nonEmpty)
+    val facilitatorNote = request.facilitatorNote.map(_.trim).filter(_.nonEmpty)
+    val freeWriting = request.freeWriting.map(_.trim).filter(_.nonEmpty)
+
+    val existingQuery = reflections.filter(reflection =>
+      reflection.groupId === groupId
+        && reflection.participantId === request.participantId
     )
 
-    val insertQuery =
-      (reflections returning reflections.map(_.id)) += reflection
+    db.run(existingQuery.result.headOption).flatMap {
+      case Some(existing) =>
+        val sharedGuided = existing.sharedGuided || request.shareGuided
+        val sharedGuidedAt =
+          if (request.shareGuided) Some(now) else existing.sharedGuidedAt
+        val sharedFreeWriting =
+          existing.sharedFreeWriting || request.shareFreeWriting
+        val sharedFreeWritingAt =
+          if (request.shareFreeWriting) Some(now)
+          else existing.sharedFreeWritingAt
 
-    db.run(insertQuery).flatMap { newId =>
-      db.run(reflections.filter(_.id === newId).result.head)
+        val update = existingQuery
+          .map(reflection =>
+            (
+              reflection.privateNote,
+              reflection.facilitatorNote,
+              reflection.freeWriting,
+              reflection.sharedGuided,
+              reflection.sharedGuidedAt,
+              reflection.sharedFreeWriting,
+              reflection.sharedFreeWritingAt
+            )
+          )
+          .update(
+            (
+              privateNote,
+              facilitatorNote,
+              freeWriting,
+              sharedGuided,
+              sharedGuidedAt,
+              sharedFreeWriting,
+              sharedFreeWritingAt
+            )
+          )
+
+        db.run(update).map(_ =>
+          existing.copy(
+            privateNote = privateNote,
+            facilitatorNote = facilitatorNote,
+            freeWriting = freeWriting,
+            sharedGuided = sharedGuided,
+            sharedGuidedAt = sharedGuidedAt,
+            sharedFreeWriting = sharedFreeWriting,
+            sharedFreeWritingAt = sharedFreeWritingAt
+          )
+        )
+
+      case None =>
+        val reflection = Reflection(
+          id = 0,
+          groupId = groupId,
+          participantId = request.participantId,
+          privateNote = privateNote,
+          facilitatorNote = facilitatorNote,
+          freeWriting = freeWriting,
+          sharedGuided = request.shareGuided,
+          sharedGuidedAt = if (request.shareGuided) Some(now) else None,
+          sharedFreeWriting = request.shareFreeWriting,
+          sharedFreeWritingAt =
+            if (request.shareFreeWriting) Some(now) else None,
+          createdAt = now
+        )
+        val insert = (reflections returning reflections.map(_.id)) += reflection
+        db.run(insert).map(newId => reflection.copy(id = newId))
     }
   }
 
-  // TODO: Refactor
-  def shareReflection(reflectionId: Int): Future[Option[Reflection]] = {
-    val query = reflections.filter(_.id === reflectionId)
-    val updateAction = query
-      .map(reflection =>
-        (reflection.sharedWithFacilitator, reflection.sharedAt)
-      )
-      .update((true, Some(LocalDateTime.now())))
+  /* The participant's reflection for this group, so the quiet space can reload
+     their saved draft (and what they have already shared). */
+  def latestReflection(
+      groupId: Int,
+      participantId: Int
+  ): Future[Option[Reflection]] =
+    db.run(
+      reflections
+        .filter(reflection =>
+          reflection.groupId === groupId
+            && reflection.participantId === participantId
+        )
+        .sortBy(_.createdAt.desc)
+        .result
+        .headOption
+    )
 
-    db.run(updateAction).flatMap {
-      case 0 => Future.successful(None)
-      case _ => db.run(query.result.headOption)
-    }
+  /* Active facilitator-curated links for a group (plus links shown to all, where
+     groupId is null), ordered by sortOrder. Only http(s) URLs are returned so a
+     malicious javascript:/data: link can never reach the client. */
+  def activeLinksForGroup(groupId: Int): Future[Seq[ReturnSupportLink]] =
+    db.run(
+      supportLinks
+        .filter(_.isActive)
+        .sortBy(link => (link.sortOrder.asc, link.id.asc))
+        .result
+    ).map(_.collect {
+      case link if link.groupId.forall(_ == groupId) && isSafeUrl(link.url) =>
+        ReturnSupportLink(link.id, link.title, link.url, link.description)
+    })
+
+  private def isSafeUrl(url: String): Boolean = {
+    val scheme = url.trim.toLowerCase
+    scheme.startsWith("http://") || scheme.startsWith("https://")
   }
 
   def sendGroupMessage(

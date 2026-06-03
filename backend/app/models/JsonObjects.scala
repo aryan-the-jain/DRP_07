@@ -31,6 +31,13 @@ case class ReturnFacilitatorMessage(
     createdAt: LocalDateTime
 )
 
+case class ReturnSupportLink(
+    id: Int,
+    title: String,
+    url: String,
+    description: Option[String]
+)
+
 case class ReturnReflectionResponse(
     id: Int,
     groupId: Int,

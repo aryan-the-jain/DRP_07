@@ -52,6 +52,9 @@ object JsonFormats {
   given returnFacilitatorMessageWrites: Writes[ReturnFacilitatorMessage] =
     Json.writes[ReturnFacilitatorMessage]
 
+  given returnSupportLinkWrites: Writes[ReturnSupportLink] =
+    Json.writes[ReturnSupportLink]
+
   given returnReflectionResponse: Writes[ReturnReflectionResponse] =
     Json.writes[ReturnReflectionResponse]
 }

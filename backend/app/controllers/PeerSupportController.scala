@@ -43,8 +43,17 @@ class PeerSupportController @Inject() (
   ): Action[AnyContent] =
     peerSupportRepository.facilitatorMessages(groupId, participantId).returnOk()
 
-  def shareReflection(reflectionId: Int): Action[AnyContent] =
-    peerSupportRepository.shareReflection(reflectionId).returnOk()
+  def latestReflection(
+      groupId: Int,
+      participantId: Int
+  ): Action[AnyContent] =
+    peerSupportRepository.latestReflection(groupId, participantId).returnOk()
+
+  def supportLinks(groupId: Int): Action[AnyContent] =
+    if (groupId <= 0)
+      Action(BadRequest(Json.obj("error" -> "Invalid room")))
+    else
+      peerSupportRepository.activeLinksForGroup(groupId).returnOk()
 
   /* Validates the request and returns an object of JsSuccess(A, _), where A is CreateMessage or
      CreateReflection.  If this inner A is well-formed, we then map it into the actual GroupMessage
@@ -80,5 +89,6 @@ class PeerSupportController @Inject() (
 
   private def hasReflectionText(reflection: CreateReflection): Boolean =
     reflection.privateNote.exists(_.trim.nonEmpty) ||
-      reflection.facilitatorNote.exists(_.trim.nonEmpty)
+      reflection.facilitatorNote.exists(_.trim.nonEmpty) ||
+      reflection.freeWriting.exists(_.trim.nonEmpty)
 }
