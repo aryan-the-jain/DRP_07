@@ -68,7 +68,7 @@ export function QuietReflectionRoom({
   onShareReflection,
 }: QuietReflectionRoomProps) {
   const [activeReflectionTab, setActiveReflectionTab] =
-    useState<ReflectionTab>("guided");
+    useState<ReflectionTab>("calming");
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const hasGuidedText = Boolean(privateNote.trim() || facilitatorNote.trim());
   const hasFreeWritingText = Boolean(freeWritingNote.trim());
