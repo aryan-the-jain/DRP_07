@@ -24,6 +24,13 @@ case class ReturnGroupMessage(
     createdAt: LocalDateTime
 )
 
+case class ReturnFacilitatorMessage(
+    fromId: Int,
+    toId: Int,
+    body: String,
+    createdAt: LocalDateTime
+)
+
 case class ReturnReflectionResponse(
     id: Int,
     groupId: Int,

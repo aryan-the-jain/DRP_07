@@ -59,12 +59,12 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   def facilitatorMessages(
       groupId: Int,
       participantId: Int
-  ): Future[Seq[(Int, Int, String, LocalDateTime)]] =
+  ): Future[Seq[ReturnFacilitatorMessage]] =
     db.run(
       facilitatorMessageQuerier
         .selectPrivateMessages(groupId, participantId)
         .result
-    )
+    ).map(_.map(ReturnFacilitatorMessage.apply))
 
   // TODO: Refactor
   def createReflection(

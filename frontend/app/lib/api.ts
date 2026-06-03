@@ -42,6 +42,13 @@ export async function fetchGroupMessages(apiUrl: string): Promise<GroupMessage[]
   return sortMessages(await response.json());
 }
 
+type FacilitatorMessageResponse = {
+  fromId: number;
+  toId: number;
+  body: string;
+  createdAt: string;
+};
+
 export async function fetchFacilitatorMessages(
   apiUrl: string,
 ): Promise<GroupMessage[]> {
@@ -53,7 +60,16 @@ export async function fetchFacilitatorMessages(
     throw new Error("Could not load private messages.");
   }
 
-  return sortMessages(await response.json());
+  // The facilitator endpoint returns { fromId, toId, body, createdAt }; map the
+  // sender (fromId) onto `id` so it matches the shape MessageList expects.
+  const messages = (await response.json()) as FacilitatorMessageResponse[];
+  return sortMessages(
+    messages.map(({ fromId, body, createdAt }) => ({
+      id: fromId,
+      body,
+      createdAt,
+    })),
+  );
 }
 
 export async function sendMessage(

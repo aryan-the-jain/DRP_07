@@ -49,6 +49,9 @@ object JsonFormats {
   given returnGroupMessageWrites: Writes[ReturnGroupMessage] =
     Json.writes[ReturnGroupMessage]
 
+  given returnFacilitatorMessageWrites: Writes[ReturnFacilitatorMessage] =
+    Json.writes[ReturnFacilitatorMessage]
+
   given returnReflectionResponse: Writes[ReturnReflectionResponse] =
     Json.writes[ReturnReflectionResponse]
 }
