@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
 
-import { Icon } from "./Icon";
+import { Icon, IconName } from "./Icon";
 
 // Shard progress bar — sections shown as shards on a thread, described not
 // numbered. The LINE is the journey: it fills orange up to wherever you are.
@@ -15,12 +15,17 @@ export type ShardStep = {
 };
 
 export const ONBOARDING_SECTIONS: ShardStep[] = [
-  { label: "About you", desc: "who we’re talking to" },
+  { label: "About you", desc: "a few basics" },
+  { label: "A bit more", desc: "the lighter stuff" },
   { label: "In your time", desc: "only if you want" },
-  { label: "What helps", desc: "how to support you" },
 ];
 
-type ShardState = "todo" | "active" | "done" | "skipped";
+enum ShardState {
+  Todo = "todo",
+  Active = "active",
+  Done = "done",
+  Skipped = "skipped",
+}
 
 function Shard({
   state,
@@ -40,12 +45,12 @@ function Shard({
   onLeave: () => void;
 }) {
   const labelColor =
-    state === "todo"
+    state === ShardState.Todo
       ? "var(--muted)"
-      : state === "done"
+      : state === ShardState.Done
         ? "var(--ink)"
         : "var(--warm)";
-  const shownDesc = state === "skipped" ? "come back any time" : desc;
+  const shownDesc = state === ShardState.Skipped ? "come back any time" : desc;
 
   return (
     <button
@@ -82,7 +87,7 @@ function Shard({
           transform: hovered ? "translateY(-4px) scale(1.12)" : "none",
         }}
       >
-        {state === "active" && (
+        {state === ShardState.Active && (
           <div
             style={{
               position: "absolute",
@@ -95,7 +100,7 @@ function Shard({
             }}
           />
         )}
-        {state === "todo" && (
+        {state === ShardState.Todo && (
           <div
             style={{
               width: 19,
@@ -107,7 +112,7 @@ function Shard({
             }}
           />
         )}
-        {state === "skipped" && (
+        {state === ShardState.Skipped && (
           <div
             style={{
               width: 22,
@@ -119,7 +124,7 @@ function Shard({
             }}
           />
         )}
-        {state === "active" && (
+        {state === ShardState.Active && (
           <div
             style={{
               width: 27,
@@ -131,7 +136,7 @@ function Shard({
             }}
           />
         )}
-        {state === "done" && (
+        {state === ShardState.Done && (
           <div
             style={{
               width: 25,
@@ -145,7 +150,7 @@ function Shard({
             }}
           >
             <div style={{ transform: "rotate(-45deg)", display: "flex" }}>
-              <Icon name="check" size={14} c="#fff" sw={2.6} />
+              <Icon name={IconName.Check} size={14} c="#fff" sw={2.6} />
             </div>
           </div>
         )}
@@ -153,16 +158,25 @@ function Shard({
       <div style={{ textAlign: "center", marginTop: 5 }}>
         <span
           className="slabel"
-          style={{ fontSize: 16.5, lineHeight: 1, color: labelColor }}
+          style={{
+            fontSize: 16.5,
+            lineHeight: 1,
+            color: labelColor,
+            ...(state === ShardState.Active && {
+              borderBottomColor: "var(--warm)",
+              borderBottomStyle: "solid",
+            }),
+          }}
         >
           {label}
         </span>
         <div
           style={{
             fontSize: 12.5,
-            color: state === "skipped" ? "var(--calm)" : "var(--faint)",
+            color:
+              state === ShardState.Skipped ? "var(--calm)" : "var(--faint)",
             marginTop: 5,
-            fontStyle: state === "skipped" ? "italic" : "normal",
+            fontStyle: state === ShardState.Skipped ? "italic" : "normal",
           }}
         >
           {shownDesc}
@@ -206,10 +220,10 @@ export function ShardBar({
   const [hovered, setHovered] = useState<number | null>(null);
 
   const stateFor = (i: number): ShardState => {
-    if (i === current) return "active";
-    if (completed[i]) return "done";
-    if (i < current) return "skipped";
-    return "todo";
+    if (i === current) return ShardState.Active;
+    if (completed[i]) return ShardState.Done;
+    if (i < current) return ShardState.Skipped;
+    return ShardState.Todo;
   };
 
   return (

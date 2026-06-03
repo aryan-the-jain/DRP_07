@@ -123,6 +123,32 @@
   transform: none;
   box-shadow: none;
 }
+/* calm (green) primary — used by the quiet-space card */
+.onboarding-root .btn.calm {
+  background: var(--calm);
+  border-color: transparent;
+  color: #fff;
+}
+.onboarding-root .btn.calm:hover {
+  background: oklch(0.6 0.06 165);
+}
+
+/* ---- chips (meta tags on the invitation card) ---- */
+.onboarding-root .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.6px solid var(--line);
+  background: var(--card);
+  border-radius: 40px;
+  padding: 4px 11px;
+  font-size: 14px;
+}
+.onboarding-root .chip.calm {
+  border-color: var(--calm);
+  background: var(--calm-soft);
+  color: #3c5a4c;
+}
 
 .onboarding-root .leader {
   font-family: ui-monospace, monospace;
@@ -152,13 +178,28 @@
   cursor: pointer;
   color: var(--ink);
   background: var(--card);
-  transition: transform 0.08s;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
   width: 100%;
   text-align: left;
   font-family: var(--hand);
 }
+/* coloring on hover (no movement) — mirrors the back/next buttons */
 .onboarding-root .opt:hover {
-  transform: translateY(-1px);
+  border-color: var(--warm);
+  background: var(--warm-soft);
+}
+.onboarding-root .opt.sel:hover {
+  background: color-mix(in oklch, var(--warm) 32%, var(--paper));
+}
+.onboarding-root .opt.skip:hover {
+  border-color: var(--calm);
+  background: var(--calm-soft);
+}
+.onboarding-root .opt.skip.sel:hover {
+  background: color-mix(in oklch, var(--calm) 30%, var(--paper));
 }
 .onboarding-root .opt .ind {
   width: 23px;
@@ -241,6 +282,10 @@
   color: var(--ink);
   background: var(--card);
   font-family: var(--hand);
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
 }
 .onboarding-root .chip-opt.sel {
   background: var(--warm);
@@ -258,6 +303,21 @@
   background: var(--calm);
   border-style: solid;
   color: #fff;
+}
+/* coloring on hover (no movement) — mirrors the back/next buttons */
+.onboarding-root .chip-opt:hover {
+  border-color: var(--warm);
+  background: var(--warm-soft);
+}
+.onboarding-root .chip-opt.sel:hover {
+  background: oklch(0.62 0.105 48);
+}
+.onboarding-root .chip-opt.skip:hover {
+  border-color: var(--calm);
+  background: var(--calm-soft);
+}
+.onboarding-root .chip-opt.skip.sel:hover {
+  background: oklch(0.6 0.06 165);
 }
 
 /* ---- text input style: underline only ---- */
@@ -294,4 +354,9 @@
 .onboarding-root .shard .slabel {
   border-bottom: 1.6px dotted var(--faint);
   padding-bottom: 1px;
+  transition: border-color 0.15s ease, border-style 0.15s ease;
+}
+.onboarding-root .shard:hover .slabel {
+  border-bottom-color: var(--warm);
+  border-bottom-style: solid;
 }

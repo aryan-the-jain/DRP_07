@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
-import { Icon } from "./Icon";
+import { Icon, IconName } from "./Icon";
 
 // Interactive ports of the design's presentational question parts (wf-survey.jsx).
 // The look is faithful; the wiring is real controlled inputs / buttons.
@@ -11,7 +11,7 @@ const VARY = ["", "v2", "v3"] as const;
 export function Why({ children }: { children: ReactNode }) {
   return (
     <div className="why">
-      <Icon name="heart" size={15} c="var(--calm)" /> {children}
+      <Icon name={IconName.Heart} size={15} c="var(--calm)" /> {children}
     </div>
   );
 }
@@ -81,9 +81,7 @@ export function SectionHead({
         )}
       </div>
       {sub && (
-        <div
-          style={{ fontSize: 15.5, color: "var(--muted)", marginTop: 10 }}
-        >
+        <div style={{ fontSize: 15.5, color: "var(--muted)", marginTop: 10 }}>
           {sub}
         </div>
       )}
@@ -150,6 +148,91 @@ export function UnderlineField({
   );
 }
 
+// A typed field that collects many free-text entries — type one and press
+// Enter (or Add). Each becomes a removable chip. Used for the "Other" hobbies.
+export function TagField({
+  id,
+  label,
+  placeholder,
+  values,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  placeholder: string;
+  values: string[];
+  onChange: (values: string[]) => void;
+}) {
+  const [draft, setDraft] = useState("");
+
+  const add = () => {
+    const v = draft.trim();
+    if (v && !values.includes(v)) {
+      onChange([...values, v]);
+    }
+    setDraft("");
+  };
+  const remove = (v: string) => onChange(values.filter((x) => x !== v));
+
+  return (
+    <div>
+      {values.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 11,
+            marginBottom: 12,
+          }}
+        >
+          {values.map((v) => (
+            <button
+              type="button"
+              key={v}
+              onClick={() => remove(v)}
+              title={`Remove “${v}”`}
+              className="sk thin chip-opt sel"
+              style={{ gap: 8 }}
+            >
+              {v}
+              <span aria-hidden style={{ opacity: 0.85 }}>
+                ×
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="uinput">
+        <label htmlFor={id} className="sr-only">
+          {label}
+        </label>
+        <input
+          id={id}
+          type="text"
+          placeholder={placeholder}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              add();
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="btn ghost"
+          style={{ fontSize: 14, padding: "5px 14px" }}
+          onClick={add}
+          disabled={!draft.trim()}
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ---- stacked options (marker + colour) ----
 export type Choice = {
   text: string;
@@ -182,7 +265,7 @@ export function Opt({
       } ${skip ? "skip" : ""}`}
     >
       <span className="ind">
-        {selected && <Icon name="check" size={14} c="#fff" sw={2.6} />}
+        {selected && <Icon name={IconName.Check} size={14} c="#fff" sw={2.6} />}
       </span>
       <span>{text}</span>
     </button>

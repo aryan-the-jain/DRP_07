@@ -1,8 +1,15 @@
 import type { CSSProperties, JSX } from "react";
 
 // Minimal line-icon set ported from the design's wf-shared.jsx — only the icons
-// the onboarding survey actually uses (check, chev, heart).
-export type IconName = "check" | "chev" | "heart";
+// the onboarding flow actually uses.
+export enum IconName {
+  Check = "check",
+  Chev = "chev",
+  Heart = "heart",
+  People = "people",
+  Quiet = "quiet",
+  Clock = "clock",
+}
 
 type IconProps = {
   name: IconName;
@@ -27,13 +34,33 @@ export function Icon({
     strokeLinejoin: "round" as const,
   };
   const paths: Record<IconName, JSX.Element> = {
-    chev: <path {...p} d="M8 4l5 6-5 6" />,
-    check: <path {...p} d="M4 11l5 5 9-11" />,
-    heart: (
+    [IconName.Chev]: <path {...p} d="M8 4l5 6-5 6" />,
+    [IconName.Check]: <path {...p} d="M4 11l5 5 9-11" />,
+    [IconName.Heart]: (
       <path
         {...p}
         d="M11 18S3.5 13 3.5 8.2A3.7 3.7 0 0 1 11 6a3.7 3.7 0 0 1 7.5 2.2C18.5 13 11 18 11 18Z"
       />
+    ),
+    [IconName.People]: (
+      <>
+        <circle {...p} cx="8" cy="8" r="3" />
+        <path {...p} d="M2.5 18c0-3 2.5-5 5.5-5s5.5 2 5.5 5" />
+        <path {...p} d="M15 6.2a3 3 0 0 1 0 5.6M16 13.5c2.4.5 4 2.4 4 4.5" />
+      </>
+    ),
+    [IconName.Quiet]: (
+      <>
+        <circle {...p} cx="11" cy="11" r="3" />
+        <circle {...p} cx="11" cy="11" r="6.5" opacity="0.6" />
+        <circle {...p} cx="11" cy="11" r="9.5" opacity="0.3" />
+      </>
+    ),
+    [IconName.Clock]: (
+      <>
+        <circle {...p} cx="11" cy="11" r="8" />
+        <path {...p} d="M11 6.5V11l3 2" />
+      </>
     ),
   };
   return (
