@@ -1,11 +1,10 @@
 export type ActiveTab = "group" | "facilitator" | "quiet";
 
 export type SupportGroup = {
-  id: number;
   name: string;
-  facilitatorName: string;
+  day: string;
+  time: string;
   scheduledDurationMinutes: number;
-  createdAt: string;
 };
 
 export type Participant = {

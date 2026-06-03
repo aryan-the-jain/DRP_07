@@ -1,6 +1,7 @@
 import { GroupMessage, Participant, ReflectionResponse, SupportGroup } from "./types";
 
 export const groupId = 1;
+export const participantId = 1;
 export const fallbackApiUrl = "http://localhost:9000";
 
 function sortMessages(messages: GroupMessage[]) {
@@ -45,7 +46,7 @@ export async function fetchFacilitatorMessages(
   apiUrl: string,
 ): Promise<GroupMessage[]> {
   const response = await fetch(
-    `${apiUrl}/groups/${groupId}/facilitator-messages`,
+    `${apiUrl}/groups/${groupId}/${participantId}/facilitator-messages`,
   );
 
   if (!response.ok) {
@@ -142,10 +143,10 @@ export async function fetchLatestReflection(
   apiUrl: string,
 ): Promise<ReflectionResponse | null> {
   try {
-    const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`);
-    if (response.ok) {
-      return response.json();
-    }
+    // const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`);
+    // if (response.ok) {
+    //   return response.json();
+    // }
     return null;
   } catch {
     return null;
