@@ -314,7 +314,7 @@ body {
 /* inhale 4s, hold 2s, exhale 6s, rest 1s — 13s loop (matches the JS label) */
 @keyframes breathe {
   0% {
-    transform: scale(0.62);
+    transform: scale(0.8);
   }
   30.77% {
     transform: scale(1);
@@ -323,10 +323,10 @@ body {
     transform: scale(1);
   }
   92.31% {
-    transform: scale(0.62);
+    transform: scale(0.8);
   }
   100% {
-    transform: scale(0.62);
+    transform: scale(0.8);
   }
 }
 .breathe-orb {

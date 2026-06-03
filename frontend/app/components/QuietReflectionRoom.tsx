@@ -550,14 +550,18 @@ function BreathePanel() {
       </p>
 
       <div className="mt-7 flex items-center justify-center">
-        <div className="relative flex h-56 w-56 items-center justify-center">
-          <span
-            aria-hidden="true"
-            className="breathe-orb absolute inset-0 rounded-full border-2 bg-calm-soft [border-color:var(--calm)]"
-          />
+        <div className="relative flex h-64 w-64 items-center justify-center">
+          {/* Filled disc + concentric inner ring scale together with the breath.
+             The keyframe's minimum scale keeps the contracted ring wider than the
+             label, so the text always sits cleanly inside it. */}
+          <span aria-hidden="true" className="breathe-orb absolute inset-0">
+            <span className="absolute inset-0 rounded-full bg-calm-soft" />
+            <span className="absolute inset-6 rounded-full border-2 [border-color:var(--calm)]" />
+          </span>
+          {/* Label stays a steady size and sits inside the inner ring. */}
           <span
             aria-live="polite"
-            className="scrawl relative text-3xl text-calm-ink"
+            className="scrawl relative px-4 text-3xl font-bold text-calm-ink"
           >
             {phaseLabel}
           </span>
