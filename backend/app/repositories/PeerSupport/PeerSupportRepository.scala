@@ -49,6 +49,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
     db.run(query)
   }
 
+  // TODO: Refactor
   def createReflection(
       groupId: Int,
       request: CreateReflection
@@ -72,6 +73,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
     }
   }
 
+  // TODO: Refactor
   def shareReflection(reflectionId: Int): Future[Option[Reflection]] = {
     val query = reflections.filter(_.id === reflectionId)
     val updateAction = query
@@ -86,18 +88,28 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
     }
   }
 
+  // TODO: What is this?
+  def sendGroupMessage(from: Int, groupId: Int, messageBody: String): Future[Int] = {
+    val query = groupMessageQuerier.insertNewMessage(GroupMessage(
+      from,
+      groupId,
+      messageBody,
+      LocalDateTime.now()
+    ))
+    db.run(query)
+  }
+
+  def sendFacilitatorMessage(from: Int, to: Int): Nothing = ???
+
   def createMessage(
       groupId: Int,
       request: CreateMessage,
       messageType: MessageType
   ): Future[GroupMessage] = {
     val message = GroupMessage(
-      id = 0, // TODO: Why is this hard-coded as 0?!!!!!
+      0, // TODO: Why is this hard-coded as 0?!!!!!
       groupId,
       request.senderName.getOrElse("You"), // TODO: Remove magic string!!
-      Role.PARTICIPANT,
-      request.body.trim,
-      messageType,
       LocalDateTime.now()
     )
 
