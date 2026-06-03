@@ -11,9 +11,6 @@ object JsonFormats {
 
   given roleWrites: Writes[Role] = Writes(role => JsString(role.show))
 
-  given messageTypeWrites: Writes[MessageType] =
-    Writes(messageType => JsString(messageType.show))
-
   given createSupportRequestReads: Reads[CreateSupportRequest] =
     Json.reads[CreateSupportRequest]
 

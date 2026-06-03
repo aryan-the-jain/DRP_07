@@ -9,11 +9,6 @@ enum Role(val show: String) {
   case FACILITATOR extends Role("facilitator")
 }
 
-enum MessageType(val show: String) {
-  case GROUP_WIDE extends MessageType("group")
-  case FACILITATOR_DIRECT extends MessageType("facilitator_direct")
-}
-
 case class SupportGroup(
     groupId: Int,
     name: String,
