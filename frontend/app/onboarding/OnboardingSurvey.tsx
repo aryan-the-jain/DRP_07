@@ -7,11 +7,11 @@ import { QuietSpaceCard, Screen } from "./MomentScreen";
 import { ONBOARDING_SECTIONS, ShardBar } from "./ShardBar";
 import {
   Choice,
+  NoRushNotice as SaveBar,
   Opt,
   OptChips,
   OptList,
   Qn,
-  SaveBar,
   SectionHead,
   TagField,
   TextField,
@@ -139,6 +139,7 @@ export function OnboardingSurvey() {
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS);
   const [finished, setFinished] = useState(false);
   const [savedForLater, setSavedForLater] = useState(false);
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
   // The "that's everything we need" pause point — shown once, the first time the
   // user leaves the (only required) first section.
   const [pausePromptSeen, setPausePromptSeen] = useState(false);
@@ -246,25 +247,36 @@ export function OnboardingSurvey() {
   return (
     <div
       style={{
-        height: "100dvh",
+        position: "fixed",
+        inset: 0,
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
         background: "var(--paper)",
       }}
     >
-      {/* sticky top: title + shard progress bar + save/reassurance bar */}
-      <div style={{ flex: "0 0 auto", borderBottom: "2px solid var(--line)" }}>
+      {/* sticky top: title + shard progress bar + optional notice */}
+      <div style={{ flex: "0 0 auto" }}>
+        {/* title bar — grey line sits here, above the shard bar */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             padding: "18px 30px",
+            borderBottom: "2px solid var(--line)",
           }}
         >
           <span className="h-title" style={{ fontSize: 22, color: "var(--ink)" }}>
             Setting up your space
           </span>
+          <div style={{ flex: 1 }} />
+          <button
+            type="button"
+            className="save-pill"
+            onClick={onSaveAndFinishLater}
+          >
+            <Icon name={IconName.Bookmark} size={16} c="var(--calm)" /> Save &amp;
+            come back later
+          </button>
         </div>
 
         <div style={{ padding: "22px 40px 6px" }}>
@@ -275,9 +287,11 @@ export function OnboardingSurvey() {
           />
         </div>
 
-        <div style={{ padding: "10px 40px 16px" }}>
-          <SaveBar onSave={onSaveAndFinishLater} />
-        </div>
+        {!noticeDismissed && (
+          <div style={{ padding: "8px 40px 14px" }}>
+            <SaveBar onDismiss={() => setNoticeDismissed(true)} />
+          </div>
+        )}
       </div>
 
       {/* scrollable body */}

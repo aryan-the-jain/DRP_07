@@ -105,43 +105,57 @@ export function SectionHead({ title, sub }: { title: string; sub?: string }) {
   );
 }
 
-// Unified save + reassurance bar (design's "option A"): a calm green box whose
-// reassurance text leads straight into the save button.
-export function SaveBar({ onSave }: { onSave: () => void }) {
+export function NoRushNotice({ onDismiss }: { onDismiss: () => void }) {
   return (
     <div
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 16,
-        padding: "12px 14px 12px 18px",
+        gap: 13,
+        padding: "11px 14px 11px 18px",
         background: "var(--calm-soft)",
         border: "1.6px solid var(--calm)",
         borderRadius: "16px 230px 16px 240px/230px 16px 240px 16px",
       }}
     >
-      <Icon name={IconName.Mug} size={22} c="var(--calm)" />
-      <span style={{ flex: 1, fontSize: 15.5, color: "#3c5a4c" }}>
-        There’s no rush — you can stop whenever you need and pick this up when you
-        feel ready.
+      <Icon name={IconName.Mug} size={20} c="var(--calm)" />
+      <span style={{ flex: 1, fontSize: 15, color: "#3c5a4c" }}>
+        There’s no rush. You can stop whenever you need and pick this up later.
+        Just click the button in the top right when you want a break, we'll save your progress.
       </span>
       <button
         type="button"
-        className="save-pill"
-        onClick={onSave}
+        aria-label="Dismiss"
+        onClick={onDismiss}
         style={{
-          background: "var(--calm)",
-          color: "#fff",
-          borderColor: "transparent",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 28,
+          height: 28,
+          borderRadius: "50%",
+          border: "1.6px solid var(--calm)",
+          background: "transparent",
+          color: "var(--calm)",
+          cursor: "pointer",
           flex: "0 0 auto",
+          transition: "background-color 0.14s ease, color 0.14s ease",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = "var(--calm)";
+          (e.currentTarget as HTMLButtonElement).style.color = "#fff";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+          (e.currentTarget as HTMLButtonElement).style.color = "var(--calm)";
         }}
       >
-        <Icon name={IconName.Bookmark} size={16} c="#fff" /> Save &amp; come back
-        later
+        <Icon name={IconName.X} size={14} c="currentColor" sw={2} />
       </button>
     </div>
   );
 }
+
 
 // ---- text inputs ----
 export function TextField({

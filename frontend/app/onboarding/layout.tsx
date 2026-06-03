@@ -26,7 +26,8 @@ export default function OnboardingLayout({
 }>) {
   return (
     <div
-      className={`onboarding-root ${patrickHand.variable} ${caveat.variable} min-h-full`}
+      className={`onboarding-root ${patrickHand.variable} ${caveat.variable}`}
+      style={{ height: "100dvh", overflow: "hidden" }}
     >
       {children}
     </div>
