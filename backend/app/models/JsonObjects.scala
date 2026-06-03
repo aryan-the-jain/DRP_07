@@ -38,6 +38,13 @@ case class ReturnSupportLink(
     description: Option[String]
 )
 
+case class ReturnMeditationPlaylist(
+    title: String,
+    description: Option[String],
+    spotifyUrl: String,
+    trackCount: Option[Int]
+)
+
 case class ReturnReflectionResponse(
     id: Int,
     groupId: Int,

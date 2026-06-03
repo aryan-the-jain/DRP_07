@@ -29,6 +29,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   private val groupMessages = TableQuery[GroupMessagesTable]
   private val reflections = TableQuery[ReflectionsTable]
   private val supportLinks = TableQuery[SupportLinksTable]
+  private val meditationPlaylists = TableQuery[MeditationPlaylistsTable]
 
   private val groupQuerier =
     GroupQueries(supportGroups, groupParticipants, participants)
@@ -188,6 +189,36 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
     val scheme = url.trim.toLowerCase
     scheme.startsWith("http://") || scheme.startsWith("https://")
   }
+
+  /* Active meditation playlists for a group (plus playlists shown to all, where
+     groupId is null), ordered by sortOrder. Only genuine Spotify playlist URLs
+     are returned, so a non-Spotify or non-playlist link can never reach the
+     client. */
+  def activeMeditationPlaylists(
+      groupId: Int
+  ): Future[Seq[ReturnMeditationPlaylist]] =
+    db.run(
+      meditationPlaylists
+        .filter(_.isActive)
+        .sortBy(playlist => (playlist.sortOrder.asc, playlist.id.asc))
+        .result
+    ).map(_.collect {
+      case playlist
+          if playlist.groupId.forall(_ == groupId)
+            && isSpotifyPlaylistUrl(playlist.spotifyUrl) =>
+        ReturnMeditationPlaylist(
+          playlist.title,
+          playlist.description,
+          playlist.spotifyUrl,
+          playlist.trackCount
+        )
+    })
+
+  // Accept only https open.spotify.com/playlist/{id} links (optional query).
+  private def isSpotifyPlaylistUrl(url: String): Boolean =
+    url.trim.matches(
+      "^https://open\\.spotify\\.com/playlist/[A-Za-z0-9]+(\\?[^\\s]*)?$"
+    )
 
   def sendGroupMessage(
       groupId: Int,

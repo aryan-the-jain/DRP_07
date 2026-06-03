@@ -55,6 +55,9 @@ object JsonFormats {
   given returnSupportLinkWrites: Writes[ReturnSupportLink] =
     Json.writes[ReturnSupportLink]
 
+  given returnMeditationPlaylistWrites: Writes[ReturnMeditationPlaylist] =
+    Json.writes[ReturnMeditationPlaylist]
+
   given returnReflectionResponse: Writes[ReturnReflectionResponse] =
     Json.writes[ReturnReflectionResponse]
 }

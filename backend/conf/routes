@@ -19,3 +19,4 @@ GET     /groups/:groupId/:participantId/facilitator-messages      controllers.Pe
 POST    /groups/:groupId/reflections               controllers.PeerSupportController.createReflection(groupId: Int)
 GET     /groups/:groupId/participants/:participantId/reflection   controllers.PeerSupportController.latestReflection(groupId: Int, participantId: Int)
 GET     /groups/:groupId/support-links             controllers.PeerSupportController.supportLinks(groupId: Int)
+GET     /groups/:groupId/meditation-playlists      controllers.PeerSupportController.meditationPlaylists(groupId: Int)

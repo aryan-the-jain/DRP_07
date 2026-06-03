@@ -34,6 +34,13 @@ export type SupportLink = {
   description: string | null;
 };
 
+export type MeditationPlaylist = {
+  title: string;
+  description: string | null;
+  spotifyUrl: string;
+  trackCount: number | null;
+};
+
 export type ReflectionResponse = {
   id: number;
   groupId: number;

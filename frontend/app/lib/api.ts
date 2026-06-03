@@ -1,5 +1,6 @@
 import {
   GroupMessage,
+  MeditationPlaylist,
   Participant,
   ReflectionResponse,
   SupportGroup,
@@ -154,6 +155,20 @@ export async function fetchSupportLinks(
   }
 
   return (await response.json()) as SupportLink[];
+}
+
+export async function fetchMeditationPlaylists(
+  apiUrl: string,
+): Promise<MeditationPlaylist[]> {
+  const response = await fetch(
+    `${apiUrl}/groups/${groupId}/meditation-playlists`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Could not load playlists.");
+  }
+
+  return (await response.json()) as MeditationPlaylist[];
 }
 
 export async function fetchLatestReflection(

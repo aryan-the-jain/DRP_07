@@ -55,6 +55,12 @@ class PeerSupportController @Inject() (
     else
       peerSupportRepository.activeLinksForGroup(groupId).returnOk()
 
+  def meditationPlaylists(groupId: Int): Action[AnyContent] =
+    if (groupId <= 0)
+      Action(BadRequest(Json.obj("error" -> "Invalid room")))
+    else
+      peerSupportRepository.activeMeditationPlaylists(groupId).returnOk()
+
   /* Validates the request and returns an object of JsSuccess(A, _), where A is CreateMessage or
      CreateReflection.  If this inner A is well-formed, we then map it into the actual GroupMessage
      or Reflection, convert it to JSON and return the object.  In the event of an error, we return

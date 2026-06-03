@@ -12,6 +12,7 @@ export type IconName =
   | "pen"
   | "quiet"
   | "send"
+  | "spotify"
   | "wind";
 
 type LineIconProps = {
@@ -82,6 +83,13 @@ export function LineIcon({
       </>
     ),
     send: <path {...pathProps} d="M4 11 18 4l-5 14-2.5-5.5L4 11Zm6.5 1.5L18 4" />,
+    spotify: (
+      <>
+        <path {...pathProps} d="M5 8.5c4-1.1 8.2-0.6 11.8 1.6" />
+        <path {...pathProps} d="M5.6 12c3.2-0.8 6.7-0.4 9.6 1.4" />
+        <path {...pathProps} d="M6.4 15.2c2.4-0.6 5-0.3 7.1 1.1" />
+      </>
+    ),
     wind: (
       <>
         <path {...pathProps} d="M3 8h9a2.4 2.4 0 1 0-2.4-2.4" />

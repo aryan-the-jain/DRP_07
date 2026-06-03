@@ -98,3 +98,17 @@ case class SupportLink(
     createdAt: LocalDateTime,
     updatedAt: LocalDateTime
 )
+
+// Facilitator-curated meditation playlist. A null groupId means it is shown to all.
+case class MeditationPlaylist(
+    id: Int,
+    groupId: Option[Int],
+    title: String,
+    description: Option[String],
+    spotifyUrl: String,
+    trackCount: Option[Int],
+    sortOrder: Int,
+    isActive: Boolean,
+    createdAt: LocalDateTime,
+    updatedAt: LocalDateTime
+)
