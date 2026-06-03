@@ -1,7 +1,14 @@
 import { FormEvent, RefObject } from "react";
 
-import { ActiveTab, GroupMessage, Participant, SupportGroup } from "../lib/types";
+import {
+  ActiveTab,
+  GroupMessage,
+  Participant,
+  ReflectionShareSelection,
+  SupportGroup,
+} from "../lib/types";
 import { ChatHeader } from "./ChatHeader";
+import { LineIcon } from "./DesignPrimitives";
 import { MessageComposer } from "./MessageComposer";
 import { MessageList } from "./MessageList";
 import { ParticipantProfileModal } from "./ParticipantProfileModal";
@@ -20,6 +27,8 @@ type ChatRoomProps = {
   messageBody: string;
   privateNote: string;
   facilitatorNote: string;
+  freeWritingNote: string;
+  shareSelection: ReflectionShareSelection;
   isSharingReflection: boolean;
   isReflectionShared: boolean;
   quietSpaceError: string;
@@ -39,8 +48,10 @@ type ChatRoomProps = {
   onMessageBodyChange: (value: string) => void;
   onPrivateNoteChange: (value: string) => void;
   onFacilitatorNoteChange: (value: string) => void;
+  onFreeWritingNoteChange: (value: string) => void;
+  onShareSelectionChange: (selection: ReflectionShareSelection) => void;
   onExitQuietSpace: () => void;
-  onShareReflection: () => void;
+  onShareReflection: () => void | Promise<void>;
 };
 
 export function ChatRoom({
@@ -56,6 +67,8 @@ export function ChatRoom({
   messageBody,
   privateNote,
   facilitatorNote,
+  freeWritingNote,
+  shareSelection,
   isSharingReflection,
   isReflectionShared,
   quietSpaceError,
@@ -75,6 +88,8 @@ export function ChatRoom({
   onMessageBodyChange,
   onPrivateNoteChange,
   onFacilitatorNoteChange,
+  onFreeWritingNoteChange,
+  onShareSelectionChange,
   onExitQuietSpace,
   onShareReflection,
 }: ChatRoomProps) {
@@ -82,15 +97,15 @@ export function ChatRoom({
   const groupName = group?.name ?? "Friday Group";
 
   return (
-    <main className="h-screen overflow-hidden bg-[#f4f1ec] px-4 py-5 text-stone-900 sm:px-6 lg:px-8">
-      <section className="mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden rounded-[1.5rem] border border-stone-200 bg-[#fffdf8] shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
+    <main className="h-screen overflow-hidden bg-paper px-4 py-5 text-ink sm:px-6 lg:px-8">
+      <section className="panel mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
         {hasLeftRoom ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center bg-[#fffdf8] p-6 text-center">
-            <div className="max-w-md rounded-2xl border border-stone-200 bg-white px-6 py-7 shadow-sm">
-              <h1 className="font-serif text-2xl font-semibold text-stone-950">
+          <div className="flex min-h-0 flex-1 items-center justify-center p-6 text-center">
+            <div className="sk v2 max-w-md px-7 py-8">
+              <h1 className="h-title text-3xl text-ink">
                 You&apos;ve left {groupName}.
               </h1>
-              <p className="mt-3 text-sm leading-relaxed text-stone-600">
+              <p className="mt-3 text-[15px] leading-relaxed text-muted">
                 Thank you for taking part. It&apos;s safe to close this tab when
                 you&apos;re ready.
               </p>
@@ -113,19 +128,23 @@ export function ChatRoom({
             />
 
             {activeTab === "quiet" ? (
-          <QuietReflectionRoom
-            privateNote={privateNote}
-            facilitatorNote={facilitatorNote}
-            isSharingReflection={isSharingReflection}
-            isReflectionShared={isReflectionShared}
-            quietSpaceError={quietSpaceError}
-            onPrivateNoteChange={onPrivateNoteChange}
-            onFacilitatorNoteChange={onFacilitatorNoteChange}
-            onExitQuietSpace={onExitQuietSpace}
-            onShareReflection={onShareReflection}
-          />
+              <QuietReflectionRoom
+                privateNote={privateNote}
+                facilitatorNote={facilitatorNote}
+                freeWritingNote={freeWritingNote}
+                shareSelection={shareSelection}
+                isSharingReflection={isSharingReflection}
+                isReflectionShared={isReflectionShared}
+                quietSpaceError={quietSpaceError}
+                onPrivateNoteChange={onPrivateNoteChange}
+                onFacilitatorNoteChange={onFacilitatorNoteChange}
+                onFreeWritingNoteChange={onFreeWritingNoteChange}
+                onShareSelectionChange={onShareSelectionChange}
+                onExitQuietSpace={onExitQuietSpace}
+                onShareReflection={onShareReflection}
+              />
             ) : (
-              <div className="flex min-h-0 flex-1 flex-col bg-[#fffdf8]">
+              <div className="flex min-h-0 flex-1 flex-col bg-card">
                 <MessageList
                   activeTab={activeTab}
                   facilitatorName={facilitatorName}
@@ -144,17 +163,18 @@ export function ChatRoom({
                   />
                 )}
 
-                {/* Pinned Quiet Space button bar */}
-                <div className="shrink-0 border-t border-stone-200/60 bg-[#fffdf8] py-3.5 flex justify-center">
+                {/* Pinned Quiet Space invitation */}
+                <div className="shrink-0 px-4 py-3.5 flex justify-center">
                   <div className="relative group w-fit">
                     <button
                       type="button"
                       onClick={() => onSetActiveTab("quiet")}
-                      className="rounded-2xl border border-stone-300 bg-[#faf7f1] px-5 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-[#f5efe6] cursor-pointer"
+                      className="btn calm sm inline-flex items-center gap-2"
                     >
+                      <LineIcon name="quiet" size={17} />
                       Step into a quiet space to reflect
                     </button>
-                    <span className="absolute bottom-full mb-3.5 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out z-50 p-3 rounded-xl border border-stone-200 bg-[#faf7f1] shadow-md w-60 text-xs font-normal leading-normal text-stone-600 text-center block">
+                    <span className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out z-50 p-3 sk thin soft bg-card shadow-[0_8px_24px_rgba(68,52,35,0.12)] w-60 text-xs leading-normal text-muted text-center block">
                       Take a pause from the conversation. You can write your thoughts down freely and privately here.
                     </span>
                   </div>

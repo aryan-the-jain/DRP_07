@@ -16,7 +16,13 @@ import {
   shareReflection,
 } from "./lib/api";
 import { initialsFor } from "./lib/format";
-import { ActiveTab, GroupMessage, Participant, SupportGroup } from "./lib/types";
+import {
+  ActiveTab,
+  GroupMessage,
+  Participant,
+  ReflectionShareSelection,
+  SupportGroup,
+} from "./lib/types";
 
 export default function Home() {
   const [group, setGroup] = useState<SupportGroup | null>(null);
@@ -33,6 +39,13 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("group");
   const [privateNote, setPrivateNote] = useState("");
   const [facilitatorNote, setFacilitatorNote] = useState("");
+  const [freeWritingNote, setFreeWritingNote] = useState("");
+  const [shareSelection, setShareSelection] = useState<ReflectionShareSelection>(
+    {
+      guidedAnswers: false,
+      freeWriting: false,
+    },
+  );
   const [isSharingReflection, setIsSharingReflection] = useState(false);
   const [isReflectionShared, setIsReflectionShared] = useState(false);
   const [quietSpaceError, setQuietSpaceError] = useState("");
@@ -229,12 +242,35 @@ export default function Home() {
     setIsReflectionShared(false);
   }
 
+  function handleFreeWritingNoteChange(value: string) {
+    setFreeWritingNote(value);
+    setQuietSpaceError("");
+    setIsReflectionShared(false);
+  }
+
+  function handleShareSelectionChange(selection: ReflectionShareSelection) {
+    setShareSelection(selection);
+    setQuietSpaceError("");
+    setIsReflectionShared(false);
+  }
+
   async function handleShareReflection() {
     const trimmedPrivate = privateNote.trim();
     const trimmedFacilitator = facilitatorNote.trim();
+    const trimmedFreeWriting = freeWritingNote.trim();
+    const hasGuidedText = Boolean(trimmedPrivate || trimmedFacilitator);
+    const hasFreeWritingText = Boolean(trimmedFreeWriting);
 
-    if (!trimmedPrivate && !trimmedFacilitator) {
-      setQuietSpaceError("Please type something before sharing.");
+    if (!shareSelection.guidedAnswers && !shareSelection.freeWriting) {
+      setQuietSpaceError("Choose what you would like to share.");
+      return;
+    }
+
+    if (
+      !(shareSelection.guidedAnswers && hasGuidedText) &&
+      !(shareSelection.freeWriting && hasFreeWritingText)
+    ) {
+      setQuietSpaceError("Please type something in the area you selected.");
       return;
     }
 
@@ -242,14 +278,17 @@ export default function Home() {
     setQuietSpaceError("");
 
     try {
-      const reflectionData = await saveReflection(
-        apiUrl,
-        trimmedPrivate,
-        trimmedFacilitator,
-      );
-      const reflectionId = reflectionData.id;
+      if (shareSelection.guidedAnswers && hasGuidedText) {
+        const reflectionData = await saveReflection(
+          apiUrl,
+          trimmedPrivate,
+          trimmedFacilitator,
+        );
+        const reflectionId = reflectionData.id;
 
-      await shareReflection(apiUrl, reflectionId);
+        await shareReflection(apiUrl, reflectionId);
+      }
+
       setIsReflectionShared(true);
     } catch {
       setIsReflectionShared(true);
@@ -280,6 +319,8 @@ export default function Home() {
       messageBody={messageBody}
       privateNote={privateNote}
       facilitatorNote={facilitatorNote}
+      freeWritingNote={freeWritingNote}
+      shareSelection={shareSelection}
       isSharingReflection={isSharingReflection}
       isReflectionShared={isReflectionShared}
       quietSpaceError={quietSpaceError}
@@ -299,6 +340,8 @@ export default function Home() {
       onMessageBodyChange={setMessageBody}
       onPrivateNoteChange={handlePrivateNoteChange}
       onFacilitatorNoteChange={handleFacilitatorNoteChange}
+      onFreeWritingNoteChange={handleFreeWritingNoteChange}
+      onShareSelectionChange={handleShareSelectionChange}
       onExitQuietSpace={handleExitQuietSpace}
       onShareReflection={handleShareReflection}
     />
