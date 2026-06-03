@@ -47,7 +47,7 @@ export function MessageList({
             </div>
           ) : (
             visibleMessages.map((message) => {
-              const senderId = (message as any).fromId ?? (message as any).participantId;
+              const senderId = message.id;
               const participant = findParticipantById(senderId);
               const displayName = participant ? participant.displayName : "Unknown";
 
