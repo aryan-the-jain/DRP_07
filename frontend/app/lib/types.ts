@@ -17,7 +17,7 @@ export type Participant = {
 };
 
 export type GroupMessage = {
-  senderId: number;
+  id: number;
   body: string;
   createdAt: string;
 };

@@ -4,28 +4,11 @@ export const groupId = 1;
 export const participantId = 1;
 export const fallbackApiUrl = "http://localhost:9000";
 
-/* The group, participant and group-message endpoints return named objects.
-   Group messages name the sender's participant id as `id`, so this wire shape
-   differs from GroupMessage and is mapped across in the fetch helper. */
-type GroupMessageResponse = {
-  id: number; // the sender's participant id
-  body: string;
-  createdAt: string;
-};
-
-/* Private messages are still returned as a positional tuple
-   [fromId, toId, body, createdAt] rather than an object. */
-type FacilitatorMessageTuple = [
-  fromId: number,
-  toId: number,
-  body: string,
-  createdAt: string,
-];
-
 function sortMessages(messages: GroupMessage[]) {
   return [...messages].sort(
     (first, second) =>
-      new Date(first.createdAt).getTime() - new Date(second.createdAt).getTime(),
+      new Date(first.createdAt).getTime() -
+        new Date(second.createdAt).getTime() || first.id - second.id,
   );
 }
 
@@ -33,20 +16,20 @@ export async function fetchGroup(apiUrl: string): Promise<SupportGroup> {
   const response = await fetch(`${apiUrl}/groups/${groupId}`);
 
   if (!response.ok) {
-    throw new Error("Could not load the group.");
+    throw new Error("Could not load Friday Group.");
   }
 
-  return (await response.json()) as SupportGroup;
+  return response.json();
 }
 
 export async function fetchParticipants(apiUrl: string): Promise<Participant[]> {
   const response = await fetch(`${apiUrl}/groups/${groupId}/participants`);
 
   if (!response.ok) {
-    throw new Error("Could not load the group.");
+    throw new Error("Could not load Friday Group.");
   }
 
-  return (await response.json()) as Participant[];
+  return response.json();
 }
 
 export async function fetchGroupMessages(apiUrl: string): Promise<GroupMessage[]> {
@@ -56,14 +39,7 @@ export async function fetchGroupMessages(apiUrl: string): Promise<GroupMessage[]
     throw new Error("Could not load messages.");
   }
 
-  const messages = (await response.json()) as GroupMessageResponse[];
-  return sortMessages(
-    messages.map(({ id, body, createdAt }) => ({
-      senderId: id,
-      body,
-      createdAt,
-    })),
-  );
+  return sortMessages(await response.json());
 }
 
 export async function fetchFacilitatorMessages(
@@ -77,45 +53,25 @@ export async function fetchFacilitatorMessages(
     throw new Error("Could not load private messages.");
   }
 
-  const tuples = (await response.json()) as FacilitatorMessageTuple[];
-  return sortMessages(
-    tuples.map(([fromId, , body, createdAt]) => ({
-      senderId: fromId,
-      body,
-      createdAt,
-    })),
-  );
+  return sortMessages(await response.json());
 }
 
-export async function sendGroupMessage(apiUrl: string, body: string) {
-  const response = await fetch(`${apiUrl}/groups/${groupId}/messages`, {
+export async function sendMessage(
+  apiUrl: string,
+  endpoint: "messages" | "facilitator-messages",
+  body: string,
+) {
+  const response = await fetch(`${apiUrl}/groups/${groupId}/${endpoint}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ participantId, body }),
+    body: JSON.stringify({
+      senderName: "You",
+      senderInitials: "Y",
+      body,
+    }),
   });
-
-  if (!response.ok) {
-    throw new Error("Could not send message.");
-  }
-}
-
-export async function sendFacilitatorMessage(
-  apiUrl: string,
-  facilitatorId: number,
-  body: string,
-) {
-  const response = await fetch(
-    `${apiUrl}/groups/${groupId}/facilitator-messages`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ fromId: participantId, toId: facilitatorId, body }),
-    },
-  );
 
   if (!response.ok) {
     throw new Error("Could not send message.");
