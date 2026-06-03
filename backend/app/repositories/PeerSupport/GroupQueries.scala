@@ -71,4 +71,16 @@ class GroupQueries(
     for g <- groups if g.groupId === groupId
     yield (g.day, g.time, g.duration)
   }
+
+  /* Returns the information about a participant given the groupId and participantId. */
+  def selectParticipantInfo(groupId: Int, participantId: Int): Query[
+    (Rep[String], Rep[String], Rep[String], Rep[String], Rep[String], Rep[Role]),
+    (String, String, String, String, String, Role),
+    Seq
+  ] = {
+    for
+      gp <- groupParticipants if gp.groupId === groupId
+      p <- participants if p.participantId === gp.participantId
+    yield (p.name, p.initials, p.country, p.aboutMe, p.funFact, p.role)
+  }
 }

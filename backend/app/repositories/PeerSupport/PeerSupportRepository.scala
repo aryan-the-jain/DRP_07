@@ -44,6 +44,9 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   ): Future[Seq[(String, String, String, String, String, Role)]] =
     db.run(groupQuerier.selectParticipants(groupId).result)
 
+  def participantInfo(groupId: Int, participantId: Int): Future[Seq[(String, String, String, String, String, Role)]] =
+    db.run(groupQuerier.selectParticipantInfo(groupId, participantId).result)
+
   def groupMessages(groupId: Int): Future[Seq[(Int, String, LocalDateTime)]] =
     db.run(groupMessageQuerier.selectMessagesFromParticipant(groupId).result)
 
