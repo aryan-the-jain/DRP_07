@@ -4,7 +4,7 @@ import models.*
 import models.JsonFormats.given
 import play.api.libs.json.*
 import play.api.mvc.*
-import repositories.PeerSupportRepository
+import repositories.PeerSupport.PeerSupportRepository
 
 import javax.inject.*
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,10 +32,10 @@ class PeerSupportController @Inject() (
     peerSupportRepository.participantsForGroup(groupId).returnOk()
 
   def messages(groupId: Int): Action[AnyContent] =
-    peerSupportRepository.groupMessagesForGroup(groupId).returnOk()
+    peerSupportRepository.groupMessages(groupId).returnOk()
 
-  def facilitatorMessages(groupId: Int): Action[AnyContent] =
-    peerSupportRepository.facilitatorMessagesForGroup(groupId).returnOk()
+  def facilitatorMessages(groupId: Int, participantId: Int): Action[AnyContent] =
+    peerSupportRepository.facilitatorMessages(groupId, participantId).returnOk()
 
   def shareReflection(reflectionId: Int): Action[AnyContent] =
     peerSupportRepository.shareReflection(reflectionId).returnOk()
@@ -57,15 +57,14 @@ class PeerSupportController @Inject() (
       }
   }
 
-  def createMessage(groupId: Int): Action[JsValue] = createNew(
-    peerSupportRepository.createMessage(groupId, _, MessageType.GROUP_WIDE),
-    (m: CreateMessage) => m.body.trim.nonEmpty
+  def sendGroupMessage(groupId: Int): Action[JsValue] = createNew(
+    peerSupportRepository.sendGroupMessage(groupId, _),
+    (m: CreateGroupMessage) => m.body.trim.nonEmpty
   )
 
-  def createFacilitatorMessage(groupId: Int): Action[JsValue] = createNew(
-    peerSupportRepository
-      .createMessage(groupId, _, MessageType.FACILITATOR_DIRECT),
-    (m: CreateMessage) => m.body.trim.nonEmpty
+  def sendFacilitatorMessage(groupId: Int): Action[JsValue] = createNew(
+    peerSupportRepository.sendFacilitatorMessage(groupId, _),
+    (m: CreateFacilitatorMessage) => m.body.trim.nonEmpty
   )
 
   def createReflection(groupId: Int): Action[JsValue] = createNew(

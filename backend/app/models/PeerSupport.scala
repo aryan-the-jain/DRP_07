@@ -45,16 +45,23 @@ case class GroupMessage(
 )
 
 case class FacilitatorMessage(
-    participantId: Int,
+    fromId: Int,
+    toId: Int,
     groupId: Int,
     body: String,
     createdAt: LocalDateTime
 )
 
-// TODO: What is this doing?
-case class CreateMessage(
+case class CreateFacilitatorMessage(
+    fromId: Int,
+    toId: Int,
     body: String,
-    senderName: Option[String]
+)
+
+// TODO: What is this doing?
+case class CreateGroupMessage(
+    participantId: Int,
+    body: String,
 )
 
 // TODO: Learn what's going on here.
