@@ -1,4 +1,5 @@
 import {
+  Doodle,
   GroupMessage,
   MeditationPlaylist,
   Participant,
@@ -169,6 +170,42 @@ export async function fetchMeditationPlaylists(
   }
 
   return (await response.json()) as MeditationPlaylist[];
+}
+
+export async function saveDoodle(
+  apiUrl: string,
+  imageData: string,
+  shareWithFacilitator: boolean,
+): Promise<Doodle> {
+  const response = await fetch(`${apiUrl}/groups/${groupId}/doodles`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      participantId,
+      imageData,
+      sharedWithFacilitator: shareWithFacilitator,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not keep your doodle.");
+  }
+
+  return response.json();
+}
+
+export async function fetchDoodles(apiUrl: string): Promise<Doodle[]> {
+  const response = await fetch(
+    `${apiUrl}/groups/${groupId}/participants/${participantId}/doodles`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Could not load your doodles.");
+  }
+
+  return (await response.json()) as Doodle[];
 }
 
 export async function fetchLatestReflection(

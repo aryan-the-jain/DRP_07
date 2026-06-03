@@ -20,3 +20,5 @@ POST    /groups/:groupId/reflections               controllers.PeerSupportContro
 GET     /groups/:groupId/participants/:participantId/reflection   controllers.PeerSupportController.latestReflection(groupId: Int, participantId: Int)
 GET     /groups/:groupId/support-links             controllers.PeerSupportController.supportLinks(groupId: Int)
 GET     /groups/:groupId/meditation-playlists      controllers.PeerSupportController.meditationPlaylists(groupId: Int)
+POST    /groups/:groupId/doodles                   controllers.PeerSupportController.saveDoodle(groupId: Int)
+GET     /groups/:groupId/participants/:participantId/doodles   controllers.PeerSupportController.doodles(groupId: Int, participantId: Int)

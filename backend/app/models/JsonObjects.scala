@@ -45,6 +45,13 @@ case class ReturnMeditationPlaylist(
     trackCount: Option[Int]
 )
 
+case class ReturnDoodle(
+    id: Int,
+    imageData: String,
+    sharedWithFacilitator: Boolean,
+    createdAt: LocalDateTime
+)
+
 case class ReturnReflectionResponse(
     id: Int,
     groupId: Int,

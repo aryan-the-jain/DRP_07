@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ReflectionShareSelection } from "../lib/types";
 import { LineIcon } from "./DesignPrimitives";
-import { CalmingCorner } from "./quiet/CalmingCorner";
+import { CalmingCorner, CalmingView } from "./quiet/CalmingCorner";
+import { DoodleShareHandle } from "./quiet/DoodlePanel";
 import {
   FreeWritingField,
   GuidedReflectionFields,
@@ -45,7 +46,11 @@ export function QuietReflectionRoom({
 }: QuietReflectionRoomProps) {
   const [activeReflectionTab, setActiveReflectionTab] =
     useState<ReflectionTab>("calming");
+  const [activeCalmingView, setActiveCalmingView] =
+    useState<CalmingView>("breathe");
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isSharingDoodle, setIsSharingDoodle] = useState(false);
+  const doodleShareRef = useRef<DoodleShareHandle | null>(null);
   const hasGuidedText = Boolean(privateNote.trim() || facilitatorNote.trim());
   const hasFreeWritingText = Boolean(freeWritingNote.trim());
   const hasReflectionText = hasGuidedText || hasFreeWritingText;
@@ -53,6 +58,12 @@ export function QuietReflectionRoom({
     (shareSelection.guidedAnswers && hasGuidedText) ||
     (shareSelection.freeWriting && hasFreeWritingText);
   const isReflectionBusy = isSharingReflection;
+  // The shared top-right Share button is shown on the writing tabs and on the
+  // Doodle view (where it shares the canvas), but hidden on the other calming
+  // views which have nothing to share.
+  const isDoodleActive =
+    activeReflectionTab === "calming" && activeCalmingView === "doodle";
+  const showShareButton = activeReflectionTab !== "calming" || isDoodleActive;
 
   useEffect(() => {
     if (!isShareDialogOpen || isReflectionBusy) {
@@ -71,6 +82,17 @@ export function QuietReflectionRoom({
   }, [isShareDialogOpen, isReflectionBusy]);
 
   async function handleShareFromDialog() {
+    if (isDoodleActive) {
+      setIsSharingDoodle(true);
+      try {
+        await doodleShareRef.current?.shareCurrent();
+      } finally {
+        setIsSharingDoodle(false);
+      }
+      setIsShareDialogOpen(false);
+      return;
+    }
+
     if (!hasSelectedReflectionText) {
       return;
     }
@@ -94,28 +116,36 @@ export function QuietReflectionRoom({
               Back to the group
             </button>
 
-            {activeReflectionTab !== "calming" && (
+            {showShareButton && (
               <div className="relative group w-fit">
                 <button
                   type="button"
                   onClick={() => setIsShareDialogOpen(true)}
                   disabled={
-                    isReflectionBusy || !hasReflectionText || isReflectionShared
+                    isReflectionBusy ||
+                    isSharingDoodle ||
+                    (!isDoodleActive &&
+                      (!hasReflectionText || isReflectionShared))
                   }
                   className="btn calm sm inline-flex items-center gap-2"
                 >
-                  {isReflectionShared && !isSharingReflection && (
-                    <LineIcon name="check" size={16} />
-                  )}
-                  {isSharingReflection
-                    ? "Sharing…"
-                    : isReflectionShared
-                      ? "Shared"
-                      : "Share with facilitator"}
+                  {!isDoodleActive &&
+                    isReflectionShared &&
+                    !isSharingReflection && <LineIcon name="check" size={16} />}
+                  {isDoodleActive
+                    ? isSharingDoodle
+                      ? "Sharing…"
+                      : "Share with facilitator"
+                    : isSharingReflection
+                      ? "Sharing…"
+                      : isReflectionShared
+                        ? "Shared"
+                        : "Share with facilitator"}
                 </button>
                 <span className="absolute top-full mt-2.5 right-0 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-out z-50 p-3 sk thin soft bg-card shadow-[0_8px_24px_rgba(58,52,45,0.12)] w-52 text-xs leading-normal text-muted text-left block">
-                  Choose which reflection notes to share privately with the
-                  facilitator.
+                  {isDoodleActive
+                    ? "Share this drawing privately with the facilitator."
+                    : "Choose which reflection notes to share privately with the facilitator."}
                 </span>
               </div>
             )}
@@ -158,7 +188,12 @@ export function QuietReflectionRoom({
 
               <div className="mx-auto w-full max-w-3xl space-y-5">
                 {activeReflectionTab === "calming" ? (
-                  <CalmingCorner apiUrl={apiUrl} />
+                  <CalmingCorner
+                    apiUrl={apiUrl}
+                    activeView={activeCalmingView}
+                    onActiveViewChange={setActiveCalmingView}
+                    doodleShareRef={doodleShareRef}
+                  />
                 ) : activeReflectionTab === "guided" ? (
                   <GuidedReflectionFields
                     privateNote={privateNote}
@@ -182,9 +217,10 @@ export function QuietReflectionRoom({
 
       {isShareDialogOpen && (
         <ShareReflectionDialog
+          mode={isDoodleActive ? "doodle" : "text"}
           selection={shareSelection}
-          canSend={hasSelectedReflectionText}
-          disabled={isReflectionBusy}
+          canSend={isDoodleActive ? true : hasSelectedReflectionText}
+          disabled={isDoodleActive ? isSharingDoodle : isReflectionBusy}
           onSelectionChange={onShareSelectionChange}
           onCancel={() => setIsShareDialogOpen(false)}
           onSend={handleShareFromDialog}

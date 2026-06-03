@@ -97,4 +97,23 @@ class PeerSupportController @Inject() (
     reflection.privateNote.exists(_.trim.nonEmpty) ||
       reflection.facilitatorNote.exists(_.trim.nonEmpty) ||
       reflection.freeWriting.exists(_.trim.nonEmpty)
+
+  def saveDoodle(groupId: Int): Action[JsValue] = createNew(
+    peerSupportRepository.saveDoodle(groupId, _),
+    (d: CreateDoodle) => isValidDoodle(d)
+  )
+
+  // Reject empty or oversized payloads gracefully. PNG data URLs are large, so we
+  // cap the stored size rather than accept an unbounded blob.
+  private val MaxDoodleDataLength = 3_000_000
+  private def isValidDoodle(doodle: CreateDoodle): Boolean =
+    doodle.participantId > 0 &&
+      doodle.imageData.startsWith("data:image/png;base64,") &&
+      doodle.imageData.length <= MaxDoodleDataLength
+
+  def doodles(groupId: Int, participantId: Int): Action[AnyContent] =
+    if (groupId <= 0 || participantId <= 0)
+      Action(BadRequest(Json.obj("error" -> "Invalid room or participant")))
+    else
+      peerSupportRepository.doodlesForParticipant(groupId, participantId).returnOk()
 }

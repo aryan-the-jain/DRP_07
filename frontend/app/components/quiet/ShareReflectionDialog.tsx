@@ -1,6 +1,7 @@
 import { ReflectionShareSelection } from "../../lib/types";
 
 export function ShareReflectionDialog({
+  mode,
   selection,
   canSend,
   disabled,
@@ -8,6 +9,7 @@ export function ShareReflectionDialog({
   onCancel,
   onSend,
 }: {
+  mode: "text" | "doodle";
   selection: ReflectionShareSelection;
   canSend: boolean;
   disabled: boolean;
@@ -15,6 +17,8 @@ export function ShareReflectionDialog({
   onCancel: () => void;
   onSend: () => void | Promise<void>;
 }) {
+  const isDoodle = mode === "doodle";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(58,52,45,0.22)] px-4">
       <div
@@ -28,33 +32,36 @@ export function ShareReflectionDialog({
             id="share-reflection-title"
             className="h-title text-2xl text-ink"
           >
-            Share with the facilitator
+            {isDoodle ? "Share this doodle" : "Share with the facilitator"}
           </h3>
           <p className="text-[15px] leading-relaxed text-muted">
-            Choose what you&apos;d like to share. Everything else stays private
-            to you.
+            {isDoodle
+              ? "Your facilitator will see this drawing. Nothing else is shared, and there's no rush."
+              : "Choose what you'd like to share. Everything else stays private to you."}
           </p>
         </div>
 
-        <div className="mt-5 space-y-3">
-          <ShareCheckbox
-            label="Guided answers"
-            checked={selection.guidedAnswers}
-            disabled={disabled}
-            onChange={(checked) =>
-              onSelectionChange({ ...selection, guidedAnswers: checked })
-            }
-          />
+        {!isDoodle && (
+          <div className="mt-5 space-y-3">
+            <ShareCheckbox
+              label="Guided answers"
+              checked={selection.guidedAnswers}
+              disabled={disabled}
+              onChange={(checked) =>
+                onSelectionChange({ ...selection, guidedAnswers: checked })
+              }
+            />
 
-          <ShareCheckbox
-            label="Free writing"
-            checked={selection.freeWriting}
-            disabled={disabled}
-            onChange={(checked) =>
-              onSelectionChange({ ...selection, freeWriting: checked })
-            }
-          />
-        </div>
+            <ShareCheckbox
+              label="Free writing"
+              checked={selection.freeWriting}
+              disabled={disabled}
+              onChange={(checked) =>
+                onSelectionChange({ ...selection, freeWriting: checked })
+              }
+            />
+          </div>
+        )}
 
         <div className="mt-6 flex justify-end gap-2">
           <button

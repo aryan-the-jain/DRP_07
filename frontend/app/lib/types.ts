@@ -41,6 +41,13 @@ export type MeditationPlaylist = {
   trackCount: number | null;
 };
 
+export type Doodle = {
+  id: number;
+  imageData: string;
+  sharedWithFacilitator: boolean;
+  createdAt: string;
+};
+
 export type ReflectionResponse = {
   id: number;
   groupId: number;

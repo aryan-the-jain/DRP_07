@@ -99,6 +99,23 @@ case class SupportLink(
     updatedAt: LocalDateTime
 )
 
+// A participant's private doodle (PNG stored as a base64 data URL).
+case class UserDoodle(
+    id: Int,
+    participantId: Int,
+    groupId: Int,
+    imageData: String,
+    sharedWithFacilitator: Boolean,
+    createdAt: LocalDateTime,
+    updatedAt: LocalDateTime
+)
+
+case class CreateDoodle(
+    participantId: Int,
+    imageData: String,
+    sharedWithFacilitator: Boolean
+)
+
 // Facilitator-curated meditation playlist. A null groupId means it is shown to all.
 case class MeditationPlaylist(
     id: Int,

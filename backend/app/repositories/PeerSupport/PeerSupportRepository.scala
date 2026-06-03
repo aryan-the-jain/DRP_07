@@ -30,6 +30,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   private val reflections = TableQuery[ReflectionsTable]
   private val supportLinks = TableQuery[SupportLinksTable]
   private val meditationPlaylists = TableQuery[MeditationPlaylistsTable]
+  private val userDoodles = TableQuery[UserDoodlesTable]
 
   private val groupQuerier =
     GroupQueries(supportGroups, groupParticipants, participants)
@@ -219,6 +220,49 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
     url.trim.matches(
       "^https://open\\.spotify\\.com/playlist/[A-Za-z0-9]+(\\?[^\\s]*)?$"
     )
+
+  /* Save a participant's doodle. Used both for "Keep this" (private) and for
+     sharing with the facilitator (sharedWithFacilitator = true) — sharing is just
+     a kept doodle with the flag set, mirroring how reflections model sharing. */
+  def saveDoodle(groupId: Int, request: CreateDoodle): Future[ReturnDoodle] = {
+    val now = LocalDateTime.now()
+    val doodle = UserDoodle(
+      id = 0,
+      participantId = request.participantId,
+      groupId = groupId,
+      imageData = request.imageData,
+      sharedWithFacilitator = request.sharedWithFacilitator,
+      createdAt = now,
+      updatedAt = now
+    )
+    val insert = (userDoodles returning userDoodles.map(_.id)) += doodle
+    db.run(insert).map(newId =>
+      ReturnDoodle(newId, doodle.imageData, doodle.sharedWithFacilitator, now)
+    )
+  }
+
+  /* The participant's kept doodles for this group, most recent first. Private to
+     the participant. */
+  def doodlesForParticipant(
+      groupId: Int,
+      participantId: Int
+  ): Future[Seq[ReturnDoodle]] =
+    db.run(
+      userDoodles
+        .filter(doodle =>
+          doodle.groupId === groupId
+            && doodle.participantId === participantId
+        )
+        .sortBy(_.createdAt.desc)
+        .result
+    ).map(_.map(doodle =>
+      ReturnDoodle(
+        doodle.id,
+        doodle.imageData,
+        doodle.sharedWithFacilitator,
+        doodle.createdAt
+      )
+    ))
 
   def sendGroupMessage(
       groupId: Int,

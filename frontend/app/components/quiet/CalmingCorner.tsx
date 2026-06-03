@@ -1,22 +1,37 @@
-import { useState } from "react";
+import { RefObject } from "react";
 
 import { BreathePanel } from "./BreathePanel";
+import { DoodlePanel, DoodleShareHandle } from "./DoodlePanel";
 import { MeditationPanel } from "./MeditationPanel";
 import { ResourcesPanel } from "./ResourcesPanel";
 import { SteadyMePanel } from "./SteadyMePanel";
 
-type CalmingView = "breathe" | "steady" | "meditation" | "resources";
+export type CalmingView =
+  | "breathe"
+  | "steady"
+  | "meditation"
+  | "doodle"
+  | "resources";
 
 const calmingViews: Array<{ id: CalmingView; label: string }> = [
   { id: "breathe", label: "Breathe" },
   { id: "steady", label: "Steady me" },
   { id: "meditation", label: "Meditation" },
+  { id: "doodle", label: "Doodle" },
   { id: "resources", label: "Resources" },
 ];
 
-export function CalmingCorner({ apiUrl }: { apiUrl: string }) {
-  const [activeView, setActiveView] = useState<CalmingView>("breathe");
-
+export function CalmingCorner({
+  apiUrl,
+  activeView,
+  onActiveViewChange,
+  doodleShareRef,
+}: {
+  apiUrl: string;
+  activeView: CalmingView;
+  onActiveViewChange: (view: CalmingView) => void;
+  doodleShareRef: RefObject<DoodleShareHandle | null>;
+}) {
   return (
     <div className="space-y-5">
       <div
@@ -33,7 +48,7 @@ export function CalmingCorner({ apiUrl }: { apiUrl: string }) {
               type="button"
               role="tab"
               aria-selected={isActive}
-              onClick={() => setActiveView(view.id)}
+              onClick={() => onActiveViewChange(view.id)}
               className={`btn sm ${isActive ? "calm" : "ghost"}`}
             >
               {view.label}
@@ -48,6 +63,8 @@ export function CalmingCorner({ apiUrl }: { apiUrl: string }) {
         <SteadyMePanel />
       ) : activeView === "meditation" ? (
         <MeditationPanel apiUrl={apiUrl} />
+      ) : activeView === "doodle" ? (
+        <DoodlePanel apiUrl={apiUrl} shareRef={doodleShareRef} />
       ) : (
         <ResourcesPanel apiUrl={apiUrl} />
       )}
