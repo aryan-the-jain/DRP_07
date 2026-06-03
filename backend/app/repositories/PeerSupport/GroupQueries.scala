@@ -1,7 +1,7 @@
 package repositories.PeerSupport
 
 import slick.jdbc.PostgresProfile.api.*
-import models.Role
+import models.*
 import Instances.given
 
 import java.time.{DayOfWeek, LocalTime}

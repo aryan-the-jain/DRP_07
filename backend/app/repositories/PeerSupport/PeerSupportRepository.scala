@@ -36,21 +36,21 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
     facilitatorMessages
   )
 
-  def findGroup(groupId: Int): Future[Option[(String, String, Int)]] =
-    db.run(groupQuerier.selectGroup(groupId).result.headOption)
+  def findGroup(groupId: Int): Future[ReturnSupportGroup] =
+    db.run(groupQuerier.selectGroup(groupId).result.head).map(ReturnSupportGroup.apply)
 
   def participantsForGroup(
       groupId: Int
-  ): Future[Seq[(String, String, String, String, String, Role)]] =
-    db.run(groupQuerier.selectParticipants(groupId).result)
+  ): Future[Seq[ReturnParticipant]] =
+    db.run(groupQuerier.selectParticipants(groupId).result).map(_.map(ReturnParticipant.apply))
 
   def participantInfo(
       participantId: Int
-  ): Future[Seq[(String, String, String, String, String, Role)]] =
-    db.run(groupQuerier.selectParticipantInfo(participantId).result)
+  ): Future[Seq[ReturnParticipant]] =
+    db.run(groupQuerier.selectParticipantInfo(participantId).result).map(_.map(ReturnParticipant.apply))
 
-  def groupMessages(groupId: Int): Future[Seq[(Int, String, LocalDateTime)]] =
-    db.run(groupMessageQuerier.selectMessagesFromParticipant(groupId).result)
+  def groupMessages(groupId: Int): Future[Seq[ReturnGroupMessage]] =
+    db.run(groupMessageQuerier.selectMessagesFromParticipant(groupId).result).map(_.map(ReturnGroupMessage.apply))
 
   def facilitatorMessages(
       groupId: Int,
@@ -104,7 +104,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   def sendGroupMessage(
       groupId: Int,
       message: CreateGroupMessage
-  ): Future[Seq[(Int, String, LocalDateTime)]] = {
+  ): Future[Seq[ReturnGroupMessage]] = {
     val query = groupMessageQuerier.insertNewMessage(
       GroupMessage(
         message.participantId,
@@ -114,7 +114,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
       )
     )
     db.run(query)
-    groupMessages(groupId)
+    groupMessages(groupId) // TODO: Get rid
   }
 
   def sendFacilitatorMessage(
