@@ -14,9 +14,10 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class SupportRequestController @Inject() (
     cc: ControllerComponents,
-    supportRequestRepository: SupportRequestRepository
-)(using ExecutionContext)
-    extends AbstractController(cc) {
+    supportRequestRepository: SupportRequestRepository,
+    executionContext: ExecutionContext
+) extends AbstractController(cc) {
+  private given ExecutionContext = executionContext
 
   def index: Action[AnyContent] = Action.async {
     supportRequestRepository.all().map { requests =>
