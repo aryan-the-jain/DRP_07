@@ -1,7 +1,11 @@
 INSERT INTO support_groups (group_id, name, day_of_week, time, duration)
 VALUES (1, 'Monday Group', 'MONDAY', CURRENT_TIMESTAMP - INTERVAL '3 minutes', 30);
 
-SELECT setval('support_groups_id_seq', 1, true);
+SELECT setval(
+  pg_get_serial_sequence('support_groups', 'group_id'),
+  1,
+  true
+);
 
 INSERT INTO participants (
     participant_id,
@@ -85,7 +89,11 @@ INSERT INTO participants (
         'facilitator'
     );
 
-SELECT setval('participants_id_seq', 8, true);
+SELECT setval(
+  pg_get_serial_sequence('participants', 'participant_id'),
+  8,
+  true
+);
 
 INSERT INTO group_participants (
     group_id,
