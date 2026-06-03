@@ -125,7 +125,7 @@ export async function shareReflection(apiUrl: string, reflectionId: number) {
 
     if (!response.ok) {
       throw new Error(
-        "We couldn't share this with the facilitator yet. Your text is still here.",
+        "We couldn't share this with the facilitator yet.  Your text is still here.",
       );
     }
   } catch (error) {
