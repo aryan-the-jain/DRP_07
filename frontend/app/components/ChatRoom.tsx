@@ -1,6 +1,12 @@
 import { FormEvent, RefObject } from "react";
 
-import { ActiveTab, GroupMessage, Participant, SupportGroup } from "../lib/types";
+import {
+  ActiveTab,
+  GroupMessage,
+  Participant,
+  ReflectionShareSelection,
+  SupportGroup,
+} from "../lib/types";
 import { ChatHeader } from "./ChatHeader";
 import { MessageComposer } from "./MessageComposer";
 import { MessageList } from "./MessageList";
@@ -20,6 +26,8 @@ type ChatRoomProps = {
   messageBody: string;
   privateNote: string;
   facilitatorNote: string;
+  freeWritingNote: string;
+  shareSelection: ReflectionShareSelection;
   isSharingReflection: boolean;
   isReflectionShared: boolean;
   quietSpaceError: string;
@@ -39,8 +47,10 @@ type ChatRoomProps = {
   onMessageBodyChange: (value: string) => void;
   onPrivateNoteChange: (value: string) => void;
   onFacilitatorNoteChange: (value: string) => void;
+  onFreeWritingNoteChange: (value: string) => void;
+  onShareSelectionChange: (selection: ReflectionShareSelection) => void;
   onExitQuietSpace: () => void;
-  onShareReflection: () => void;
+  onShareReflection: () => void | Promise<void>;
 };
 
 export function ChatRoom({
@@ -56,6 +66,8 @@ export function ChatRoom({
   messageBody,
   privateNote,
   facilitatorNote,
+  freeWritingNote,
+  shareSelection,
   isSharingReflection,
   isReflectionShared,
   quietSpaceError,
@@ -75,6 +87,8 @@ export function ChatRoom({
   onMessageBodyChange,
   onPrivateNoteChange,
   onFacilitatorNoteChange,
+  onFreeWritingNoteChange,
+  onShareSelectionChange,
   onExitQuietSpace,
   onShareReflection,
 }: ChatRoomProps) {
@@ -113,17 +127,21 @@ export function ChatRoom({
             />
 
             {activeTab === "quiet" ? (
-          <QuietReflectionRoom
-            privateNote={privateNote}
-            facilitatorNote={facilitatorNote}
-            isSharingReflection={isSharingReflection}
-            isReflectionShared={isReflectionShared}
-            quietSpaceError={quietSpaceError}
-            onPrivateNoteChange={onPrivateNoteChange}
-            onFacilitatorNoteChange={onFacilitatorNoteChange}
-            onExitQuietSpace={onExitQuietSpace}
-            onShareReflection={onShareReflection}
-          />
+              <QuietReflectionRoom
+                privateNote={privateNote}
+                facilitatorNote={facilitatorNote}
+                freeWritingNote={freeWritingNote}
+                shareSelection={shareSelection}
+                isSharingReflection={isSharingReflection}
+                isReflectionShared={isReflectionShared}
+                quietSpaceError={quietSpaceError}
+                onPrivateNoteChange={onPrivateNoteChange}
+                onFacilitatorNoteChange={onFacilitatorNoteChange}
+                onFreeWritingNoteChange={onFreeWritingNoteChange}
+                onShareSelectionChange={onShareSelectionChange}
+                onExitQuietSpace={onExitQuietSpace}
+                onShareReflection={onShareReflection}
+              />
             ) : (
               <div className="flex min-h-0 flex-1 flex-col bg-[#fffdf8]">
                 <MessageList

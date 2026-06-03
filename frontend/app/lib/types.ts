@@ -1,5 +1,10 @@
 export type ActiveTab = "group" | "facilitator" | "quiet";
 
+export type ReflectionShareSelection = {
+  guidedAnswers: boolean;
+  freeWriting: boolean;
+};
+
 export type SupportGroup = {
   id: number;
   name: string;
