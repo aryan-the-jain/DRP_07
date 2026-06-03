@@ -14,6 +14,6 @@ GET     /groups/:groupId/participants              controllers.PeerSupportContro
 GET     /groups/:groupId/messages                  controllers.PeerSupportController.messages(groupId: Int)
 POST    /groups/:groupId/messages                  controllers.PeerSupportController.sendGroupMessage(groupId: Int)
 POST    /groups/:groupId/facilitator-messages      controllers.PeerSupportController.sendFacilitatorMessage(groupId: Int)
-GET     /groups/:groupId/facilitator-messages      controllers.PeerSupportController.facilitatorMessages(groupId: Int)
+GET     /groups/:groupId/:participantId/facilitator-messages      controllers.PeerSupportController.facilitatorMessages(groupId: Int, participantId: Int)
 POST    /groups/:groupId/reflections               controllers.PeerSupportController.createReflection(groupId: Int)
 PATCH   /reflections/:reflectionId/share           controllers.PeerSupportController.shareReflection(reflectionId: Int)

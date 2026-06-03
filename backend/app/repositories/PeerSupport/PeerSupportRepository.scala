@@ -84,7 +84,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
     }
   }
 
-  def sendGroupMessage(groupId: Int, message: CreateGroupMessage): Future[Int] = {
+  def sendGroupMessage(groupId: Int, message: CreateGroupMessage): Future[Seq[(Int, String, LocalDateTime)]] = {
     val query = groupMessageQuerier.insertNewMessage(GroupMessage(
       message.participantId,
       groupId,
@@ -92,6 +92,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
       LocalDateTime.now()
     ))
     db.run(query)
+    groupMessages(groupId)
   }
 
   def sendFacilitatorMessage(groupId: Int, message: CreateFacilitatorMessage): Future[Int] = {

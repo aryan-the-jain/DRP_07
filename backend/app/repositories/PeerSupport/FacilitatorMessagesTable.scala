@@ -13,6 +13,6 @@ class FacilitatorMessagesTable(tag: Tag) extends Table[FacilitatorMessage](tag, 
   def body = column[String]("body")
   def createdAt = column[LocalDateTime]("created_at", O.PrimaryKey)
 
-  def * = (fromId, toId, body, createdAt).mapTo[FacilitatorMessage]
+  def * = (fromId, toId, groupId, body, createdAt).mapTo[FacilitatorMessage]
 }
 
