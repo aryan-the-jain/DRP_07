@@ -30,9 +30,13 @@ export type GroupMessage = {
 export type ReflectionResponse = {
   id: number;
   groupId: number;
+  participantId: number;
   privateNote: string | null;
   facilitatorNote: string | null;
-  sharedWithFacilitator: boolean;
+  freeWriting: string | null;
+  sharedGuided: boolean;
+  sharedGuidedAt: string | null;
+  sharedFreeWriting: boolean;
+  sharedFreeWritingAt: string | null;
   createdAt: string;
-  sharedAt: string | null;
 };

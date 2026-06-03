@@ -10,12 +10,9 @@ import {
   fetchGroupMessages,
   fetchLatestReflection,
   fetchParticipants,
-  groupId,
   saveReflection,
   sendMessage,
-  shareReflection,
 } from "./lib/api";
-import { initialsFor } from "./lib/format";
 import {
   ActiveTab,
   GroupMessage,
@@ -77,7 +74,14 @@ export default function Home() {
       if (reflection) {
         setPrivateNote(reflection.privateNote ?? "");
         setFacilitatorNote(reflection.facilitatorNote ?? "");
-        setIsReflectionShared(reflection.sharedWithFacilitator);
+        setFreeWritingNote(reflection.freeWriting ?? "");
+        setShareSelection({
+          guidedAnswers: reflection.sharedGuided,
+          freeWriting: reflection.sharedFreeWriting,
+        });
+        setIsReflectionShared(
+          reflection.sharedGuided || reflection.sharedFreeWriting,
+        );
       }
     } catch {
       // Gracefully ignore since it is just a draft load
@@ -213,14 +217,22 @@ export default function Home() {
   async function handleExitQuietSpace() {
     const trimmedPrivate = privateNote.trim();
     const trimmedFacilitator = facilitatorNote.trim();
+    const trimmedFreeWriting = freeWritingNote.trim();
+    const hasAnyText = Boolean(
+      trimmedPrivate || trimmedFacilitator || trimmedFreeWriting,
+    );
 
-    if (!isReflectionShared && (trimmedPrivate || trimmedFacilitator)) {
+    // Persist whatever they wrote as a private draft (not shared) so it is
+    // restored next time. Best-effort: don't block leaving on a failed save.
+    if (!isReflectionShared && hasAnyText) {
       try {
-        await saveReflection(
-          apiUrl,
-          trimmedPrivate,
-          trimmedFacilitator,
-        );
+        await saveReflection(apiUrl, {
+          privateNote: trimmedPrivate,
+          facilitatorNote: trimmedFacilitator,
+          freeWriting: trimmedFreeWriting,
+          shareGuided: false,
+          shareFreeWriting: false,
+        });
       } catch {
         // Quietly fail since this is a draft save
       }
@@ -278,20 +290,21 @@ export default function Home() {
     setQuietSpaceError("");
 
     try {
-      if (shareSelection.guidedAnswers && hasGuidedText) {
-        const reflectionData = await saveReflection(
-          apiUrl,
-          trimmedPrivate,
-          trimmedFacilitator,
-        );
-        const reflectionId = reflectionData.id;
-
-        await shareReflection(apiUrl, reflectionId);
-      }
+      // One write persists the text and marks the chosen sections as shared.
+      // Only treat it as shared once the backend has actually saved it.
+      await saveReflection(apiUrl, {
+        privateNote: trimmedPrivate,
+        facilitatorNote: trimmedFacilitator,
+        freeWriting: trimmedFreeWriting,
+        shareGuided: shareSelection.guidedAnswers && hasGuidedText,
+        shareFreeWriting: shareSelection.freeWriting && hasFreeWritingText,
+      });
 
       setIsReflectionShared(true);
     } catch {
-      setIsReflectionShared(true);
+      setQuietSpaceError(
+        "We couldn't share this with the facilitator. Your writing is safe here — please try again.",
+      );
     } finally {
       setIsSharingReflection(false);
     }

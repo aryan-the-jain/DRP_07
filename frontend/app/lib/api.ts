@@ -98,76 +98,59 @@ export async function sendMessage(
   }
 }
 
+export type ReflectionInput = {
+  privateNote: string;
+  facilitatorNote: string;
+  freeWriting: string;
+  shareGuided: boolean;
+  shareFreeWriting: boolean;
+};
+
+/* Upserts the current participant's reflection. The backend stores every
+   section and marks guided / free writing as shared independently, so this
+   resolves only when the write actually persisted. */
 export async function saveReflection(
   apiUrl: string,
-  privateNote: string,
-  facilitatorNote: string,
+  reflection: ReflectionInput,
 ): Promise<ReflectionResponse> {
-  try {
-    const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        privateNote: privateNote || null,
-        facilitatorNote: facilitatorNote || null,
-      }),
-    });
+  const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      participantId,
+      privateNote: reflection.privateNote || null,
+      facilitatorNote: reflection.facilitatorNote || null,
+      freeWriting: reflection.freeWriting || null,
+      shareGuided: reflection.shareGuided,
+      shareFreeWriting: reflection.shareFreeWriting,
+    }),
+  });
 
-    if (!response.ok) {
-      throw new Error(
-        "We couldn't save your reflection. Please check your connection and try again.",
-      );
-    }
-
-    return response.json();
-  } catch (error) {
-    if (error instanceof Error && error.message !== "Failed to fetch") {
-      throw error;
-    }
-
+  if (!response.ok) {
     throw new Error(
       "We couldn't save your reflection. Please check your connection and try again.",
     );
   }
-}
 
-export async function shareReflection(apiUrl: string, reflectionId: number) {
-  try {
-    const response = await fetch(`${apiUrl}/reflections/${reflectionId}/share`, {
-      method: "PATCH",
-      headers: {
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        "We couldn't share this with the facilitator yet.  Your text is still here.",
-      );
-    }
-  } catch (error) {
-    if (error instanceof Error && error.message !== "Failed to fetch") {
-      throw error;
-    }
-
-    throw new Error(
-      "We couldn't share this with the facilitator yet. Your text is still here.",
-    );
-  }
+  return response.json();
 }
 
 export async function fetchLatestReflection(
   apiUrl: string,
 ): Promise<ReflectionResponse | null> {
   try {
-    // const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`);
-    // if (response.ok) {
-    //   return response.json();
-    // }
-    return null;
+    const response = await fetch(
+      `${apiUrl}/groups/${groupId}/participants/${participantId}/reflection`,
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as ReflectionResponse | null;
   } catch {
     return null;
   }
