@@ -1,5 +1,6 @@
 import { RefObject } from "react";
 
+import { participantId } from "../lib/api";
 import { formatMessageTime, initialsFor } from "../lib/format";
 import { ActiveTab, GroupMessage, Participant } from "../lib/types";
 import { AvatarCircle } from "./DesignPrimitives";
@@ -52,11 +53,12 @@ export function MessageList({
               const participant = findParticipantById(message.id);
               const displayName = participant?.displayName ?? "Unknown";
               const isFacilitator = participant?.role === "facilitator";
+              const isOwn = message.id === participantId;
 
               return (
                 <article
                   key={`${message.id}-${message.createdAt}-${index}`}
-                  className="flex gap-3 sm:gap-4"
+                  className={`flex gap-3 sm:gap-4 ${isOwn ? "flex-row-reverse" : ""}`}
                 >
                   <button
                     type="button"
@@ -76,8 +78,12 @@ export function MessageList({
                     />
                   </button>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <div
+                    className={`flex min-w-0 flex-1 flex-col ${isOwn ? "items-end" : "items-start"}`}
+                  >
+                    <div
+                      className={`mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 ${isOwn ? "justify-end" : ""}`}
+                    >
                       <button
                         type="button"
                         className="text-sm font-semibold text-ink transition hover:text-warm-ink focus:outline-none focus:underline disabled:cursor-default disabled:hover:text-ink"
@@ -101,7 +107,7 @@ export function MessageList({
                     </div>
 
                     <div
-                      className={`bubble w-fit max-w-full text-[15px] leading-6 text-ink sm:text-base ${isFacilitator ? "calm" : ""}`}
+                      className={`bubble w-fit max-w-full text-[15px] leading-6 text-ink sm:text-base ${isFacilitator ? "calm" : ""} ${isOwn ? "mine" : ""}`}
                     >
                       {message.body}
                     </div>

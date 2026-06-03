@@ -288,6 +288,12 @@ body {
   border-color: var(--calm);
   background: var(--calm-soft);
 }
+/* the current participant's own messages, aligned to the right */
+.bubble.mine {
+  border-color: var(--warm);
+  background: var(--warm-soft);
+  border-radius: 18px 18px 6px 18px;
+}
 
 /* ---- gentle entrance ---- */
 @keyframes fadeIn {
