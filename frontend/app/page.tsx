@@ -168,13 +168,21 @@ export default function Home() {
       return;
     }
 
+    const endpoint = activeTab === "group" ? "messages" : "facilitator-messages";
+    const facilitatorId = participants.find(
+      (participant) => participant.role === "facilitator",
+    )?.id;
+
+    if (endpoint === "facilitator-messages" && facilitatorId === undefined) {
+      setErrorMessage("Your message could not be sent. Please try again.");
+      return;
+    }
+
     setIsSending(true);
     setErrorMessage("");
 
-    const endpoint = activeTab === "group" ? "messages" : "facilitator-messages";
-
     try {
-      await sendMessage(apiUrl, endpoint, trimmedMessage);
+      await sendMessage(apiUrl, endpoint, trimmedMessage, facilitatorId);
 
       setMessageBody("");
       if (activeTab === "group") {

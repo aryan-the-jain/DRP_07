@@ -60,17 +60,21 @@ export async function sendMessage(
   apiUrl: string,
   endpoint: "messages" | "facilitator-messages",
   body: string,
+  facilitatorId?: number,
 ) {
+  // The backend expects { participantId, body } for the group chat and
+  // { fromId, toId, body } for a private message to the facilitator.
+  const payload =
+    endpoint === "messages"
+      ? { participantId, body }
+      : { fromId: participantId, toId: facilitatorId, body };
+
   const response = await fetch(`${apiUrl}/groups/${groupId}/${endpoint}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      senderName: "You",
-      senderInitials: "Y",
-      body,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
