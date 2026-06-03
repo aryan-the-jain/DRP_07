@@ -46,13 +46,15 @@ export function MessageList({
                 : `No private messages yet. You can write to ${facilitatorName} here when you are ready.`}
             </div>
           ) : (
-            visibleMessages.map((message) => {
-              const senderId = (message as any).fromId ?? (message as any).participantId;
-              const participant = findParticipantById(senderId);
+            visibleMessages.map((message, index) => {
+              const participant = findParticipantById(message.senderId);
               const displayName = participant ? participant.displayName : "Unknown";
 
               return (
-                <article key={message.createdAt} className="flex gap-3 sm:gap-4">
+                <article
+                  key={`${message.senderId}-${message.createdAt}-${index}`}
+                  className="flex gap-3 sm:gap-4"
+                >
                   <button
                     type="button"
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-[#e6ddcf] focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-default disabled:hover:border-stone-300 disabled:hover:bg-[#eee6da]"

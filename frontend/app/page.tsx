@@ -10,12 +10,11 @@ import {
   fetchGroupMessages,
   fetchLatestReflection,
   fetchParticipants,
-  groupId,
   saveReflection,
-  sendMessage,
+  sendFacilitatorMessage,
+  sendGroupMessage,
   shareReflection,
 } from "./lib/api";
-import { initialsFor } from "./lib/format";
 import { ActiveTab, GroupMessage, Participant, SupportGroup } from "./lib/types";
 
 export default function Home() {
@@ -103,6 +102,18 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [messages]);
 
+  // Messages carry only a sender id, so index the roster by id to resolve names.
+  const participantsById = useMemo(
+    () => new Map(participants.map((participant) => [participant.id, participant])),
+    [participants],
+  );
+
+  // The facilitator's id is needed to send private messages.
+  const facilitatorId = useMemo(
+    () => participants.find((participant) => participant.role === "facilitator")?.id,
+    [participants],
+  );
+
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -147,12 +158,10 @@ export default function Home() {
     setSelectedParticipant(null);
   }
 
-  // FIXED: Shifted lookup logic from names to backend participant IDs
-  function findParticipantById(id: number) {
-    if (id === undefined || id === null) return undefined;
-    
-    return participants.find((p) => p.id === id);
-  }
+  const findParticipantById = useCallback(
+    (id: number) => participantsById.get(id),
+    [participantsById],
+  );
 
   async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -168,13 +177,20 @@ export default function Home() {
       return;
     }
 
+    if (activeTab === "facilitator" && facilitatorId === undefined) {
+      setErrorMessage("Your message could not be sent. Please try again.");
+      return;
+    }
+
     setIsSending(true);
     setErrorMessage("");
 
-    const endpoint = activeTab === "group" ? "messages" : "facilitator-messages";
-
     try {
-      await sendMessage(apiUrl, endpoint, trimmedMessage);
+      if (activeTab === "group") {
+        await sendGroupMessage(apiUrl, trimmedMessage);
+      } else {
+        await sendFacilitatorMessage(apiUrl, facilitatorId!, trimmedMessage);
+      }
 
       setMessageBody("");
       if (activeTab === "group") {
