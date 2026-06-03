@@ -25,11 +25,13 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   private val supportGroups = TableQuery[SupportGroupsTable]
   private val participants = TableQuery[ParticipantsTable]
   private val groupParticipants = TableQuery[GroupParticipantsTable]
+  private val facilitatorMessages = TableQuery[FacilitatorMessagesTable]
   private val groupMessages = TableQuery[GroupMessagesTable]
   private val reflections = TableQuery[ReflectionsTable]
 
   private val groupQuerier = GroupQueries(supportGroups, groupParticipants, participants)
   private val groupMessageQuerier = GroupMessageQueries(groupMessages)
+  private val facilitatorMessagesQuerier = FacilitatorMessageQueries(facilitatorMessages)
 
   def findGroup(groupId: Int): Future[Option[(String, String, Int)]] =
     db.run(groupQuerier.selectGroup(groupId).result.headOption)
@@ -40,17 +42,11 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   def groupMessagesForGroup(groupId: Int): Future[Seq[(Int, String, LocalDateTime)]] =
     db.run(groupMessageQuerier.selectMessagesFromParticipant(groupId).result)
 
-  def facilitatorMessagesForGroup(groupId: Int): Future[Seq[GroupMessage]] = {
-    db.run(
-      groupMessages
-        .filter(message =>
-          message.groupId === groupId && message.messageType === LiteralColumn(
-            MessageType.FACILITATOR_DIRECT: MessageType
-          )
-        )
-        .sortBy(message => (message.createdAt.asc, message.id.asc))
-        .result
-    )
+  def facilitatorMessages(groupId: Int, participantId: Int): Future[Seq[(Int, String, LocalDateTime)]] = {
+    val query = groupQuerier.selectFacilitator(groupId).result.head.flatMap { facilitatorId =>
+      facilitatorMessagesQuerier.selectPrivateMessages(groupId, participantId, facilitatorId).result
+    }
+    db.run(query)
   }
 
   def createReflection(

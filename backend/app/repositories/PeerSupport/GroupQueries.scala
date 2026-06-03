@@ -24,6 +24,14 @@ class GroupQueries(
     yield (g.name, p.name, g.duration)
   }
 
+  /* Selects the participant ID of the group facilitator. */
+  def selectFacilitator(groupId: Int): Query[(Rep[Int]), Int, Seq] = {
+    for
+      gp <- groupParticipants if gp.groupId === groupId
+      p <- participants if p.role === Role.FACILITATOR
+    yield p.participantId
+  }
+
   /* Returns all of the participants in a group and their (visible) information. */
   def selectParticipants(groupId: Int): Query[
     (Rep[String], Rep[String], Rep[String], Rep[String], Rep[String], Rep[Role]),
