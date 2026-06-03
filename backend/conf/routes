@@ -12,6 +12,8 @@ POST    /support-requests          controllers.SupportRequestController.create
 GET     /groups/:groupId                           controllers.PeerSupportController.group(groupId: Int)
 GET     /groups/:groupId/participants              controllers.PeerSupportController.participants(groupId: Int)
 GET     /participants/:participantId               controllers.PeerSupportController.participantInfo(participantId: Int)
+GET     /participants/:participantId/onboarding    controllers.PeerSupportController.onboarding(participantId: Int)
+PATCH   /participants/:participantId/onboarding    controllers.PeerSupportController.saveOnboarding(participantId: Int)
 GET     /groups/:groupId/messages                  controllers.PeerSupportController.messages(groupId: Int)
 POST    /groups/:groupId/messages                  controllers.PeerSupportController.sendGroupMessage(groupId: Int)
 POST    /groups/:groupId/facilitator-messages      controllers.PeerSupportController.sendFacilitatorMessage(groupId: Int)

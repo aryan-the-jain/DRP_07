@@ -73,7 +73,7 @@ export function ChatHeader({
         </div>
       </div>
 
-      {activeTab !== "quiet" && (
+      {activeTab !== ActiveTab.Quiet && (
         <div className="flex flex-col gap-2 border-t border-stone-200 px-4 py-3 text-sm text-stone-700 sm:flex-row sm:items-center sm:px-5">
           <span>
             <strong className="font-semibold text-stone-950">
@@ -84,11 +84,15 @@ export function ChatHeader({
           <button
             type="button"
             onClick={() =>
-              onSetActiveTab(activeTab === "group" ? "facilitator" : "group")
+              onSetActiveTab(
+                activeTab === ActiveTab.Group
+                  ? ActiveTab.Facilitator
+                  : ActiveTab.Group,
+              )
             }
             className="w-fit rounded-full border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
           >
-            {activeTab === "group"
+            {activeTab === ActiveTab.Group
               ? "Directly message facilitator here"
               : "Go back to group discussion"}
           </button>

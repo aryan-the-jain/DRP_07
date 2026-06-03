@@ -1,4 +1,8 @@
-export type ActiveTab = "group" | "facilitator" | "quiet";
+export enum ActiveTab {
+  Group = "group",
+  Facilitator = "facilitator",
+  Quiet = "quiet",
+}
 
 export type SupportGroup = {
   name: string;
@@ -31,3 +35,23 @@ export type ReflectionResponse = {
   createdAt: string;
   sharedAt: string | null;
 };
+
+export enum OnboardingStatus {
+  Draft = "draft",
+  Complete = "complete",
+}
+
+export type OnboardingPayload = {
+  callName: string;
+  pronouns: string | null;
+  age: number | null;
+  funFact: string;
+  hobbies: string | null;
+  culturalBackground: string | null;
+  griefRecency: string | null;
+  whoLost: string | null;
+  status: OnboardingStatus;
+};
+
+// Mirrors the backend `ReturnOnboarding`. `hobbies` is a JSON-encoded string[].
+export type OnboardingResponse = { participantId: number } & OnboardingPayload;

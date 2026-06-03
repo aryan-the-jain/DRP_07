@@ -5,7 +5,7 @@ import { ActiveTab, GroupMessage, Participant } from "../lib/types";
 import { FacilitatorMessageModal } from "./FacilitatorMessageModal";
 
 type MessageListProps = {
-  activeTab: Exclude<ActiveTab, "quiet">;
+  activeTab: Exclude<ActiveTab, ActiveTab.Quiet>;
   facilitatorName: string;
   messages: GroupMessage[];
   facilitatorMessages: GroupMessage[];

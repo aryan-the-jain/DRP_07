@@ -1,4 +1,11 @@
-import { GroupMessage, Participant, ReflectionResponse, SupportGroup } from "./types";
+import {
+  GroupMessage,
+  OnboardingPayload,
+  OnboardingResponse,
+  Participant,
+  ReflectionResponse,
+  SupportGroup,
+} from "./types";
 
 export const groupId = 1;
 export const participantId = 1;
@@ -132,6 +139,46 @@ export async function saveReflection(
       "We couldn't save your reflection. Please check your connection and try again.",
     );
   }
+}
+
+export async function fetchOnboarding(
+  apiUrl: string,
+): Promise<OnboardingResponse | null> {
+  const response = await fetch(
+    `${apiUrl}/participants/${participantId}/onboarding`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Could not load your saved answers.");
+  }
+
+  // Backend returns the saved object or JSON null (no prior survey answers).
+  return response.json();
+}
+
+export async function saveOnboarding(
+  apiUrl: string,
+  payload: OnboardingPayload,
+): Promise<OnboardingResponse> {
+  const response = await fetch(
+    `${apiUrl}/participants/${participantId}/onboarding`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "We couldn't save your answers just now. Please check your connection and try again.",
+    );
+  }
+
+  return response.json();
 }
 
 export async function shareReflection(apiUrl: string, reflectionId: number) {

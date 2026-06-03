@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { fallbackApiUrl, fetchOnboarding, saveOnboarding } from "../lib/api";
+import {
+  OnboardingPayload,
+  OnboardingResponse,
+  OnboardingStatus,
+} from "../lib/types";
 import { Icon, IconName } from "./Icon";
 import { QuietSpaceCard, Screen } from "./MomentScreen";
 import { ONBOARDING_SECTIONS, ShardBar } from "./ShardBar";
@@ -121,6 +127,99 @@ const EMPTY_ANSWERS: Answers = {
   whoLost: "",
 };
 
+// ---- mapping between the survey's `Answers` and the backend payload ----
+// "Other" reveals a typed value and "I'd rather not say" is a skip, so both are
+// flattened away here: the backend only ever stores the final, plain value.
+
+const knownTexts = (choices: Choice[]): string[] =>
+  choices.filter((c) => !c.skip && c.text !== OTHER).map((c) => c.text);
+
+// A single-choice answer (which may use "Other") → the value to store, or null.
+function flattenChoice(value: string, other: string): string | null {
+  if (!value || value === NOT_SAY) return null;
+  if (value === OTHER) {
+    const trimmed = other.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  return value;
+}
+
+// A single-choice answer with only a skip option → the value to store, or null.
+function flattenSkip(value: string): string | null {
+  return !value || value === NOT_SAY ? null : value;
+}
+
+// A stored value → the matching chip, or "Other" + the typed value.
+function expandChoice(
+  stored: string | null,
+  choices: Choice[],
+): { value: string; other: string } {
+  if (!stored) return { value: "", other: "" };
+  if (knownTexts(choices).includes(stored)) return { value: stored, other: "" };
+  return { value: OTHER, other: stored };
+}
+
+function answersToPayload(
+  answers: Answers,
+  status: OnboardingStatus,
+): OnboardingPayload {
+  const hobbies = [
+    ...answers.hobbies.filter((h) => h !== OTHER && h !== NOT_SAY),
+    ...answers.hobbiesOther.map((h) => h.trim()).filter((h) => h.length > 0),
+  ];
+  const age = parseInt(answers.age.trim(), 10);
+
+  return {
+    callName: answers.callName.trim(),
+    pronouns: flattenChoice(answers.pronouns, answers.pronounsOther),
+    age: Number.isNaN(age) ? null : age,
+    funFact: answers.funFact.trim(),
+    hobbies: hobbies.length > 0 ? JSON.stringify(hobbies) : null,
+    culturalBackground: flattenChoice(answers.cultural, answers.culturalOther),
+    griefRecency: flattenSkip(answers.recency),
+    whoLost: flattenSkip(answers.whoLost),
+    status,
+  };
+}
+
+function responseToAnswers(resp: OnboardingResponse): Answers {
+  const pronouns = expandChoice(resp.pronouns, PRONOUNS);
+  const cultural = expandChoice(resp.culturalBackground, CULTURAL);
+
+  // `hobbies` is a JSON-encoded string[]; parse it defensively.
+  let storedHobbies: string[] = [];
+  if (resp.hobbies) {
+    try {
+      const parsed = JSON.parse(resp.hobbies);
+      if (Array.isArray(parsed)) {
+        storedHobbies = parsed.filter(
+          (h): h is string => typeof h === "string",
+        );
+      }
+    } catch {
+      storedHobbies = [];
+    }
+  }
+  const known = knownTexts(HOBBIES);
+  const hobbies = storedHobbies.filter((h) => known.includes(h));
+  const hobbiesOther = storedHobbies.filter((h) => !known.includes(h));
+  if (hobbiesOther.length > 0) hobbies.push(OTHER);
+
+  return {
+    callName: resp.callName ?? "",
+    pronouns: pronouns.value,
+    pronounsOther: pronouns.other,
+    age: resp.age != null ? String(resp.age) : "",
+    funFact: resp.funFact ?? "",
+    hobbies,
+    hobbiesOther,
+    cultural: cultural.value,
+    culturalOther: cultural.other,
+    recency: resp.griefRecency ?? "",
+    whoLost: resp.whoLost ?? "",
+  };
+}
+
 export function OnboardingSurvey() {
   const [section, setSection] = useState(0);
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS);
@@ -132,6 +231,49 @@ export function OnboardingSurvey() {
   const [pausePromptSeen, setPausePromptSeen] = useState(false);
   const [pendingSection, setPendingSection] = useState<number | null>(null);
   const pausePromptOpen = pendingSection !== null;
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? fallbackApiUrl;
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Pre-fill from any saved answers so "pick up where I left off" survives a refresh.
+  useEffect(() => {
+    let active = true;
+    fetchOnboarding(apiUrl)
+      .then((saved) => {
+        if (active && saved) setAnswers(responseToAnswers(saved));
+      })
+      .catch(() => {
+        // Saved answers couldn't be reached — start the survey fresh.
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [apiUrl]);
+
+  // Persist the current answers (draft on "save later"/early exit, complete on
+  // finish). Returns whether the save succeeded so callers can advance the UI.
+  const persist = async (status: OnboardingStatus): Promise<boolean> => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await saveOnboarding(apiUrl, answersToPayload(answers, status));
+      return true;
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't save your answers just now.",
+      );
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const setText = (key: TextKey, value: string) =>
     setAnswers((prev) => ({ ...prev, [key]: value }));
@@ -175,26 +317,26 @@ export function OnboardingSurvey() {
   };
 
   const goBack = () => setSection((s) => Math.max(0, s - 1));
-  const goNext = () => {
+  const goNext = async () => {
     if (section < LAST_SECTION) {
       if (leaveFirstSection(section + 1)) return;
       setSection((s) => s + 1);
       return;
     }
-    // Finish — frontend-only stub (no network call yet).
-    setFinished(true);
+    // Finish — persist the whole survey as a completed submission.
+    if (await persist(OnboardingStatus.Complete)) setFinished(true);
   };
 
-  const onSaveAndFinishLater = () => {
-    // Frontend-only: persistence arrives with the backend iteration. For now we
-    // just show the reassuring "your place is held" screen.
-    setSavedForLater(true);
+  const onSaveAndFinishLater = async () => {
+    // Persist whatever has been entered so far as a draft, then reassure.
+    if (await persist(OnboardingStatus.Draft)) setSavedForLater(true);
   };
 
   // Pause prompt actions.
-  const onPauseEnter = () => {
+  const onPauseEnter = async () => {
+    // Leaving early after the (only required) first section — keep it as a draft.
     setPendingSection(null);
-    setFinished(true);
+    if (await persist(OnboardingStatus.Draft)) setFinished(true);
   };
   const onPauseContinue = () => {
     if (pendingSection !== null) setSection(pendingSection);
@@ -219,6 +361,14 @@ export function OnboardingSurvey() {
     if (leaveFirstSection(index)) return;
     setSection(index);
   };
+
+  // Hold a calm blank page while saved answers load, to avoid a flash of the
+  // empty form before it pre-fills.
+  if (loading) {
+    return (
+      <div style={{ position: "fixed", inset: 0, background: "var(--paper)" }} />
+    );
+  }
 
   // Finished the survey → the "tender moments" first screen (StateFinding).
   if (finished) {
@@ -259,6 +409,7 @@ export function OnboardingSurvey() {
             type="button"
             className="save-pill"
             onClick={onSaveAndFinishLater}
+            disabled={saving}
           >
             <Icon name={IconName.Bookmark} size={16} c="var(--calm)" /> Save &amp;
             come back later
@@ -312,6 +463,22 @@ export function OnboardingSurvey() {
         </div>
       </div>
 
+      {saveError && (
+        <div style={{ flex: "0 0 auto", padding: "0 40px 6px" }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 14,
+              lineHeight: 1.4,
+              textAlign: "center",
+              color: "#9c5b54",
+            }}
+          >
+            {saveError}
+          </p>
+        </div>
+      )}
+
       {/* sticky bottom: back / next */}
       <div
         style={{
@@ -336,7 +503,12 @@ export function OnboardingSurvey() {
         ) : (
           <span style={{ width: 90 }} />
         )}
-        <button type="button" className="btn warm" onClick={goNext}>
+        <button
+          type="button"
+          className="btn warm"
+          onClick={goNext}
+          disabled={saving}
+        >
           {isLast ? (
             <>
               Finish setting up <Icon name={IconName.Check} size={16} c="#fff" />

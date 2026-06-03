@@ -74,3 +74,15 @@ case class CreateReflection(
     privateNote: Option[String],
     facilitatorNote: Option[String]
 )
+
+case class UpdateOnboarding(
+    callName: String,
+    pronouns: Option[String],
+    age: Option[Int],
+    funFact: String,
+    hobbies: Option[String],
+    culturalBackground: Option[String],
+    griefRecency: Option[String],
+    whoLost: Option[String],
+    status: String
+)

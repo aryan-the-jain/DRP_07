@@ -30,7 +30,7 @@ export default function Home() {
   const [facilitatorMessages, setFacilitatorMessages] = useState<
     GroupMessage[]
   >([]);
-  const [activeTab, setActiveTab] = useState<ActiveTab>("group");
+  const [activeTab, setActiveTab] = useState<ActiveTab>(ActiveTab.Group);
   const [privateNote, setPrivateNote] = useState("");
   const [facilitatorNote, setFacilitatorNote] = useState("");
   const [isSharingReflection, setIsSharingReflection] = useState(false);
@@ -168,7 +168,8 @@ export default function Home() {
       return;
     }
 
-    const endpoint = activeTab === "group" ? "messages" : "facilitator-messages";
+    const endpoint =
+      activeTab === ActiveTab.Group ? "messages" : "facilitator-messages";
     const facilitatorId = participants.find(
       (participant) => participant.role === "facilitator",
     )?.id;
@@ -185,7 +186,7 @@ export default function Home() {
       await sendMessage(apiUrl, endpoint, trimmedMessage, facilitatorId);
 
       setMessageBody("");
-      if (activeTab === "group") {
+      if (activeTab === ActiveTab.Group) {
         await loadMessages();
       } else {
         await loadFacilitatorMessages();
@@ -214,7 +215,7 @@ export default function Home() {
     }
 
     setQuietSpaceError("");
-    setActiveTab("group");
+    setActiveTab(ActiveTab.Group);
   }
 
   function handlePrivateNoteChange(value: string) {

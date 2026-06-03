@@ -112,7 +112,7 @@ export function ChatRoom({
               onExit={onExit}
             />
 
-            {activeTab === "quiet" ? (
+            {activeTab === ActiveTab.Quiet ? (
           <QuietReflectionRoom
             privateNote={privateNote}
             facilitatorNote={facilitatorNote}
@@ -149,7 +149,7 @@ export function ChatRoom({
                   <div className="relative group w-fit">
                     <button
                       type="button"
-                      onClick={() => onSetActiveTab("quiet")}
+                      onClick={() => onSetActiveTab(ActiveTab.Quiet)}
                       className="rounded-2xl border border-stone-300 bg-[#faf7f1] px-5 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-[#f5efe6] cursor-pointer"
                     >
                       Step into a quiet space to reflect
