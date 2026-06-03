@@ -40,11 +40,15 @@ object JsonFormats {
   given reflectionWrites: Writes[Reflection] =
     Json.writes[Reflection]
 
-  given returnSupportGroupWrites: Writes[ReturnSupportGroup] = Json.writes[ReturnSupportGroup]
+  given returnSupportGroupWrites: Writes[ReturnSupportGroup] =
+    Json.writes[ReturnSupportGroup]
 
-  given returnParticipantWrites: Writes[ReturnParticipant] = Json.writes[ReturnParticipant]
+  given returnParticipantWrites: Writes[ReturnParticipant] =
+    Json.writes[ReturnParticipant]
 
-  given returnGroupMessageWrites: Writes[ReturnGroupMessage] = Json.writes[ReturnGroupMessage]
+  given returnGroupMessageWrites: Writes[ReturnGroupMessage] =
+    Json.writes[ReturnGroupMessage]
 
-  given returnReflectionResponse: Writes[ReturnReflectionResponse] = Json.writes[ReturnReflectionResponse]
+  given returnReflectionResponse: Writes[ReturnReflectionResponse] =
+    Json.writes[ReturnReflectionResponse]
 }

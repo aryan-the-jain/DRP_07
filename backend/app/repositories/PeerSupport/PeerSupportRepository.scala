@@ -37,20 +37,24 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   )
 
   def findGroup(groupId: Int): Future[ReturnSupportGroup] =
-    db.run(groupQuerier.selectGroup(groupId).result.head).map(ReturnSupportGroup.apply)
+    db.run(groupQuerier.selectGroup(groupId).result.head)
+      .map(ReturnSupportGroup.apply)
 
   def participantsForGroup(
       groupId: Int
   ): Future[Seq[ReturnParticipant]] =
-    db.run(groupQuerier.selectParticipants(groupId).result).map(_.map(ReturnParticipant.apply))
+    db.run(groupQuerier.selectParticipants(groupId).result)
+      .map(_.map(ReturnParticipant.apply))
 
   def participantInfo(
       participantId: Int
   ): Future[Seq[ReturnParticipant]] =
-    db.run(groupQuerier.selectParticipantInfo(participantId).result).map(_.map(ReturnParticipant.apply))
+    db.run(groupQuerier.selectParticipantInfo(participantId).result)
+      .map(_.map(ReturnParticipant.apply))
 
   def groupMessages(groupId: Int): Future[Seq[ReturnGroupMessage]] =
-    db.run(groupMessageQuerier.selectMessagesFromParticipant(groupId).result).map(_.map(ReturnGroupMessage.apply))
+    db.run(groupMessageQuerier.selectMessagesFromParticipant(groupId).result)
+      .map(_.map(ReturnGroupMessage.apply))
 
   def facilitatorMessages(
       groupId: Int,
