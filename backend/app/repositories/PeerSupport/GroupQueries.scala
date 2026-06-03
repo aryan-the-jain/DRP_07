@@ -74,7 +74,14 @@ class GroupQueries(
 
   /* Returns the information about a participant given the groupId and participantId. */
   def selectParticipantInfo(groupId: Int, participantId: Int): Query[
-    (Rep[String], Rep[String], Rep[String], Rep[String], Rep[String], Rep[Role]),
+    (
+        Rep[String],
+        Rep[String],
+        Rep[String],
+        Rep[String],
+        Rep[String],
+        Rep[Role]
+    ),
     (String, String, String, String, String, Role),
     Seq
   ] = {
