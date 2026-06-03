@@ -11,6 +11,7 @@ import {
   OptChips,
   OptList,
   Qn,
+  SaveBar,
   SectionHead,
   TagField,
   TextField,
@@ -101,14 +102,21 @@ type Answers = {
   whoLost: string;
 };
 
-type TextKey =
-  | "callName"
-  | "genderOther"
-  | "pronounsOther"
-  | "age"
-  | "funFact"
-  | "culturalOther";
-type SingleKey = "gender" | "pronouns" | "cultural" | "recency" | "whoLost";
+enum TextKey {
+  CallName = "callName",
+  GenderOther = "genderOther",
+  PronounsOther = "pronounsOther",
+  Age = "age",
+  FunFact = "funFact",
+  CulturalOther = "culturalOther",
+}
+enum SingleKey {
+  Gender = "gender",
+  Pronouns = "pronouns",
+  Cultural = "cultural",
+  Recency = "recency",
+  WhoLost = "whoLost",
+}
 
 const EMPTY_ANSWERS: Answers = {
   callName: "",
@@ -131,6 +139,11 @@ export function OnboardingSurvey() {
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS);
   const [finished, setFinished] = useState(false);
   const [savedForLater, setSavedForLater] = useState(false);
+  // The "that's everything we need" pause point — shown once, the first time the
+  // user leaves the (only required) first section.
+  const [pausePromptSeen, setPausePromptSeen] = useState(false);
+  const [pendingSection, setPendingSection] = useState<number | null>(null);
+  const pausePromptOpen = pendingSection !== null;
 
   const setText = (key: TextKey, value: string) =>
     setAnswers((prev) => ({ ...prev, [key]: value }));
@@ -162,9 +175,21 @@ export function OnboardingSurvey() {
       return { ...prev, [key]: [...withoutSkip, value] };
     });
 
+  // Leaving the first section the first time → hold navigation and show the
+  // pause prompt; `target` is where the user was heading.
+  const leaveFirstSection = (target: number) => {
+    if (section === 0 && target !== 0 && !pausePromptSeen) {
+      setPausePromptSeen(true);
+      setPendingSection(target);
+      return true;
+    }
+    return false;
+  };
+
   const goBack = () => setSection((s) => Math.max(0, s - 1));
   const goNext = () => {
     if (section < LAST_SECTION) {
+      if (leaveFirstSection(section + 1)) return;
       setSection((s) => s + 1);
       return;
     }
@@ -176,6 +201,16 @@ export function OnboardingSurvey() {
     // Frontend-only: persistence arrives with the backend iteration. For now we
     // just show the reassuring "your place is held" screen.
     setSavedForLater(true);
+  };
+
+  // Pause prompt actions.
+  const onPauseEnter = () => {
+    setPendingSection(null);
+    setFinished(true);
+  };
+  const onPauseContinue = () => {
+    if (pendingSection !== null) setSection(pendingSection);
+    setPendingSection(null);
   };
 
   const isLast = section === LAST_SECTION;
@@ -194,6 +229,7 @@ export function OnboardingSurvey() {
 
   const goToSection = (index: number) => {
     setFinished(false);
+    if (leaveFirstSection(index)) return;
     setSection(index);
   };
 
@@ -217,35 +253,18 @@ export function OnboardingSurvey() {
         background: "var(--paper)",
       }}
     >
-      {/* sticky top: title + shard progress bar */}
-      <div style={{ flex: "0 0 auto"/*, borderBottom: "2px solid var(--line)" */}}>
+      {/* sticky top: title + shard progress bar + save/reassurance bar */}
+      <div style={{ flex: "0 0 auto", borderBottom: "2px solid var(--line)" }}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             padding: "18px 30px",
-            borderBottom: "2px solid var(--line)",
           }}
         >
           <span className="h-title" style={{ fontSize: 22, color: "var(--ink)" }}>
             Setting up your space
           </span>
-          <div style={{ flex: 1 }} />
-          <button
-            type="button"
-            onClick={onSaveAndFinishLater}
-            style={{
-              fontFamily: "var(--hand)",
-              fontSize: 14.5,
-              color: "var(--calm)",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              textUnderlineOffset: 3,
-            }}
-          >
-            save &amp; finish later
-          </button>
         </div>
 
         <div style={{ padding: "22px 40px 6px" }}>
@@ -254,6 +273,10 @@ export function OnboardingSurvey() {
             completed={completed}
             onSelect={goToSection}
           />
+        </div>
+
+        <div style={{ padding: "10px 40px 16px" }}>
+          <SaveBar onSave={onSaveAndFinishLater} />
         </div>
       </div>
 
@@ -325,6 +348,92 @@ export function OnboardingSurvey() {
           )}
         </button>
       </div>
+
+      {pausePromptOpen && (
+        <PausePopup onEnter={onPauseEnter} onContinue={onPauseContinue} />
+      )}
+    </div>
+  );
+}
+
+// The "that's everything we need" pause point, shown as a gentle overlay after
+// the first (only required) section. Ported from the design's PausePoint.
+function PausePopup({
+  onEnter,
+  onContinue,
+}: {
+  onEnter: () => void;
+  onContinue: () => void;
+}) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(58, 52, 45, 0.34)",
+        padding: 24,
+      }}
+    >
+      <div className="pause-card" style={{ maxWidth: 560 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 12,
+          }}
+        >
+          <Icon name={IconName.Mug} size={28} c="var(--calm)" />
+          <span className="h-title" style={{ fontSize: 27, color: "#3c5a4c" }}>
+            That’s everything we need.
+          </span>
+        </div>
+        <p
+          style={{
+            fontSize: 17,
+            lineHeight: 1.5,
+            color: "var(--ink)",
+            margin: "0 0 8px",
+          }}
+        >
+          You can stop right here — your space is ready, and you can step into it
+          now.
+        </p>
+        <p
+          style={{
+            fontSize: 16,
+            lineHeight: 1.5,
+            color: "var(--muted)",
+            margin: "0 0 22px",
+          }}
+        >
+          There’s a little more that helps us find the right group for you, but
+          it’s entirely optional and there’s no rush at all. Come back to it
+          whenever you feel ready.
+        </p>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="btn warm"
+            style={{ fontSize: 16 }}
+            onClick={onEnter}
+          >
+            Take me in — I’ll finish later
+          </button>
+          <button
+            type="button"
+            className="btn ghost"
+            style={{ fontSize: 15.5, borderColor: "var(--calm)", color: "#3c5a4c" }}
+            onClick={onContinue}
+          >
+            Keep going, gently <Icon name={IconName.Chev} size={15} c="var(--calm)" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -350,23 +459,29 @@ function SectionAbout({
       {/* text · boxed field */}
       <Qn
         q="What would you like us to call you?"
-        why="it’s the name your group will see"
+        needed
+        why="it’s the name your circle and facilitator will see."
+        use="Your real name is never shown."
       >
         <TextField
           id="callName"
           label="What would you like us to call you?"
           placeholder="Type a name…"
           value={answers.callName}
-          onChange={(v) => setText("callName", v)}
+          onChange={(v) => setText(TextKey.CallName, v)}
         />
       </Qn>
 
       {/* single + 'other' typed */}
-      <Qn q="How do you describe your gender?" optional why="only if you’d like to share">
+      <Qn
+        q="How do you describe your gender?"
+        optional
+        why="only if you’d like to — it just helps us understand your group."
+      >
         <OptChips
           items={GENDER}
           isSelected={(text) => answers.gender === text}
-          onToggle={(text) => selectSingle("gender", text)}
+          onToggle={(text) => selectSingle(SingleKey.Gender, text)}
         />
         {answers.gender === OTHER && (
           <div style={{ marginTop: 12 }}>
@@ -375,18 +490,22 @@ function SectionAbout({
               label="Describe your gender"
               placeholder="In your own words…"
               value={answers.genderOther}
-              onChange={(v) => setText("genderOther", v)}
+              onChange={(v) => setText(TextKey.GenderOther, v)}
             />
           </div>
         )}
       </Qn>
 
       {/* single + 'other' typed */}
-      <Qn q="Which pronouns feel right?" optional why="so we address you the way you’d like">
+      <Qn
+        q="Which pronouns feel right?"
+        optional
+        why="so your facilitator and group address you the way you’d like."
+      >
         <OptChips
           items={PRONOUNS}
           isSelected={(text) => answers.pronouns === text}
-          onToggle={(text) => selectSingle("pronouns", text)}
+          onToggle={(text) => selectSingle(SingleKey.Pronouns, text)}
         />
         {answers.pronouns === OTHER && (
           <div style={{ marginTop: 12 }}>
@@ -395,7 +514,7 @@ function SectionAbout({
               label="Your pronouns"
               placeholder="Your pronouns…"
               value={answers.pronounsOther}
-              onChange={(v) => setText("pronounsOther", v)}
+              onChange={(v) => setText(TextKey.PronounsOther, v)}
             />
           </div>
         )}
@@ -404,15 +523,16 @@ function SectionAbout({
       {/* text · boxed field */}
       <Qn
         q="How old are you?"
-        optional
-        why="roughly — it helps us find people at a similar stage"
+        needed
+        why="to gently place you with people at a similar stage of life."
+        use="Only used to match your group; never shown."
       >
         <TextField
           id="age"
           label="How old are you?"
           placeholder="e.g. 21"
           value={answers.age}
-          onChange={(v) => setText("age", v)}
+          onChange={(v) => setText(TextKey.Age, v)}
         />
       </Qn>
     </div>
@@ -443,19 +563,24 @@ function SectionMore({
       <Qn
         q="Got a fun fact about yourself?"
         optional
-        why="something small your group might smile at"
+        why="a gentle way for people to find common ground."
+        use="Shared with your group to help you connect."
       >
         <UnderlineField
           id="funFact"
           label="A fun fact about you"
           placeholder="Anything at all…"
           value={answers.funFact}
-          onChange={(v) => setText("funFact", v)}
+          onChange={(v) => setText(TextKey.FunFact, v)}
         />
       </Qn>
 
       {/* multiple + 'other' typed (skip is mutually exclusive) */}
-      <Qn q="What do you enjoy?" optional why="pick as many as you like">
+      <Qn
+        q="What do you enjoy?"
+        optional
+        why="small shared interests can make a first meeting feel easier."
+      >
         <OptChips
           items={HOBBIES}
           isSelected={(text) => answers.hobbies.includes(text)}
@@ -478,12 +603,12 @@ function SectionMore({
       <Qn
         q="What’s your cultural background?"
         optional
-        why="only if you’d like to — it can help your group feel familiar"
+        why="only if you’d like to — it can help your group feel familiar and understood."
       >
         <OptChips
           items={CULTURAL}
           isSelected={(text) => answers.cultural === text}
-          onToggle={(text) => selectSingle("cultural", text)}
+          onToggle={(text) => selectSingle(SingleKey.Cultural, text)}
         />
         {answers.cultural === OTHER && (
           <div style={{ marginTop: 12 }}>
@@ -492,7 +617,7 @@ function SectionMore({
               label="Your cultural background"
               placeholder="In your own words…"
               value={answers.culturalOther}
-              onChange={(v) => setText("culturalOther", v)}
+              onChange={(v) => setText(TextKey.CulturalOther, v)}
             />
           </div>
         )}
@@ -513,14 +638,14 @@ function SectionInYourTime({
     <div>
       <SectionHead
         title="In your own time"
-        optional
         sub="Skip anything you’d rather not share."
       />
       {/* single · stacked with marker */}
       <Qn
         q="How recently did it happen?"
         optional
-        why="only to place you with people at a similar point, skip if you’d rather"
+        why="only to place you with people at a similar point in their grief."
+        use="Used once, to match your group; never displayed."
       >
         <OptList>
           {RECENCY.map((o, i) => (
@@ -530,18 +655,23 @@ function SectionInYourTime({
               skip={o.skip}
               vary={i}
               selected={answers.recency === o.text}
-              onClick={() => selectSingle("recency", o.text)}
+              onClick={() => selectSingle(SingleKey.Recency, o.text)}
             />
           ))}
         </OptList>
       </Qn>
       {/* single · inline chips */}
-      <Qn q="Who did you lose?" optional>
+      <Qn
+        q="Who did you lose?"
+        optional
+        why="so the people you meet have walked something similar."
+        use="Only ever shared with your group if you choose to."
+      >
         <OptChips
           items={WHO_LOST}
           isSelected={(text) => answers.whoLost === text}
           onToggle={(text) =>
-            selectSingle("whoLost", answers.whoLost === text ? "" : text)
+            selectSingle(SingleKey.WhoLost, answers.whoLost === text ? "" : text)
           }
         />
       </Qn>

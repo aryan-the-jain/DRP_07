@@ -168,6 +168,92 @@
   font-style: italic;
 }
 
+/* ---- prominent OPTIONAL badge (next to a question) ---- */
+.onboarding-root .opt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--hand);
+  font-size: 14px;
+  line-height: 1;
+  color: #3c5a4c;
+  background: var(--calm-soft);
+  border: 1.6px solid var(--calm);
+  padding: 4px 11px 5px;
+  border-radius: 30px;
+}
+.onboarding-root .opt-badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.6px solid var(--calm);
+}
+/* a gentle 'needed' marker for the required basics — not a red star */
+.onboarding-root .need-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--hand);
+  font-size: 14px;
+  line-height: 1;
+  color: #7a4a2e;
+  background: var(--warm-soft);
+  border: 1.6px solid var(--warm);
+  padding: 4px 11px 5px;
+  border-radius: 30px;
+}
+
+/* ---- 'why we ask + how we use it' block (green vertical bar + text) ---- */
+.onboarding-root .whyask {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  font-size: 14.5px;
+  color: var(--muted);
+  line-height: 1.4;
+  max-width: 560px;
+}
+.onboarding-root .whyask .wbar {
+  width: 3px;
+  border-radius: 3px;
+  background: var(--calm);
+  flex: 0 0 auto;
+}
+.onboarding-root .whyask b {
+  color: var(--ink);
+  font-weight: 400;
+  font-family: var(--scrawl);
+  font-size: 17px;
+}
+
+/* ---- prominent 'save & come back later' pill ---- */
+.onboarding-root .save-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--hand);
+  font-size: 15.5px;
+  color: #3c5a4c;
+  background: var(--calm-soft);
+  border: 2px solid var(--calm);
+  padding: 9px 17px;
+  cursor: pointer;
+  border-radius: 40px 14px 40px 14px/14px 40px 14px 40px;
+  transition: background-color 0.16s ease;
+}
+.onboarding-root .save-pill:hover {
+  background: oklch(0.6 0.06 165);
+  color: #fff;
+}
+
+/* a 'good place to pause' panel — progressive disclosure / finish-for-now */
+.onboarding-root .pause-card {
+  border: 2.5px solid var(--calm);
+  background: var(--card);
+  border-radius: 14px 240px 16px 255px/230px 16px 255px 16px;
+  padding: 26px 30px;
+}
+
 /* ---- survey: option boxes ---- */
 .onboarding-root .opt {
   display: flex;

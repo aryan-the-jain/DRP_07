@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, type ReactNode } from "react";
 
 import { Icon, IconName } from "./Icon";
@@ -7,25 +9,56 @@ import { Icon, IconName } from "./Icon";
 
 const VARY = ["", "v2", "v3"] as const;
 
-// "why we ask" line — trauma-informed transparency, always visible.
-export function Why({ children }: { children: ReactNode }) {
+// Prominent "optional · skip freely" / "we'll need this one" markers, shown next
+// to a question (never on a section heading).
+function OptionalTag() {
   return (
-    <div className="why">
-      <Icon name={IconName.Heart} size={15} c="var(--calm)" /> {children}
+    <span className="opt-badge">
+      <span className="dot" /> optional · skip freely
+    </span>
+  );
+}
+function NeededTag() {
+  return (
+    <span className="need-badge">
+      <Icon name={IconName.Heart} size={13} c="var(--warm)" /> we’ll need this one
+    </span>
+  );
+}
+
+// "Why we ask" — a green vertical bar beside the reason, and (optionally) how the
+// answer is used. Trauma-informed transparency.
+export function WhyAsk({ why, use }: { why: string; use?: string }) {
+  return (
+    <div className="whyask">
+      <span className="wbar" />
+      <span>
+        <b>Why we ask:</b> {why}
+        {use && (
+          <>
+            {" · "}
+            <span style={{ color: "var(--ink)" }}>{use}</span>
+          </>
+        )}
+      </span>
     </div>
   );
 }
 
-// A single question: title (+ optional tag) and the "why" line above its body.
+// A single question: title (+ optional/needed tag) and the "why we ask" block.
 export function Qn({
   q,
   why,
+  use,
   optional,
+  needed,
   children,
 }: {
   q: string;
   why?: string;
+  use?: string;
   optional?: boolean;
+  needed?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -33,24 +66,21 @@ export function Qn({
       <div
         style={{
           display: "flex",
-          alignItems: "baseline",
-          gap: 10,
+          alignItems: "center",
+          gap: 11,
           flexWrap: "wrap",
-          marginBottom: why ? 4 : 12,
+          marginBottom: why ? 9 : 12,
         }}
       >
         <span className="h-title" style={{ fontSize: 24 }}>
           {q}
         </span>
-        {optional && (
-          <span className="leader" style={{ color: "var(--calm)" }}>
-            optional
-          </span>
-        )}
+        {optional && <OptionalTag />}
+        {needed && <NeededTag />}
       </div>
       {why && (
-        <div style={{ marginBottom: 13 }}>
-          <Why>{why}</Why>
+        <div style={{ marginBottom: 14 }}>
+          <WhyAsk why={why} use={use} />
         </div>
       )}
       {children}
@@ -58,33 +88,57 @@ export function Qn({
   );
 }
 
-// Section heading with the wavy hand-drawn underline.
-export function SectionHead({
-  title,
-  sub,
-  optional,
-}: {
-  title: string;
-  sub?: string;
-  optional?: boolean;
-}) {
+// Section heading with the wavy hand-drawn underline (no optional/needed tag —
+// those live on the questions themselves).
+export function SectionHead({ title, sub }: { title: string; sub?: string }) {
   return (
     <div style={{ margin: "0 0 16px" }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-        <span className="h-title uline" style={{ fontSize: 26 }}>
-          {title}
-        </span>
-        {optional && (
-          <span className="leader" style={{ color: "var(--calm)" }}>
-            optional
-          </span>
-        )}
-      </div>
+      <span className="h-title uline" style={{ fontSize: 26 }}>
+        {title}
+      </span>
       {sub && (
         <div style={{ fontSize: 15.5, color: "var(--muted)", marginTop: 10 }}>
           {sub}
         </div>
       )}
+    </div>
+  );
+}
+
+// Unified save + reassurance bar (design's "option A"): a calm green box whose
+// reassurance text leads straight into the save button.
+export function SaveBar({ onSave }: { onSave: () => void }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+        padding: "12px 14px 12px 18px",
+        background: "var(--calm-soft)",
+        border: "1.6px solid var(--calm)",
+        borderRadius: "16px 230px 16px 240px/230px 16px 240px 16px",
+      }}
+    >
+      <Icon name={IconName.Mug} size={22} c="var(--calm)" />
+      <span style={{ flex: 1, fontSize: 15.5, color: "#3c5a4c" }}>
+        There’s no rush — you can stop whenever you need and pick this up when you
+        feel ready.
+      </span>
+      <button
+        type="button"
+        className="save-pill"
+        onClick={onSave}
+        style={{
+          background: "var(--calm)",
+          color: "#fff",
+          borderColor: "transparent",
+          flex: "0 0 auto",
+        }}
+      >
+        <Icon name={IconName.Bookmark} size={16} c="#fff" /> Save &amp; come back
+        later
+      </button>
     </div>
   );
 }

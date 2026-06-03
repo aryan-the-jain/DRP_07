@@ -9,6 +9,8 @@ export enum IconName {
   People = "people",
   Quiet = "quiet",
   Clock = "clock",
+  Mug = "mug",
+  Bookmark = "bookmark",
 }
 
 type IconProps = {
@@ -62,6 +64,14 @@ export function Icon({
         <path {...p} d="M11 6.5V11l3 2" />
       </>
     ),
+    [IconName.Mug]: (
+      <>
+        <path {...p} d="M5 8h11v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" />
+        <path {...p} d="M16 9.5h1.5a2 2 0 0 1 0 4H16" />
+        <path {...p} d="M8 3.2v2M11.5 3.2v2" />
+      </>
+    ),
+    [IconName.Bookmark]: <path {...p} d="M6 3.5h10v15l-5-3.6-5 3.6z" />,
   };
   return (
     <svg
