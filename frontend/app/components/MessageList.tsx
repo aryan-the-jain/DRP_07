@@ -11,7 +11,7 @@ type MessageListProps = {
   facilitatorMessages: GroupMessage[];
   isLoading: boolean;
   messagesEndRef: RefObject<HTMLDivElement | null>;
-  findParticipantByName: (name: string) => Participant | undefined;
+  findParticipantById: (id: number) => Participant | undefined;
   onOpenParticipantProfile: (participant: Participant) => void;
 };
 
@@ -22,7 +22,7 @@ export function MessageList({
   facilitatorMessages,
   isLoading,
   messagesEndRef,
-  findParticipantByName,
+  findParticipantById,
   onOpenParticipantProfile,
 }: MessageListProps) {
   const visibleMessages = activeTab === "group" ? messages : facilitatorMessages;
@@ -47,14 +47,16 @@ export function MessageList({
             </div>
           ) : (
             visibleMessages.map((message) => {
-              const participant = findParticipantByName(message.senderName);
+              const senderId = message.id;
+              const participant = findParticipantById(senderId);
+              const displayName = participant ? participant.displayName : "Unknown";
 
               return (
-                <article key={message.id} className="flex gap-3 sm:gap-4">
+                <article key={message.createdAt} className="flex gap-3 sm:gap-4">
                   <button
                     type="button"
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-[#e6ddcf] focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-default disabled:hover:border-stone-300 disabled:hover:bg-[#eee6da]"
-                    aria-label={`Open ${message.senderName}'s profile`}
+                    aria-label={`Open ${displayName}'s profile`}
                     disabled={!participant}
                     onClick={() => {
                       if (participant) {
@@ -62,7 +64,7 @@ export function MessageList({
                       }
                     }}
                   >
-                    {initialsFor(message.senderName)}
+                    {initialsFor(participant?.initials ?? displayName.charAt(0))}
                   </button>
 
                   <div className="min-w-0 flex-1">
@@ -77,7 +79,7 @@ export function MessageList({
                           }
                         }}
                       >
-                        {message.senderName}
+                        {displayName}
                       </button>
                       <time className="text-xs text-stone-500">
                         {formatMessageTime(message.createdAt)}

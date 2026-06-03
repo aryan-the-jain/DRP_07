@@ -2,7 +2,7 @@ package models
 
 import play.api.libs.json.*
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, DayOfWeek}
 import java.time.format.DateTimeFormatter
 
 object JsonFormats {
@@ -11,14 +11,13 @@ object JsonFormats {
 
   given roleWrites: Writes[Role] = Writes(role => JsString(role.show))
 
-  given messageTypeWrites: Writes[MessageType] =
-    Writes(messageType => JsString(messageType.show))
-
   given createSupportRequestReads: Reads[CreateSupportRequest] =
     Json.reads[CreateSupportRequest]
 
   given supportRequestWrites: Writes[SupportRequest] =
     Json.writes[SupportRequest]
+
+  given dayOfWeekWrites: Writes[DayOfWeek] = Writes(day => JsString(day.name()))
 
   given supportGroupWrites: Writes[SupportGroup] =
     Json.writes[SupportGroup]
@@ -26,9 +25,13 @@ object JsonFormats {
   given participantWrites: Writes[Participant] =
     Json.writes[Participant]
 
-  given createMessageReads: Reads[CreateMessage] = Json.reads[CreateMessage]
+  given createGroupMessageReads: Reads[CreateGroupMessage] =
+    Json.reads[CreateGroupMessage]
 
-  given groupMessageWrites: Writes[GroupMessage] =
+  given createFacilitatorMessageReads: Reads[CreateFacilitatorMessage] =
+    Json.reads[CreateFacilitatorMessage]
+
+  given groupGroupMessageWrites: Writes[GroupMessage] =
     Json.writes[GroupMessage]
 
   given createReflectionReads: Reads[CreateReflection] =
@@ -36,4 +39,19 @@ object JsonFormats {
 
   given reflectionWrites: Writes[Reflection] =
     Json.writes[Reflection]
+
+  given returnSupportGroupWrites: Writes[ReturnSupportGroup] =
+    Json.writes[ReturnSupportGroup]
+
+  given returnParticipantWrites: Writes[ReturnParticipant] =
+    Json.writes[ReturnParticipant]
+
+  given returnGroupMessageWrites: Writes[ReturnGroupMessage] =
+    Json.writes[ReturnGroupMessage]
+
+  given returnFacilitatorMessageWrites: Writes[ReturnFacilitatorMessage] =
+    Json.writes[ReturnFacilitatorMessage]
+
+  given returnReflectionResponse: Writes[ReturnReflectionResponse] =
+    Json.writes[ReturnReflectionResponse]
 }

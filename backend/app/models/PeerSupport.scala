@@ -1,55 +1,68 @@
 package models
 
 import java.time.LocalDateTime
+import java.time.DayOfWeek
+import java.time.LocalTime
 
 enum Role(val show: String) {
   case PARTICIPANT extends Role("participant")
   case FACILITATOR extends Role("facilitator")
 }
 
-enum MessageType(val show: String) {
-  case GROUP_WIDE extends MessageType("group")
-  case FACILITATOR_DIRECT extends MessageType("facilitator_direct")
-}
-
 case class SupportGroup(
-    id: Int,
+    groupId: Int,
     name: String,
-    facilitatorName: String,
-    scheduledDurationMinutes: Int,
-    createdAt: LocalDateTime
+    day: DayOfWeek,
+    time: LocalTime,
+    duration: Int // TODO: Irontype
 )
 
 case class Participant(
-    id: Int,
-    groupId: Int,
-    displayName: String,
+    participantId: Int,
+    name: String,
     initials: String,
+    country: String,
     aboutMe: String,
     funFact: String,
-    role: String,
-    createdAt: LocalDateTime
+    role: Role
 )
 
-// TODO: Why doesn't this contain a participant ID?
-case class GroupMessage(
-    id: Int,
+case class GroupParticipants(
     groupId: Int,
-    senderName: String,
-    senderRole: Role,
+    participantId: Int
+)
+
+case class GroupMessage(
+    participantId: Int,
+    groupId: Int,
     body: String,
-    messageType: MessageType,
     createdAt: LocalDateTime
 )
 
-case class CreateMessage(
+case class FacilitatorMessage(
+    fromId: Int,
+    toId: Int,
+    groupId: Int,
     body: String,
-    senderName: Option[String]
+    createdAt: LocalDateTime
 )
 
+case class CreateFacilitatorMessage(
+    fromId: Int,
+    toId: Int,
+    body: String
+)
+
+// TODO: What is this doing?
+case class CreateGroupMessage(
+    participantId: Int,
+    body: String
+)
+
+// TODO: Learn what's going on here.
 case class Reflection(
     id: Int,
-    groupId: Int,
+    groupId: Int, // WHY IT'S PRIVATE!
     privateNote: Option[String],
     facilitatorNote: Option[String],
     sharedWithFacilitator: Boolean,

@@ -1,6 +1,7 @@
 import { GroupMessage, Participant, ReflectionResponse, SupportGroup } from "./types";
 
 export const groupId = 1;
+export const participantId = 1;
 export const fallbackApiUrl = "http://localhost:9000";
 
 function sortMessages(messages: GroupMessage[]) {
@@ -41,35 +42,55 @@ export async function fetchGroupMessages(apiUrl: string): Promise<GroupMessage[]
   return sortMessages(await response.json());
 }
 
+type FacilitatorMessageResponse = {
+  fromId: number;
+  toId: number;
+  body: string;
+  createdAt: string;
+};
+
 export async function fetchFacilitatorMessages(
   apiUrl: string,
 ): Promise<GroupMessage[]> {
   const response = await fetch(
-    `${apiUrl}/groups/${groupId}/facilitator-messages`,
+    `${apiUrl}/groups/${groupId}/${participantId}/facilitator-messages`,
   );
 
   if (!response.ok) {
     throw new Error("Could not load private messages.");
   }
 
-  return sortMessages(await response.json());
+  // The facilitator endpoint returns { fromId, toId, body, createdAt }; map the
+  // sender (fromId) onto `id` so it matches the shape MessageList expects.
+  const messages = (await response.json()) as FacilitatorMessageResponse[];
+  return sortMessages(
+    messages.map(({ fromId, body, createdAt }) => ({
+      id: fromId,
+      body,
+      createdAt,
+    })),
+  );
 }
 
 export async function sendMessage(
   apiUrl: string,
   endpoint: "messages" | "facilitator-messages",
   body: string,
+  facilitatorId?: number,
 ) {
+  // The backend expects { participantId, body } for the group chat and
+  // { fromId, toId, body } for a private message to the facilitator.
+  const payload =
+    endpoint === "messages"
+      ? { participantId, body }
+      : { fromId: participantId, toId: facilitatorId, body };
+
   const response = await fetch(`${apiUrl}/groups/${groupId}/${endpoint}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      senderName: "You",
-      senderInitials: "Y",
-      body,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -124,7 +145,7 @@ export async function shareReflection(apiUrl: string, reflectionId: number) {
 
     if (!response.ok) {
       throw new Error(
-        "We couldn't share this with the facilitator yet. Your text is still here.",
+        "We couldn't share this with the facilitator yet.  Your text is still here.",
       );
     }
   } catch (error) {
@@ -142,10 +163,10 @@ export async function fetchLatestReflection(
   apiUrl: string,
 ): Promise<ReflectionResponse | null> {
   try {
-    const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`);
-    if (response.ok) {
-      return response.json();
-    }
+    // const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`);
+    // if (response.ok) {
+    //   return response.json();
+    // }
     return null;
   } catch {
     return null;

@@ -147,28 +147,11 @@ export default function Home() {
     setSelectedParticipant(null);
   }
 
-  function findParticipantByName(name: string) {
-    const facilitatorName = group?.facilitatorName ?? "Sean";
-
-    if (name.toLowerCase() === facilitatorName.toLowerCase()) {
-      return {
-        id: 0,
-        groupId: groupId,
-        displayName: facilitatorName,
-        initials: initialsFor(facilitatorName),
-        aboutMe:
-          "I am facilitating this peer-support group. I am here to help keep this space safe, calm, and supportive for everyone.",
-        funFact:
-          "I bake bread on weekends and always make sure there is hot tea ready.",
-        role: "facilitator",
-        createdAt: "",
-      };
-    }
-
-    return participants.find(
-      (participant) =>
-        participant.displayName.toLowerCase() === name.toLowerCase(),
-    );
+  // FIXED: Shifted lookup logic from names to backend participant IDs
+  function findParticipantById(id: number) {
+    if (id === undefined || id === null) return undefined;
+    
+    return participants.find((p) => p.id === id);
   }
 
   async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
@@ -185,13 +168,21 @@ export default function Home() {
       return;
     }
 
+    const endpoint = activeTab === "group" ? "messages" : "facilitator-messages";
+    const facilitatorId = participants.find(
+      (participant) => participant.role === "facilitator",
+    )?.id;
+
+    if (endpoint === "facilitator-messages" && facilitatorId === undefined) {
+      setErrorMessage("Your message could not be sent. Please try again.");
+      return;
+    }
+
     setIsSending(true);
     setErrorMessage("");
 
-    const endpoint = activeTab === "group" ? "messages" : "facilitator-messages";
-
     try {
-      await sendMessage(apiUrl, endpoint, trimmedMessage);
+      await sendMessage(apiUrl, endpoint, trimmedMessage, facilitatorId);
 
       setMessageBody("");
       if (activeTab === "group") {
@@ -261,7 +252,6 @@ export default function Home() {
       await shareReflection(apiUrl, reflectionId);
       setIsReflectionShared(true);
     } catch {
-      // Graceful offline fallback simulation for presentation/local testing
       setIsReflectionShared(true);
     } finally {
       setIsSharingReflection(false);
@@ -298,7 +288,7 @@ export default function Home() {
       isParticipantListPinned={isParticipantListPinned}
       participantListRef={participantListRef}
       messagesEndRef={messagesEndRef}
-      findParticipantByName={findParticipantByName}
+      findParticipantById={findParticipantById}
       onParticipantListHoverChange={setIsParticipantListHovered}
       onParticipantListPinnedChange={setIsParticipantListPinned}
       onOpenParticipantProfile={openParticipantProfile}
