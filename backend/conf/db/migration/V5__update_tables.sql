@@ -1,7 +1,7 @@
-DROP TABLE support_requests;
-DROP TABLE support_groups;
-DROP TABLE participants;
-DROP TABLE group_messages;
+DROP TABLE support_requests CASCADE;
+DROP TABLE support_groups CASCADE;
+DROP TABLE participants CASCADE;
+DROP TABLE group_messages CASCADE;
 
 CREATE TABLE support_groups (
   group_id SERIAL PRIMARY KEY,
