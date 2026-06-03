@@ -6,7 +6,6 @@ import Instances.given
 
 import java.time.{DayOfWeek, LocalTime}
 
-// TODO: Links ParticipantsTable and SupportGroupsTable (and maybe some of the other two).
 class GroupQueries(
   private val groups: TableQuery[SupportGroupsTable],
   private val groupParticipants: TableQuery[GroupParticipantsTable],

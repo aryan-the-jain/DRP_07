@@ -41,7 +41,13 @@ case class GroupMessage(
     participantId: Int,
     groupId: Int,
     body: String,
-    messageType: MessageType, // WHYYYYYYYYY
+    createdAt: LocalDateTime
+)
+
+case class FacilitatorMessage(
+    participantId: Int,
+    groupId: Int,
+    body: String,
     createdAt: LocalDateTime
 )
 

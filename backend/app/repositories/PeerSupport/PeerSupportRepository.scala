@@ -29,6 +29,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   private val reflections = TableQuery[ReflectionsTable]
 
   private val groupQuerier = GroupQueries(supportGroups, groupParticipants, participants)
+  private val groupMessageQuerier = GroupMessageQueries(groupMessages)
 
   def findGroup(groupId: Int): Future[Option[(String, String, Int)]] =
     db.run(groupQuerier.selectGroup(groupId).result.headOption)
@@ -36,18 +37,8 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   def participantsForGroup(groupId: Int): Future[Seq[(String, String, String, String, String, Role)]] =
     db.run(groupQuerier.selectParticipants(groupId).result)
 
-  def groupMessagesForGroup(groupId: Int): Future[Seq[GroupMessage]] = {
-    db.run(
-      groupMessages
-        .filter(message =>
-          message.groupId === groupId && message.messageType === LiteralColumn(
-            MessageType.GROUP_WIDE: MessageType
-          )
-        )
-        .sortBy(message => (message.createdAt.asc, message.id.asc))
-        .result
-    )
-  }
+  def groupMessagesForGroup(groupId: Int): Future[Seq[(Int, String, LocalDateTime)]] =
+    db.run(groupMessageQuerier.selectMessagesFromParticipant(groupId).result)
 
   def facilitatorMessagesForGroup(groupId: Int): Future[Seq[GroupMessage]] = {
     db.run(
