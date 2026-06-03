@@ -73,7 +73,7 @@ class GroupQueries(
   }
 
   /* Returns the information about a participant given the groupId and participantId. */
-  def selectParticipantInfo(groupId: Int, participantId: Int): Query[
+  def selectParticipantInfo(participantId: Int): Query[
     (
         Rep[String],
         Rep[String],
@@ -85,9 +85,7 @@ class GroupQueries(
     (String, String, String, String, String, Role),
     Seq
   ] = {
-    for
-      gp <- groupParticipants if gp.groupId === groupId
-      p <- participants if p.participantId === gp.participantId
+    for p <- participants if p.participantId === participantId
     yield (p.name, p.initials, p.country, p.aboutMe, p.funFact, p.role)
   }
 }
