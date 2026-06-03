@@ -7,6 +7,7 @@ export type SupportGroup = {
 };
 
 export type Participant = {
+  id: number;
   displayName: string;
   initials: string;
   country: string;

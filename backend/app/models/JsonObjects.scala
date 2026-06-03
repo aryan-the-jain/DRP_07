@@ -9,6 +9,7 @@ case class ReturnSupportGroup(
 )
 
 case class ReturnParticipant(
+    id: Int,
     displayName: String,
     initials: String,
     country: String,

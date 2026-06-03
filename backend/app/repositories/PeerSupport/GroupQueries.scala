@@ -5,6 +5,7 @@ import models.*
 import Instances.given
 
 import java.time.{DayOfWeek, LocalTime}
+import play.api.http.MediaRange.parse
 
 class GroupQueries(
     private val groups: TableQuery[SupportGroupsTable],
@@ -36,6 +37,7 @@ class GroupQueries(
   /* Returns all of the participants in a group and their (visible) information. */
   def selectParticipants(groupId: Int): Query[
     (
+        Rep[Int],
         Rep[String],
         Rep[String],
         Rep[String],
@@ -43,14 +45,22 @@ class GroupQueries(
         Rep[String],
         Rep[Role]
     ),
-    (String, String, String, String, String, Role),
+    (Int, String, String, String, String, String, Role),
     Seq
   ] = {
     val ps = for
       gp <- groupParticipants if gp.groupId === groupId
       p <- participants if gp.participantId === p.participantId
-    yield (p.name, p.initials, p.country, p.aboutMe, p.funFact, p.role)
-    ps.sortBy(p => (p._6.desc, p._1.asc))
+    yield (
+      p.participantId,
+      p.name,
+      p.initials,
+      p.country,
+      p.aboutMe,
+      p.funFact,
+      p.role
+    )
+    ps.sortBy(p => (p._7.desc, p._2.asc))
   }
 
   /* Returns the list of all groups that the given user is in. */
@@ -75,6 +85,7 @@ class GroupQueries(
   /* Returns the information about a participant given the groupId and participantId. */
   def selectParticipantInfo(participantId: Int): Query[
     (
+        Rep[Int],
         Rep[String],
         Rep[String],
         Rep[String],
@@ -82,10 +93,18 @@ class GroupQueries(
         Rep[String],
         Rep[Role]
     ),
-    (String, String, String, String, String, Role),
+    (Int, String, String, String, String, String, Role),
     Seq
   ] = {
     for p <- participants if p.participantId === participantId
-    yield (p.name, p.initials, p.country, p.aboutMe, p.funFact, p.role)
+    yield (
+      p.participantId,
+      p.name,
+      p.initials,
+      p.country,
+      p.aboutMe,
+      p.funFact,
+      p.role
+    )
   }
 }
