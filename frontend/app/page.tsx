@@ -21,6 +21,24 @@ import {
   SupportGroup,
 } from "./lib/types";
 
+// How often to refresh the conversation so other people's messages appear
+// without a manual refresh. Gentle cadence to match the calm tone.
+const MESSAGE_POLL_INTERVAL_MS = 5000;
+
+// Messages carry no stable id, so compare by content to avoid replacing state
+// (and re-scrolling) when a poll returns the same conversation.
+function sameMessages(a: GroupMessage[], b: GroupMessage[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every(
+    (message, index) =>
+      message.id === b[index].id &&
+      message.body === b[index].body &&
+      message.createdAt === b[index].createdAt,
+  );
+}
+
 export default function Home() {
   const [group, setGroup] = useState<SupportGroup | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -61,11 +79,15 @@ export default function Home() {
   }, []);
 
   const loadMessages = useCallback(async () => {
-    setMessages(await fetchGroupMessages(apiUrl));
+    const next = await fetchGroupMessages(apiUrl);
+    setMessages((previous) => (sameMessages(previous, next) ? previous : next));
   }, [apiUrl]);
 
   const loadFacilitatorMessages = useCallback(async () => {
-    setFacilitatorMessages(await fetchFacilitatorMessages(apiUrl));
+    const next = await fetchFacilitatorMessages(apiUrl);
+    setFacilitatorMessages((previous) =>
+      sameMessages(previous, next) ? previous : next,
+    );
   }, [apiUrl]);
 
   const loadReflectionDraft = useCallback(async () => {
@@ -119,6 +141,22 @@ export default function Home() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [messages]);
+
+  // Poll so other people's messages (and facilitator replies) appear without a
+  // manual refresh. Errors are swallowed: a dropped poll just keeps the last
+  // good conversation rather than surfacing an error mid-session.
+  useEffect(() => {
+    if (hasLeftRoom) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void loadMessages().catch(() => {});
+      void loadFacilitatorMessages().catch(() => {});
+    }, MESSAGE_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [hasLeftRoom, loadMessages, loadFacilitatorMessages]);
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
