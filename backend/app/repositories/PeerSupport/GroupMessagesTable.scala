@@ -6,6 +6,7 @@ import slick.jdbc.PostgresProfile.api.*
 import java.time.LocalDateTime
 
 class GroupMessagesTable(tag: Tag) extends Table[GroupMessage](tag, "group_messages") {
+  // TODO: ValueOf
   private given messageColumnType: BaseColumnType[MessageType] =
     MappedColumnType.base[MessageType, String](
       messageType => messageType.show,

@@ -30,7 +30,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
 
   private val groupQuerier = GroupQueries(supportGroups, groupParticipants, participants)
 
-  def findGroup(groupId: Int): Future[Option[(Int, String, String, Int)]] =
+  def findGroup(groupId: Int): Future[Option[(String, String, Int)]] =
     db.run(groupQuerier.selectGroup(groupId).result.headOption)
 
   def participantsForGroup(groupId: Int): Future[Seq[(String, String, String, String, String, Role)]] =

@@ -2,17 +2,11 @@ package repositories.PeerSupport
 
 import models.*
 import slick.jdbc.PostgresProfile.api.*
+import Instances.given
 
-import java.time.LocalTime
-import java.time.DayOfWeek
+import java.time.{LocalTime, DayOfWeek}
 
 private class SupportGroupsTable(tag: Tag) extends Table[SupportGroup](tag, "support_groups") {
-  private given DayOfWeekColumnType: BaseColumnType[DayOfWeek] =
-    MappedColumnType.base[DayOfWeek, String](
-      day => day.name(),
-      day => DayOfWeek.valueOf(day)
-    )
-
   def groupId = column[Int]("group_id", O.PrimaryKey, O.AutoInc)
   def name = column[String]("name")
   def day = column[DayOfWeek]("day_of_week")
