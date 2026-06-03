@@ -23,13 +23,6 @@ import {
 const OTHER = "Other";
 const NOT_SAY = "I’d rather not say";
 
-// section 1 · personal
-const GENDER: Choice[] = [
-  { text: "Male" },
-  { text: "Female" },
-  { text: OTHER },
-  { text: NOT_SAY, skip: true },
-];
 const PRONOUNS: Choice[] = [
   { text: "She / her" },
   { text: "He / him" },
@@ -88,8 +81,6 @@ const LAST_SECTION = ONBOARDING_SECTIONS.length - 1;
 
 type Answers = {
   callName: string;
-  gender: string;
-  genderOther: string;
   pronouns: string;
   pronounsOther: string;
   age: string;
@@ -104,14 +95,12 @@ type Answers = {
 
 enum TextKey {
   CallName = "callName",
-  GenderOther = "genderOther",
   PronounsOther = "pronounsOther",
   Age = "age",
   FunFact = "funFact",
   CulturalOther = "culturalOther",
 }
 enum SingleKey {
-  Gender = "gender",
   Pronouns = "pronouns",
   Cultural = "cultural",
   Recency = "recency",
@@ -120,8 +109,6 @@ enum SingleKey {
 
 const EMPTY_ANSWERS: Answers = {
   callName: "",
-  gender: "",
-  genderOther: "",
   pronouns: "",
   pronounsOther: "",
   age: "",
@@ -220,7 +207,6 @@ export function OnboardingSurvey() {
   const completed = [
     Boolean(
       answers.callName.trim() ||
-        answers.gender ||
         answers.pronouns ||
         answers.age.trim(),
     ),
@@ -454,7 +440,7 @@ function PausePopup({
 
 // ============================================================ SECTIONS
 
-// Section 1 · personal data — call name, gender, pronouns, age.
+// Section 1 · personal data — call name, pronouns, age.
 function SectionAbout({
   answers,
   setText,
@@ -484,30 +470,6 @@ function SectionAbout({
           value={answers.callName}
           onChange={(v) => setText(TextKey.CallName, v)}
         />
-      </Qn>
-
-      {/* single + 'other' typed */}
-      <Qn
-        q="How do you describe your gender?"
-        optional
-        why="only if you’d like to — it just helps us understand your group."
-      >
-        <OptChips
-          items={GENDER}
-          isSelected={(text) => answers.gender === text}
-          onToggle={(text) => selectSingle(SingleKey.Gender, text)}
-        />
-        {answers.gender === OTHER && (
-          <div style={{ marginTop: 12 }}>
-            <UnderlineField
-              id="genderOther"
-              label="Describe your gender"
-              placeholder="In your own words…"
-              value={answers.genderOther}
-              onChange={(v) => setText(TextKey.GenderOther, v)}
-            />
-          </div>
-        )}
       </Qn>
 
       {/* single + 'other' typed */}
