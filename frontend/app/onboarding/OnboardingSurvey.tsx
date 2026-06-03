@@ -23,8 +23,9 @@ const RECENCY: Choice[] = [
   { text: "I’d rather not say", skip: true },
 ];
 const WHO_LOST: Choice[] = [
-  { text: "A parent" },
+  { text: "A family member" },
   { text: "A friend" },
+  { text: "A pet" },
   { text: "Someone else" },
   { text: "I’d rather not say", skip: true },
 ];
@@ -138,7 +139,7 @@ export function OnboardingSurvey() {
       }}
     >
       {/* sticky top: title + shard progress bar */}
-      <div style={{ flex: "0 0 auto" }}>
+      <div style={{ flex: "0 0 auto"/*, borderBottom: "2px solid var(--line)" */}}>
         <div
           style={{
             display: "flex",
@@ -258,7 +259,7 @@ function SectionAbout({
     <div>
       <SectionHead
         title="A little about you"
-        sub="Nothing tricky here — just so we know who we’re talking to."
+        sub="Just so we know who we’re talking to."
       />
       {/* text · boxed field */}
       <Qn
@@ -276,7 +277,7 @@ function SectionAbout({
       {/* text · underline only */}
       <Qn
         q="Is there a word that’s been grounding you?"
-        why="only if something comes to mind — there’s no need to overthink it"
+        why="only if something comes to mind"
       >
         <UnderlineField
           id="groundingWord"
@@ -302,13 +303,13 @@ function SectionInYourTime({
       <SectionHead
         title="In your own time"
         optional
-        sub="Skip anything you’d rather not share — it won’t hold anything up."
+        sub="Skip anything you’d rather not share."
       />
       {/* single · stacked with marker */}
       <Qn
         q="How recently did it happen?"
         optional
-        why="only to gently place you with people at a similar point — skip if you’d rather"
+        why="only to place you with people at a similar point, skip if you’d rather"
       >
         <OptList>
           {RECENCY.map((o, i) => (
@@ -353,13 +354,13 @@ function SectionWhatHelps({
     <div>
       <SectionHead
         title="What might help"
-        sub="There are no right answers here — choose as many as fit, or none."
+        sub="There are no right answers here."
       />
       {/* multiple · stacked checkbox (skip is mutually exclusive) */}
       <Qn
         q="What feels hardest right now?"
         optional
-        why="choose any that fit, or none — there’s no wrong answer"
+        why="choose any that fit, or none"
       >
         <OptList>
           {HARDEST.map((o, i) => (
@@ -405,8 +406,7 @@ function FinishedPanel() {
           lineHeight: 1.5,
         }}
       >
-        Thank you for taking the time. Whenever you’re ready, your group will be
-        here — there’s no rush.
+        Thank you for taking the time. While you're waiting for the facilitator to match you with a group, feel free to check out the Quiet Space.
       </p>
     </div>
   );
