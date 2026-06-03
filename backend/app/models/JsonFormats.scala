@@ -28,9 +28,11 @@ object JsonFormats {
   given participantWrites: Writes[Participant] =
     Json.writes[Participant]
 
-  given createGroupMessageReads: Reads[CreateGroupMessage] = Json.reads[CreateGroupMessage]
-  
-  given createFacilitatorMessageReads: Reads[CreateFacilitatorMessage] = Json.reads[CreateFacilitatorMessage]
+  given createGroupMessageReads: Reads[CreateGroupMessage] =
+    Json.reads[CreateGroupMessage]
+
+  given createFacilitatorMessageReads: Reads[CreateFacilitatorMessage] =
+    Json.reads[CreateFacilitatorMessage]
 
   given groupGroupMessageWrites: Writes[GroupMessage] =
     Json.writes[GroupMessage]

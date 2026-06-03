@@ -19,7 +19,7 @@ case class SupportGroup(
     name: String,
     day: DayOfWeek,
     time: LocalTime,
-    duration: Int, // TODO: Irontype
+    duration: Int // TODO: Irontype
 )
 
 case class Participant(
@@ -29,12 +29,12 @@ case class Participant(
     country: String,
     aboutMe: String,
     funFact: String,
-    role: Role,
+    role: Role
 )
 
 case class GroupParticipants(
     groupId: Int,
-    participantId: Int,
+    participantId: Int
 )
 
 case class GroupMessage(
@@ -55,13 +55,13 @@ case class FacilitatorMessage(
 case class CreateFacilitatorMessage(
     fromId: Int,
     toId: Int,
-    body: String,
+    body: String
 )
 
 // TODO: What is this doing?
 case class CreateGroupMessage(
     participantId: Int,
-    body: String,
+    body: String
 )
 
 // TODO: Learn what's going on here.

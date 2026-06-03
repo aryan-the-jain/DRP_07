@@ -7,9 +7,9 @@ import Instances.given
 import java.time.{DayOfWeek, LocalTime}
 
 class GroupQueries(
-  private val groups: TableQuery[SupportGroupsTable],
-  private val groupParticipants: TableQuery[GroupParticipantsTable],
-  private val participants: TableQuery[ParticipantsTable],
+    private val groups: TableQuery[SupportGroupsTable],
+    private val groupParticipants: TableQuery[GroupParticipantsTable],
+    private val participants: TableQuery[ParticipantsTable]
 ) {
   /* Returns the group name, facilitator name, group conversation duration given groupId. */
   def selectGroup(groupId: Int): Query[
@@ -20,7 +20,8 @@ class GroupQueries(
     for
       g <- groups if g.groupId === groupId
       gp <- groupParticipants if gp.groupId === g.groupId
-      p <- participants if gp.participantId === p.participantId && p.role === Role.FACILITATOR
+      p <- participants
+      if gp.participantId === p.participantId && p.role === Role.FACILITATOR
     yield (g.name, p.name, g.duration)
   }
 
@@ -34,7 +35,14 @@ class GroupQueries(
 
   /* Returns all of the participants in a group and their (visible) information. */
   def selectParticipants(groupId: Int): Query[
-    (Rep[String], Rep[String], Rep[String], Rep[String], Rep[String], Rep[Role]),
+    (
+        Rep[String],
+        Rep[String],
+        Rep[String],
+        Rep[String],
+        Rep[String],
+        Rep[Role]
+    ),
     (String, String, String, String, String, Role),
     Seq
   ] = {
@@ -46,10 +54,11 @@ class GroupQueries(
   }
 
   /* Returns the list of all groups that the given user is in. */
-  def selectAllGroupsUserIsIn(participantId: Int): Query[(Rep[Int]), Int, Seq] = {
+  def selectAllGroupsUserIsIn(
+      participantId: Int
+  ): Query[(Rep[Int]), Int, Seq] = {
     // TODO: Is some ordering required?
-    for
-      gp <- groupParticipants if gp.participantId === participantId
+    for gp <- groupParticipants if gp.participantId === participantId
     yield gp.groupId
   }
 
@@ -59,8 +68,7 @@ class GroupQueries(
     (DayOfWeek, LocalTime, Int),
     Seq
   ] = {
-    for
-      g <- groups if g.groupId === groupId
+    for g <- groups if g.groupId === groupId
     yield (g.day, g.time, g.duration)
   }
 }

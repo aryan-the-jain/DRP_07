@@ -29,21 +29,33 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   private val groupMessages = TableQuery[GroupMessagesTable]
   private val reflections = TableQuery[ReflectionsTable]
 
-  private val groupQuerier = GroupQueries(supportGroups, groupParticipants, participants)
+  private val groupQuerier =
+    GroupQueries(supportGroups, groupParticipants, participants)
   private val groupMessageQuerier = GroupMessageQueries(groupMessages)
-  private val facilitatorMessageQuerier = FacilitatorMessageQueries(facilitatorMessages)
+  private val facilitatorMessageQuerier = FacilitatorMessageQueries(
+    facilitatorMessages
+  )
 
   def findGroup(groupId: Int): Future[Option[(String, String, Int)]] =
     db.run(groupQuerier.selectGroup(groupId).result.headOption)
 
-  def participantsForGroup(groupId: Int): Future[Seq[(String, String, String, String, String, Role)]] =
+  def participantsForGroup(
+      groupId: Int
+  ): Future[Seq[(String, String, String, String, String, Role)]] =
     db.run(groupQuerier.selectParticipants(groupId).result)
 
   def groupMessages(groupId: Int): Future[Seq[(Int, String, LocalDateTime)]] =
     db.run(groupMessageQuerier.selectMessagesFromParticipant(groupId).result)
 
-  def facilitatorMessages(groupId: Int, participantId: Int): Future[Seq[(Int, Int, String, LocalDateTime)]] =
-    db.run(facilitatorMessageQuerier.selectPrivateMessages(groupId, participantId).result)
+  def facilitatorMessages(
+      groupId: Int,
+      participantId: Int
+  ): Future[Seq[(Int, Int, String, LocalDateTime)]] =
+    db.run(
+      facilitatorMessageQuerier
+        .selectPrivateMessages(groupId, participantId)
+        .result
+    )
 
   // TODO: Refactor
   def createReflection(
@@ -84,25 +96,35 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
     }
   }
 
-  def sendGroupMessage(groupId: Int, message: CreateGroupMessage): Future[Seq[(Int, String, LocalDateTime)]] = {
-    val query = groupMessageQuerier.insertNewMessage(GroupMessage(
-      message.participantId,
-      groupId,
-      message.body,
-      LocalDateTime.now()
-    ))
+  def sendGroupMessage(
+      groupId: Int,
+      message: CreateGroupMessage
+  ): Future[Seq[(Int, String, LocalDateTime)]] = {
+    val query = groupMessageQuerier.insertNewMessage(
+      GroupMessage(
+        message.participantId,
+        groupId,
+        message.body,
+        LocalDateTime.now()
+      )
+    )
     db.run(query)
     groupMessages(groupId)
   }
 
-  def sendFacilitatorMessage(groupId: Int, message: CreateFacilitatorMessage): Future[Int] = {
-    val query = facilitatorMessageQuerier.insertNewMessage(FacilitatorMessage(
-      message.fromId,
-      message.toId,
-      groupId,
-      message.body,
-      LocalDateTime.now()
-    ))
+  def sendFacilitatorMessage(
+      groupId: Int,
+      message: CreateFacilitatorMessage
+  ): Future[Int] = {
+    val query = facilitatorMessageQuerier.insertNewMessage(
+      FacilitatorMessage(
+        message.fromId,
+        message.toId,
+        groupId,
+        message.body,
+        LocalDateTime.now()
+      )
+    )
     db.run(query)
   }
 }

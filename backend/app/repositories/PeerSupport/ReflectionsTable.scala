@@ -5,7 +5,6 @@ import slick.jdbc.PostgresProfile.api.*
 
 import java.time.LocalDateTime
 
-
 class ReflectionsTable(tag: Tag) extends Table[Reflection](tag, "reflections") {
   def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
   def groupId = column[Int]("group_id")

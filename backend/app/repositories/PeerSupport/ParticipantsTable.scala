@@ -6,7 +6,8 @@ import Instances.given
 
 import java.time.LocalDateTime
 
-class ParticipantsTable(tag: Tag) extends Table[Participant](tag, "participants") {
+class ParticipantsTable(tag: Tag)
+    extends Table[Participant](tag, "participants") {
 
   def participantId = column[Int]("participant_id", O.PrimaryKey, O.AutoInc)
   def name = column[String]("name")
@@ -16,5 +17,6 @@ class ParticipantsTable(tag: Tag) extends Table[Participant](tag, "participants"
   def funFact = column[String]("fun_fact")
   def role = column[Role]("role")
 
-  def * = (participantId, name, initials, country, aboutMe, funFact, role).mapTo[Participant]
+  def * = (participantId, name, initials, country, aboutMe, funFact, role)
+    .mapTo[Participant]
 }

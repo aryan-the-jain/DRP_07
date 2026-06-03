@@ -5,7 +5,9 @@ import java.time.LocalDateTime
 import slick.sql.FixedSqlAction
 import slick.jdbc.PostgresProfile.api.*
 
-class GroupMessageQueries(private val messagesTable: TableQuery[GroupMessagesTable]) {
+class GroupMessageQueries(
+    private val messagesTable: TableQuery[GroupMessagesTable]
+) {
   /* Returns the (participantId, the message body, and the time of the message) for all messages
      sent in the group conversation. */
   def selectMessagesFromParticipant(groupId: Int): Query[
@@ -13,13 +15,14 @@ class GroupMessageQueries(private val messagesTable: TableQuery[GroupMessagesTab
     (Int, String, LocalDateTime),
     Seq
   ] = {
-    val messages = for
-      m <- messagesTable if m.groupId === groupId
+    val messages = for m <- messagesTable if m.groupId === groupId
     yield (m.participantId, m.body, m.createdAt)
     messages.sortBy(m => m._3.asc)
   }
 
-  def insertNewMessage(message: GroupMessage): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] = {
+  def insertNewMessage(
+      message: GroupMessage
+  ): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] = {
     messagesTable += message
   }
 }

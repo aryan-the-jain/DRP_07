@@ -5,7 +5,8 @@ import slick.jdbc.PostgresProfile.api.*
 
 import java.time.LocalDateTime
 
-class GroupMessagesTable(tag: Tag) extends Table[GroupMessage](tag, "group_messages") {
+class GroupMessagesTable(tag: Tag)
+    extends Table[GroupMessage](tag, "group_messages") {
   def participantId = column[Int]("participant_id", O.PrimaryKey)
   def groupId = column[Int]("group_id", O.PrimaryKey)
   def body = column[String]("body")

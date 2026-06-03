@@ -15,7 +15,7 @@ object Instances {
         case value if value == Role.FACILITATOR.show => Role.FACILITATOR
       }
     )
-  
+
   given DayOfWeekColumnType: BaseColumnType[DayOfWeek] =
     MappedColumnType.base[DayOfWeek, String](
       day => day.name(),

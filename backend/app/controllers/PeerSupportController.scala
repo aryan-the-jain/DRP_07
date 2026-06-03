@@ -34,7 +34,10 @@ class PeerSupportController @Inject() (
   def messages(groupId: Int): Action[AnyContent] =
     peerSupportRepository.groupMessages(groupId).returnOk()
 
-  def facilitatorMessages(groupId: Int, participantId: Int): Action[AnyContent] =
+  def facilitatorMessages(
+      groupId: Int,
+      participantId: Int
+  ): Action[AnyContent] =
     peerSupportRepository.facilitatorMessages(groupId, participantId).returnOk()
 
   def shareReflection(reflectionId: Int): Action[AnyContent] =
