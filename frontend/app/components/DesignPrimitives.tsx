@@ -5,12 +5,14 @@ export type IconName =
   | "check"
   | "clock"
   | "close"
+  | "externalLink"
   | "heart"
   | "mail"
   | "people"
   | "pen"
   | "quiet"
-  | "send";
+  | "send"
+  | "wind";
 
 type LineIconProps = {
   name: IconName;
@@ -43,6 +45,15 @@ export function LineIcon({
       </>
     ),
     close: <path {...pathProps} d="M5 5l12 12M17 5 5 17" />,
+    externalLink: (
+      <>
+        <path
+          {...pathProps}
+          d="M16 12.5V17a1.8 1.8 0 0 1-1.8 1.8H5A1.8 1.8 0 0 1 3.2 17V7.8A1.8 1.8 0 0 1 5 6h4.5"
+        />
+        <path {...pathProps} d="M12.5 4H18v5.5M18 4l-7.5 7.5" />
+      </>
+    ),
     heart: (
       <path
         {...pathProps}
@@ -71,6 +82,13 @@ export function LineIcon({
       </>
     ),
     send: <path {...pathProps} d="M4 11 18 4l-5 14-2.5-5.5L4 11Zm6.5 1.5L18 4" />,
+    wind: (
+      <>
+        <path {...pathProps} d="M3 8h9a2.4 2.4 0 1 0-2.4-2.4" />
+        <path {...pathProps} d="M3 12h13a2.4 2.4 0 1 1-2.4 2.4" />
+        <path {...pathProps} d="M3 16h6.5a2.1 2.1 0 1 1-2.1 2.1" />
+      </>
+    ),
   };
 
   return (

@@ -1,4 +1,10 @@
-import { GroupMessage, Participant, ReflectionResponse, SupportGroup } from "./types";
+import {
+  GroupMessage,
+  Participant,
+  ReflectionResponse,
+  SupportGroup,
+  SupportLink,
+} from "./types";
 
 export const groupId = 1;
 export const participantId = 1;
@@ -136,6 +142,18 @@ export async function saveReflection(
   }
 
   return response.json();
+}
+
+export async function fetchSupportLinks(
+  apiUrl: string,
+): Promise<SupportLink[]> {
+  const response = await fetch(`${apiUrl}/groups/${groupId}/support-links`);
+
+  if (!response.ok) {
+    throw new Error("Could not load resources.");
+  }
+
+  return (await response.json()) as SupportLink[];
 }
 
 export async function fetchLatestReflection(

@@ -27,6 +27,13 @@ export type GroupMessage = {
   createdAt: string;
 };
 
+export type SupportLink = {
+  id: number;
+  title: string;
+  url: string;
+  description: string | null;
+};
+
 export type ReflectionResponse = {
   id: number;
   groupId: number;

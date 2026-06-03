@@ -15,6 +15,7 @@ import { ParticipantProfileModal } from "./ParticipantProfileModal";
 import { QuietReflectionRoom } from "./QuietReflectionRoom";
 
 type ChatRoomProps = {
+  apiUrl: string;
   activeTab: ActiveTab;
   group: SupportGroup | null;
   participants: Participant[];
@@ -55,6 +56,7 @@ type ChatRoomProps = {
 };
 
 export function ChatRoom({
+  apiUrl,
   activeTab,
   group,
   participants,
@@ -129,6 +131,7 @@ export function ChatRoom({
 
             {activeTab === "quiet" ? (
               <QuietReflectionRoom
+                apiUrl={apiUrl}
                 privateNote={privateNote}
                 facilitatorNote={facilitatorNote}
                 freeWritingNote={freeWritingNote}

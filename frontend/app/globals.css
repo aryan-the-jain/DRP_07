@@ -310,10 +310,34 @@ body {
   animation: fadeIn 0.3s ease;
 }
 
+/* ---- calming corner: breathing orb ---- */
+/* inhale 4s, hold 2s, exhale 6s, rest 1s — 13s loop (matches the JS label) */
+@keyframes breathe {
+  0% {
+    transform: scale(0.62);
+  }
+  30.77% {
+    transform: scale(1);
+  }
+  46.15% {
+    transform: scale(1);
+  }
+  92.31% {
+    transform: scale(0.62);
+  }
+  100% {
+    transform: scale(0.62);
+  }
+}
+.breathe-orb {
+  animation: breathe 13s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .btn,
   .field,
-  .animate-fadeIn {
+  .animate-fadeIn,
+  .breathe-orb {
     transition: none;
     animation: none;
   }

@@ -358,6 +358,7 @@ export default function Home() {
 
   return (
     <ChatRoom
+      apiUrl={apiUrl}
       activeTab={activeTab}
       group={group}
       participants={participants}
