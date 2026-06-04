@@ -10,13 +10,34 @@ import {
   fetchGroupMessages,
   fetchLatestReflection,
   fetchParticipants,
-  groupId,
   saveReflection,
   sendMessage,
-  shareReflection,
 } from "./lib/api";
-import { initialsFor } from "./lib/format";
-import { ActiveTab, GroupMessage, Participant, SupportGroup } from "./lib/types";
+import {
+  ActiveTab,
+  GroupMessage,
+  Participant,
+  ReflectionShareSelection,
+  SupportGroup,
+} from "./lib/types";
+
+// How often to refresh the conversation so other people's messages appear
+// without a manual refresh. Gentle cadence to match the calm tone.
+const MESSAGE_POLL_INTERVAL_MS = 5000;
+
+// Messages carry no stable id, so compare by content to avoid replacing state
+// (and re-scrolling) when a poll returns the same conversation.
+function sameMessages(a: GroupMessage[], b: GroupMessage[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every(
+    (message, index) =>
+      message.id === b[index].id &&
+      message.body === b[index].body &&
+      message.createdAt === b[index].createdAt,
+  );
+}
 
 export default function Home() {
   const [group, setGroup] = useState<SupportGroup | null>(null);
@@ -33,6 +54,13 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>(ActiveTab.Group);
   const [privateNote, setPrivateNote] = useState("");
   const [facilitatorNote, setFacilitatorNote] = useState("");
+  const [freeWritingNote, setFreeWritingNote] = useState("");
+  const [shareSelection, setShareSelection] = useState<ReflectionShareSelection>(
+    {
+      guidedAnswers: false,
+      freeWriting: false,
+    },
+  );
   const [isSharingReflection, setIsSharingReflection] = useState(false);
   const [isReflectionShared, setIsReflectionShared] = useState(false);
   const [quietSpaceError, setQuietSpaceError] = useState("");
@@ -51,11 +79,15 @@ export default function Home() {
   }, []);
 
   const loadMessages = useCallback(async () => {
-    setMessages(await fetchGroupMessages(apiUrl));
+    const next = await fetchGroupMessages(apiUrl);
+    setMessages((previous) => (sameMessages(previous, next) ? previous : next));
   }, [apiUrl]);
 
   const loadFacilitatorMessages = useCallback(async () => {
-    setFacilitatorMessages(await fetchFacilitatorMessages(apiUrl));
+    const next = await fetchFacilitatorMessages(apiUrl);
+    setFacilitatorMessages((previous) =>
+      sameMessages(previous, next) ? previous : next,
+    );
   }, [apiUrl]);
 
   const loadReflectionDraft = useCallback(async () => {
@@ -64,7 +96,14 @@ export default function Home() {
       if (reflection) {
         setPrivateNote(reflection.privateNote ?? "");
         setFacilitatorNote(reflection.facilitatorNote ?? "");
-        setIsReflectionShared(reflection.sharedWithFacilitator);
+        setFreeWritingNote(reflection.freeWriting ?? "");
+        setShareSelection({
+          guidedAnswers: reflection.sharedGuided,
+          freeWriting: reflection.sharedFreeWriting,
+        });
+        setIsReflectionShared(
+          reflection.sharedGuided || reflection.sharedFreeWriting,
+        );
       }
     } catch {
       // Gracefully ignore since it is just a draft load
@@ -102,6 +141,22 @@ export default function Home() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [messages]);
+
+  // Poll so other people's messages (and facilitator replies) appear without a
+  // manual refresh. Errors are swallowed: a dropped poll just keeps the last
+  // good conversation rather than surfacing an error mid-session.
+  useEffect(() => {
+    if (hasLeftRoom) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void loadMessages().catch(() => {});
+      void loadFacilitatorMessages().catch(() => {});
+    }, MESSAGE_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [hasLeftRoom, loadMessages, loadFacilitatorMessages]);
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -201,14 +256,22 @@ export default function Home() {
   async function handleExitQuietSpace() {
     const trimmedPrivate = privateNote.trim();
     const trimmedFacilitator = facilitatorNote.trim();
+    const trimmedFreeWriting = freeWritingNote.trim();
+    const hasAnyText = Boolean(
+      trimmedPrivate || trimmedFacilitator || trimmedFreeWriting,
+    );
 
-    if (!isReflectionShared && (trimmedPrivate || trimmedFacilitator)) {
+    // Persist whatever they wrote as a private draft (not shared) so it is
+    // restored next time. Best-effort: don't block leaving on a failed save.
+    if (!isReflectionShared && hasAnyText) {
       try {
-        await saveReflection(
-          apiUrl,
-          trimmedPrivate,
-          trimmedFacilitator,
-        );
+        await saveReflection(apiUrl, {
+          privateNote: trimmedPrivate,
+          facilitatorNote: trimmedFacilitator,
+          freeWriting: trimmedFreeWriting,
+          shareGuided: false,
+          shareFreeWriting: false,
+        });
       } catch {
         // Quietly fail since this is a draft save
       }
@@ -230,12 +293,35 @@ export default function Home() {
     setIsReflectionShared(false);
   }
 
+  function handleFreeWritingNoteChange(value: string) {
+    setFreeWritingNote(value);
+    setQuietSpaceError("");
+    setIsReflectionShared(false);
+  }
+
+  function handleShareSelectionChange(selection: ReflectionShareSelection) {
+    setShareSelection(selection);
+    setQuietSpaceError("");
+    setIsReflectionShared(false);
+  }
+
   async function handleShareReflection() {
     const trimmedPrivate = privateNote.trim();
     const trimmedFacilitator = facilitatorNote.trim();
+    const trimmedFreeWriting = freeWritingNote.trim();
+    const hasGuidedText = Boolean(trimmedPrivate || trimmedFacilitator);
+    const hasFreeWritingText = Boolean(trimmedFreeWriting);
 
-    if (!trimmedPrivate && !trimmedFacilitator) {
-      setQuietSpaceError("Please type something before sharing.");
+    if (!shareSelection.guidedAnswers && !shareSelection.freeWriting) {
+      setQuietSpaceError("Choose what you would like to share.");
+      return;
+    }
+
+    if (
+      !(shareSelection.guidedAnswers && hasGuidedText) &&
+      !(shareSelection.freeWriting && hasFreeWritingText)
+    ) {
+      setQuietSpaceError("Please type something in the area you selected.");
       return;
     }
 
@@ -243,17 +329,21 @@ export default function Home() {
     setQuietSpaceError("");
 
     try {
-      const reflectionData = await saveReflection(
-        apiUrl,
-        trimmedPrivate,
-        trimmedFacilitator,
-      );
-      const reflectionId = reflectionData.id;
+      // One write persists the text and marks the chosen sections as shared.
+      // Only treat it as shared once the backend has actually saved it.
+      await saveReflection(apiUrl, {
+        privateNote: trimmedPrivate,
+        facilitatorNote: trimmedFacilitator,
+        freeWriting: trimmedFreeWriting,
+        shareGuided: shareSelection.guidedAnswers && hasGuidedText,
+        shareFreeWriting: shareSelection.freeWriting && hasFreeWritingText,
+      });
 
-      await shareReflection(apiUrl, reflectionId);
       setIsReflectionShared(true);
     } catch {
-      setIsReflectionShared(true);
+      setQuietSpaceError(
+        "We couldn't share this with the facilitator. Your writing is safe here — please try again.",
+      );
     } finally {
       setIsSharingReflection(false);
     }
@@ -269,6 +359,7 @@ export default function Home() {
 
   return (
     <ChatRoom
+      apiUrl={apiUrl}
       activeTab={activeTab}
       group={group}
       participants={participants}
@@ -281,6 +372,8 @@ export default function Home() {
       messageBody={messageBody}
       privateNote={privateNote}
       facilitatorNote={facilitatorNote}
+      freeWritingNote={freeWritingNote}
+      shareSelection={shareSelection}
       isSharingReflection={isSharingReflection}
       isReflectionShared={isReflectionShared}
       quietSpaceError={quietSpaceError}
@@ -300,6 +393,8 @@ export default function Home() {
       onMessageBodyChange={setMessageBody}
       onPrivateNoteChange={handlePrivateNoteChange}
       onFacilitatorNoteChange={handleFacilitatorNoteChange}
+      onFreeWritingNoteChange={handleFreeWritingNoteChange}
+      onShareSelectionChange={handleShareSelectionChange}
       onExitQuietSpace={handleExitQuietSpace}
       onShareReflection={handleShareReflection}
     />

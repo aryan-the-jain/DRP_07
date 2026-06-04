@@ -1,8 +1,9 @@
-export enum ActiveTab {
-  Group = "group",
-  Facilitator = "facilitator",
-  Quiet = "quiet",
-}
+export type ActiveTab = "group" | "facilitator" | "quiet";
+
+export type ReflectionShareSelection = {
+  guidedAnswers: boolean;
+  freeWriting: boolean;
+};
 
 export type SupportGroup = {
   name: string;
@@ -26,14 +27,39 @@ export type GroupMessage = {
   createdAt: string;
 };
 
+export type SupportLink = {
+  id: number;
+  title: string;
+  url: string;
+  description: string | null;
+};
+
+export type MeditationPlaylist = {
+  title: string;
+  description: string | null;
+  spotifyUrl: string;
+  trackCount: number | null;
+};
+
+export type Doodle = {
+  id: number;
+  imageData: string;
+  sharedWithFacilitator: boolean;
+  createdAt: string;
+};
+
 export type ReflectionResponse = {
   id: number;
   groupId: number;
+  participantId: number;
   privateNote: string | null;
   facilitatorNote: string | null;
-  sharedWithFacilitator: boolean;
+  freeWriting: string | null;
+  sharedGuided: boolean;
+  sharedGuidedAt: string | null;
+  sharedFreeWriting: boolean;
+  sharedFreeWritingAt: string | null;
   createdAt: string;
-  sharedAt: string | null;
 };
 
 export enum OnboardingStatus {

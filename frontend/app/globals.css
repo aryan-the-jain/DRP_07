@@ -1,15 +1,59 @@
 @import "tailwindcss";
 
+/*
+  "alongside" design system — a warm, hand-drawn paper feel for a calm
+  peer-support space. Display voice is Caveat; body/UI voice is Nunito Sans
+  (both loaded via next/font in layout.tsx). Accents: warm terracotta for the
+  group, calm sage for the quiet reflection space.
+*/
+
 :root {
-  --background: #f4f1ec;
-  --foreground: #1c1917;
+  /* type */
+  --scrawl: var(--font-caveat), "Comic Sans MS", cursive;
+  --hand: var(--font-nunito), -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* paper palette */
+  --paper: #f6f1e9;
+  --card: #fbf8f2;
+  --ink: #3a342d;
+  --muted: #8d8478;
+  --faint: #b7afa1;
+  --line: #cbbfae;
+
+  /* warm + calm accents — same chroma/lightness family, different hue */
+  --warm: oklch(0.68 0.085 48); /* terracotta */
+  --warm-soft: color-mix(in oklch, var(--warm) 20%, var(--paper));
+  --warm-ink: #7a4a2e;
+  --calm: oklch(0.66 0.05 165); /* sage */
+  --calm-soft: color-mix(in oklch, var(--calm) 18%, var(--paper));
+  --calm-ink: #3c5a4c;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
 }
 
+/* Expose palette + fonts as Tailwind v4 utility tokens (bg-paper, text-ink…). */
 @theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-warm: var(--warm);
+  --color-warm-soft: var(--warm-soft);
+  --color-warm-ink: var(--warm-ink);
+  --color-calm: var(--calm);
+  --color-calm-soft: var(--calm-soft);
+  --color-calm-ink: var(--calm-ink);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-sans: var(--hand);
+  --font-display: var(--scrawl);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 html,
@@ -18,7 +62,283 @@ body {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--hand);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- type helpers ---- */
+.h-title {
+  font-family: var(--scrawl);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  line-height: 1.1;
+}
+.scrawl {
+  font-family: var(--scrawl);
+}
+.leader {
+  font-family: ui-monospace, "SFMono-Regular", monospace;
+  font-size: 10.5px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* doodled underline for hand-titled headings */
+.uline {
+  position: relative;
+  display: inline-block;
+}
+.uline::after {
+  content: "";
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  bottom: -6px;
+  height: 7px;
+  background: no-repeat center / 100% 100%
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M1 5 C30 1 60 8 90 3 110 0 118 5 119 5' stroke='%23c98a5a' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* dashed section rule */
+.divider {
+  height: 0;
+  border-top: 2px dashed var(--line);
+}
+
+/* ---- sketchy hand-drawn cards ---- */
+.sk {
+  border: 2px solid var(--ink);
+  border-radius: 255px 14px 225px 16px / 16px 225px 18px 255px;
+  background: var(--card);
+}
+.sk.v2 {
+  border-radius: 14px 240px 16px 255px / 230px 16px 255px 16px;
+}
+.sk.v3 {
+  border-radius: 225px 16px 240px 14px / 14px 230px 16px 240px;
+}
+.sk.thin {
+  border-width: 1.6px;
+}
+.sk.soft {
+  border-color: var(--line);
+}
+
+/* a softly rounded panel (large surfaces where the irregular sketch radius
+   would read as lopsided) */
+.panel {
+  border: 2px solid var(--line);
+  border-radius: 26px;
+  background: var(--card);
+}
+
+/* ---- avatars ---- */
+.av {
+  border-radius: 50%;
+  border: 1.8px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--hand);
+  font-weight: 700;
+  background: var(--warm-soft);
+  color: var(--warm-ink);
+  flex: 0 0 auto;
+}
+.av.anon {
+  background: #efe9df;
+  border-style: dashed;
+  border-color: var(--line);
+  color: var(--muted);
+}
+.av.calm {
+  background: var(--calm-soft);
+  color: var(--calm-ink);
+}
+.av.muted {
+  background: #efe9df;
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+/* ---- chips ---- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.6px solid var(--line);
+  background: var(--card);
+  border-radius: 40px;
+  padding: 4px 11px;
+  font-size: 14px;
+  color: var(--ink);
+}
+.chip.warm {
+  border-color: var(--warm);
+  background: var(--warm-soft);
+  color: var(--warm-ink);
+}
+.chip.calm {
+  border-color: var(--calm);
+  background: var(--calm-soft);
+  color: var(--calm-ink);
+}
+
+/* ---- buttons ---- */
+.btn {
+  font-family: var(--hand);
+  font-weight: 700;
+  font-size: 15px;
+  border: 2px solid var(--ink);
+  background: var(--card);
+  color: var(--ink);
+  padding: 8px 16px;
+  border-radius: 40px 14px 40px 14px / 14px 40px 14px 40px;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--paper),
+    0 0 0 5px var(--warm);
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.btn.warm {
+  background: var(--warm);
+  border-color: transparent;
+  color: #fff;
+}
+.btn.calm {
+  background: var(--calm);
+  border-color: transparent;
+  color: #fff;
+}
+.btn.calm:focus-visible {
+  box-shadow:
+    0 0 0 3px var(--paper),
+    0 0 0 5px var(--calm);
+}
+.btn.ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--muted);
+}
+.btn.sm {
+  padding: 6px 13px;
+  font-size: 13.5px;
+}
+
+/* ---- inputs / textareas ---- */
+.field {
+  font-family: var(--hand);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--card);
+  border: 1.8px solid var(--line);
+  border-radius: 18px;
+  padding: 10px 14px;
+  outline: none;
+  width: 100%;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.field::placeholder {
+  color: var(--faint);
+}
+.field:focus {
+  border-color: var(--warm);
+  box-shadow: 0 0 0 3px var(--warm-soft);
+}
+.field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.field.calm:focus {
+  border-color: var(--calm);
+  box-shadow: 0 0 0 3px var(--calm-soft);
+}
+
+/* ---- chat bubble ---- */
+.bubble {
+  background: var(--card);
+  border: 1.6px solid var(--line);
+  border-radius: 18px 18px 18px 6px;
+  padding: 10px 14px;
+}
+.bubble.calm {
+  border-color: var(--calm);
+  background: var(--calm-soft);
+}
+/* the current participant's own messages, aligned to the right */
+.bubble.mine {
+  border-color: var(--warm);
+  background: var(--warm-soft);
+  border-radius: 18px 18px 6px 18px;
+}
+
+/* ---- gentle entrance ---- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease;
+}
+
+/* ---- calming corner: breathing orb ---- */
+/* inhale 4s, hold 2s, exhale 6s, rest 1s — 13s loop (matches the JS label) */
+@keyframes breathe {
+  0% {
+    transform: scale(0.8);
+  }
+  30.77% {
+    transform: scale(1);
+  }
+  46.15% {
+    transform: scale(1);
+  }
+  92.31% {
+    transform: scale(0.8);
+  }
+  100% {
+    transform: scale(0.8);
+  }
+}
+.breathe-orb {
+  animation: breathe 13s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .field,
+  .animate-fadeIn,
+  .breathe-orb {
+    transition: none;
+    animation: none;
+  }
 }

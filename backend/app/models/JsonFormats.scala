@@ -37,6 +37,9 @@ object JsonFormats {
   given createReflectionReads: Reads[CreateReflection] =
     Json.reads[CreateReflection]
 
+  given createDoodleReads: Reads[CreateDoodle] =
+    Json.reads[CreateDoodle]
+
   given reflectionWrites: Writes[Reflection] =
     Json.writes[Reflection]
 
@@ -51,6 +54,15 @@ object JsonFormats {
 
   given returnFacilitatorMessageWrites: Writes[ReturnFacilitatorMessage] =
     Json.writes[ReturnFacilitatorMessage]
+
+  given returnSupportLinkWrites: Writes[ReturnSupportLink] =
+    Json.writes[ReturnSupportLink]
+
+  given returnMeditationPlaylistWrites: Writes[ReturnMeditationPlaylist] =
+    Json.writes[ReturnMeditationPlaylist]
+
+  given returnDoodleWrites: Writes[ReturnDoodle] =
+    Json.writes[ReturnDoodle]
 
   given returnReflectionResponse: Writes[ReturnReflectionResponse] =
     Json.writes[ReturnReflectionResponse]

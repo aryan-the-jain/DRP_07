@@ -59,20 +59,75 @@ case class CreateGroupMessage(
     body: String
 )
 
-// TODO: Learn what's going on here.
+/* A participant's quiet-space reflection: guided answers (privateNote +
+   facilitatorNote) and free writing. The two sections can be shared with the
+   facilitator independently, so the facilitator only ever sees shared sections.
+   TODO(next week): facilitator-side view that reads the shared_* sections. */
 case class Reflection(
     id: Int,
-    groupId: Int, // WHY IT'S PRIVATE!
+    groupId: Int,
+    participantId: Int,
     privateNote: Option[String],
     facilitatorNote: Option[String],
-    sharedWithFacilitator: Boolean,
-    createdAt: LocalDateTime,
-    sharedAt: Option[LocalDateTime]
+    freeWriting: Option[String],
+    sharedGuided: Boolean,
+    sharedGuidedAt: Option[LocalDateTime],
+    sharedFreeWriting: Boolean,
+    sharedFreeWritingAt: Option[LocalDateTime],
+    createdAt: LocalDateTime
 )
 
 case class CreateReflection(
+    participantId: Int,
     privateNote: Option[String],
-    facilitatorNote: Option[String]
+    facilitatorNote: Option[String],
+    freeWriting: Option[String],
+    shareGuided: Boolean,
+    shareFreeWriting: Boolean
+)
+
+// Facilitator-curated resource link. A null groupId means it is shown to all.
+case class SupportLink(
+    id: Int,
+    groupId: Option[Int],
+    title: String,
+    url: String,
+    description: Option[String],
+    sortOrder: Int,
+    isActive: Boolean,
+    createdAt: LocalDateTime,
+    updatedAt: LocalDateTime
+)
+
+// A participant's private doodle (PNG stored as a base64 data URL).
+case class UserDoodle(
+    id: Int,
+    participantId: Int,
+    groupId: Int,
+    imageData: String,
+    sharedWithFacilitator: Boolean,
+    createdAt: LocalDateTime,
+    updatedAt: LocalDateTime
+)
+
+case class CreateDoodle(
+    participantId: Int,
+    imageData: String,
+    sharedWithFacilitator: Boolean
+)
+
+// Facilitator-curated meditation playlist. A null groupId means it is shown to all.
+case class MeditationPlaylist(
+    id: Int,
+    groupId: Option[Int],
+    title: String,
+    description: Option[String],
+    spotifyUrl: String,
+    trackCount: Option[Int],
+    sortOrder: Int,
+    isActive: Boolean,
+    createdAt: LocalDateTime,
+    updatedAt: LocalDateTime
 )
 
 case class UpdateOnboarding(
