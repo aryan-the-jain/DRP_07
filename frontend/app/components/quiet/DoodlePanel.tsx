@@ -9,6 +9,7 @@ import {
 
 import { fetchDoodles, saveDoodle } from "../../lib/api";
 import { Doodle } from "../../lib/types";
+import { LineIcon } from "../DesignPrimitives";
 
 // Lets the shell's top-right "Share with facilitator" button share the current
 // canvas without the doodle toolbar growing its own share button.
@@ -30,6 +31,8 @@ const SELECTED_HALO = `0 0 0 3px ${CARD_FILL}, 0 0 0 5px ${SAGE}`;
 // Gentle alternating tilt so kept doodles read like a scrapbook wall.
 const KEPT_ROTATIONS = ["-3deg", "2.5deg", "-2deg", "3deg"];
 const LINE_WIDTH = 3.2;
+// The eraser is just a thick stroke in the canvas background colour.
+const ERASER_WIDTH = 22;
 
 export function DoodlePanel({
   apiUrl,
@@ -43,6 +46,8 @@ export function DoodlePanel({
   const isDrawingRef = useRef(false);
   const colourRef = useRef(DOODLE_COLOURS[0].value);
   const [selectedColour, setSelectedColour] = useState(DOODLE_COLOURS[0].value);
+  const isErasingRef = useRef(false);
+  const [isErasing, setIsErasing] = useState(false);
   const [kept, setKept] = useState<Doodle[]>([]);
   const [justKept, setJustKept] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
@@ -50,6 +55,10 @@ export function DoodlePanel({
   useEffect(() => {
     colourRef.current = selectedColour;
   }, [selectedColour]);
+
+  useEffect(() => {
+    isErasingRef.current = isErasing;
+  }, [isErasing]);
 
   // Size the canvas backing store to its displayed size (× DPR) so strokes are
   // crisp and line up with the cursor, then lay down the warm background.
@@ -129,7 +138,13 @@ export function DoodlePanel({
     setJustKept(false);
 
     const { x, y } = pointerPosition(event);
-    ctx.strokeStyle = colourRef.current;
+    if (isErasingRef.current) {
+      ctx.strokeStyle = CANVAS_FILL;
+      ctx.lineWidth = ERASER_WIDTH;
+    } else {
+      ctx.strokeStyle = colourRef.current;
+      ctx.lineWidth = LINE_WIDTH;
+    }
     ctx.beginPath();
     ctx.moveTo(x, y);
     // A tap leaves a small dot.
@@ -203,7 +218,7 @@ export function DoodlePanel({
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             {DOODLE_COLOURS.map((colour) => {
-              const isSelected = colour.value === selectedColour;
+              const isSelected = !isErasing && colour.value === selectedColour;
 
               return (
                 <button
@@ -211,7 +226,10 @@ export function DoodlePanel({
                   type="button"
                   aria-label={colour.name}
                   aria-pressed={isSelected}
-                  onClick={() => setSelectedColour(colour.value)}
+                  onClick={() => {
+                    setSelectedColour(colour.value);
+                    setIsErasing(false);
+                  }}
                   className="h-7 w-7 rounded-full transition"
                   style={{
                     background: colour.value,
@@ -220,6 +238,18 @@ export function DoodlePanel({
                 />
               );
             })}
+
+            <button
+              type="button"
+              aria-label="Eraser"
+              aria-pressed={isErasing}
+              onClick={() => setIsErasing(true)}
+              className={`ml-1 rounded-full p-1 transition ${
+                isErasing ? "text-calm-ink" : "text-muted hover:text-ink"
+              }`}
+            >
+              <LineIcon name="eraser" size={24} />
+            </button>
           </div>
 
           <div className="flex items-center gap-2">

@@ -5,6 +5,7 @@ export type IconName =
   | "check"
   | "clock"
   | "close"
+  | "eraser"
   | "externalLink"
   | "heart"
   | "mail"
@@ -46,6 +47,15 @@ export function LineIcon({
       </>
     ),
     close: <path {...pathProps} d="M5 5l12 12M17 5 5 17" />,
+    eraser: (
+      <>
+        <path
+          {...pathProps}
+          d="M8.5 17 4.8 13.3a1.6 1.6 0 0 1 0-2.3l6.2-6.2a1.6 1.6 0 0 1 2.3 0l3.7 3.7a1.6 1.6 0 0 1 0 2.3L12.5 17H8.5Z"
+        />
+        <path {...pathProps} d="M9 8.5 13.5 13M8.5 17H18" />
+      </>
+    ),
     externalLink: (
       <>
         <path
