@@ -291,7 +291,7 @@ export function OnboardingSurvey() {
       setSaveError(
         error instanceof Error
           ? error.message
-          : "We couldn't save your answers just now.",
+          : "We couldn’t save your answers just now.",
       );
       return false;
     } finally {
@@ -596,7 +596,7 @@ function PausePopup({
             margin: "0 0 8px",
           }}
         >
-          You can stop right here — we'll match you to a group and let you know when it's ready.
+          You can stop right here — we’ll match you to a group and let you know when it’s ready.
         </p>
         <p
           style={{
@@ -835,7 +835,7 @@ function SectionInYourTime({
       <Qn
         q="Who did you lose?"
         optional
-        why="so you can receive support from those who understand what it's like."
+        why="so you can receive support from those who understand what it’s like."
         use="Only ever shared with your group if you choose to."
       >
         <OptChips
