@@ -188,14 +188,6 @@ export async function saveOnboarding(
   return response.json();
 }
 
-export async function shareReflection(apiUrl: string, reflectionId: number) {
-  try {
-    const response = await fetch(`${apiUrl}/reflections/${reflectionId}/share`, {
-      method: "PATCH",
-      headers: {
-        Accept: "application/json",
-      },
-    });
 export async function fetchSupportLinks(
   apiUrl: string,
 ): Promise<SupportLink[]> {

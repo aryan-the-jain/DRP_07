@@ -75,15 +75,6 @@ export function ChatHeader({
         </div>
       </div>
 
-<<<<<<< HEAD
-      {activeTab !== ActiveTab.Quiet && (
-        <div className="flex flex-col gap-2 border-t border-stone-200 px-4 py-3 text-sm text-stone-700 sm:flex-row sm:items-center sm:px-5">
-          <span>
-            <strong className="font-semibold text-stone-950">
-              {facilitatorName}
-            </strong>{" "}
-            is facilitating
-=======
       {activeTab !== "quiet" && (
         <div className="flex flex-col gap-2.5 border-t-2 border-dashed border-line px-4 py-3 text-[15px] text-muted sm:flex-row sm:items-center sm:px-5">
           <span className="flex items-center gap-2">
@@ -96,28 +87,14 @@ export function ChatHeader({
               </strong>{" "}
               is holding this space
             </span>
->>>>>>> main
           </span>
           <button
             type="button"
             onClick={() =>
-<<<<<<< HEAD
-              onSetActiveTab(
-                activeTab === ActiveTab.Group
-                  ? ActiveTab.Facilitator
-                  : ActiveTab.Group,
-              )
-=======
               onSetActiveTab(isFacilitatorTab ? "group" : "facilitator")
->>>>>>> main
             }
             className={`btn sm inline-flex w-fit items-center gap-2 ${isFacilitatorTab ? "" : "warm"}`}
           >
-<<<<<<< HEAD
-            {activeTab === ActiveTab.Group
-              ? "Directly message facilitator here"
-              : "Go back to group discussion"}
-=======
             {isFacilitatorTab ? (
               <>
                 <LineIcon name="arrowLeft" size={15} />
@@ -129,7 +106,6 @@ export function ChatHeader({
                 Message {facilitatorName} privately
               </>
             )}
->>>>>>> main
           </button>
         </div>
       )}

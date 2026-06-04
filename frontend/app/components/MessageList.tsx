@@ -7,7 +7,7 @@ import { AvatarCircle } from "./DesignPrimitives";
 import { FacilitatorMessageModal } from "./FacilitatorMessageModal";
 
 type MessageListProps = {
-  activeTab: Exclude<ActiveTab, ActiveTab.Quiet>;
+  activeTab: Exclude<ActiveTab, "quiet">;
   facilitatorName: string;
   messages: GroupMessage[];
   facilitatorMessages: GroupMessage[];
