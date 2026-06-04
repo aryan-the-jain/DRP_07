@@ -8,18 +8,11 @@ import {
   fetchFacilitatorMessages,
   fetchGroup,
   fetchGroupMessages,
-  fetchLatestReflection,
   fetchParticipants,
-  saveReflection,
   sendMessage,
 } from "./lib/api";
-import {
-  ActiveTab,
-  GroupMessage,
-  Participant,
-  ReflectionShareSelection,
-  SupportGroup,
-} from "./lib/types";
+import { ActiveTab, GroupMessage, Participant, SupportGroup } from "./lib/types";
+import { useQuietSpace } from "./lib/useQuietSpace";
 
 // How often to refresh the conversation so other people's messages appear
 // without a manual refresh. Gentle cadence to match the calm tone.
@@ -52,18 +45,6 @@ export default function Home() {
     GroupMessage[]
   >([]);
   const [activeTab, setActiveTab] = useState<ActiveTab>("group");
-  const [privateNote, setPrivateNote] = useState("");
-  const [facilitatorNote, setFacilitatorNote] = useState("");
-  const [freeWritingNote, setFreeWritingNote] = useState("");
-  const [shareSelection, setShareSelection] = useState<ReflectionShareSelection>(
-    {
-      guidedAnswers: false,
-      freeWriting: false,
-    },
-  );
-  const [isSharingReflection, setIsSharingReflection] = useState(false);
-  const [isReflectionShared, setIsReflectionShared] = useState(false);
-  const [quietSpaceError, setQuietSpaceError] = useState("");
   const [messageBody, setMessageBody] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -78,6 +59,10 @@ export default function Home() {
     return process.env.NEXT_PUBLIC_API_URL ?? fallbackApiUrl;
   }, []);
 
+  // The quiet-space reflection state and persistence live in a shared hook so
+  // the in-room quiet tab and the standalone /quiet route behave identically.
+  const quiet = useQuietSpace(apiUrl);
+
   const loadMessages = useCallback(async () => {
     const next = await fetchGroupMessages(apiUrl);
     setMessages((previous) => (sameMessages(previous, next) ? previous : next));
@@ -88,26 +73,6 @@ export default function Home() {
     setFacilitatorMessages((previous) =>
       sameMessages(previous, next) ? previous : next,
     );
-  }, [apiUrl]);
-
-  const loadReflectionDraft = useCallback(async () => {
-    try {
-      const reflection = await fetchLatestReflection(apiUrl);
-      if (reflection) {
-        setPrivateNote(reflection.privateNote ?? "");
-        setFacilitatorNote(reflection.facilitatorNote ?? "");
-        setFreeWritingNote(reflection.freeWriting ?? "");
-        setShareSelection({
-          guidedAnswers: reflection.sharedGuided,
-          freeWriting: reflection.sharedFreeWriting,
-        });
-        setIsReflectionShared(
-          reflection.sharedGuided || reflection.sharedFreeWriting,
-        );
-      }
-    } catch {
-      // Gracefully ignore since it is just a draft load
-    }
   }, [apiUrl]);
 
   const loadRoom = useCallback(async () => {
@@ -122,13 +87,13 @@ export default function Home() {
 
       setGroup(groupData);
       setParticipants(participantsData);
-      await Promise.all([loadMessages(), loadFacilitatorMessages(), loadReflectionDraft()]);
+      await Promise.all([loadMessages(), loadFacilitatorMessages()]);
     } catch {
       setErrorMessage("We could not load the group room. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  }, [apiUrl, loadMessages, loadFacilitatorMessages, loadReflectionDraft]);
+  }, [apiUrl, loadMessages, loadFacilitatorMessages]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -254,99 +219,10 @@ export default function Home() {
   }
 
   async function handleExitQuietSpace() {
-    const trimmedPrivate = privateNote.trim();
-    const trimmedFacilitator = facilitatorNote.trim();
-    const trimmedFreeWriting = freeWritingNote.trim();
-    const hasAnyText = Boolean(
-      trimmedPrivate || trimmedFacilitator || trimmedFreeWriting,
-    );
-
-    // Persist whatever they wrote as a private draft (not shared) so it is
-    // restored next time. Best-effort: don't block leaving on a failed save.
-    if (!isReflectionShared && hasAnyText) {
-      try {
-        await saveReflection(apiUrl, {
-          privateNote: trimmedPrivate,
-          facilitatorNote: trimmedFacilitator,
-          freeWriting: trimmedFreeWriting,
-          shareGuided: false,
-          shareFreeWriting: false,
-        });
-      } catch {
-        // Quietly fail since this is a draft save
-      }
-    }
-
-    setQuietSpaceError("");
+    // Save any draft, then return to the group — the chat-room exit behaviour
+    // is unchanged; only the persistence moved into the shared hook.
+    await quiet.persistDraftReflection();
     setActiveTab("group");
-  }
-
-  function handlePrivateNoteChange(value: string) {
-    setPrivateNote(value);
-    setQuietSpaceError("");
-    setIsReflectionShared(false);
-  }
-
-  function handleFacilitatorNoteChange(value: string) {
-    setFacilitatorNote(value);
-    setQuietSpaceError("");
-    setIsReflectionShared(false);
-  }
-
-  function handleFreeWritingNoteChange(value: string) {
-    setFreeWritingNote(value);
-    setQuietSpaceError("");
-    setIsReflectionShared(false);
-  }
-
-  function handleShareSelectionChange(selection: ReflectionShareSelection) {
-    setShareSelection(selection);
-    setQuietSpaceError("");
-    setIsReflectionShared(false);
-  }
-
-  async function handleShareReflection() {
-    const trimmedPrivate = privateNote.trim();
-    const trimmedFacilitator = facilitatorNote.trim();
-    const trimmedFreeWriting = freeWritingNote.trim();
-    const hasGuidedText = Boolean(trimmedPrivate || trimmedFacilitator);
-    const hasFreeWritingText = Boolean(trimmedFreeWriting);
-
-    if (!shareSelection.guidedAnswers && !shareSelection.freeWriting) {
-      setQuietSpaceError("Choose what you would like to share.");
-      return;
-    }
-
-    if (
-      !(shareSelection.guidedAnswers && hasGuidedText) &&
-      !(shareSelection.freeWriting && hasFreeWritingText)
-    ) {
-      setQuietSpaceError("Please type something in the area you selected.");
-      return;
-    }
-
-    setIsSharingReflection(true);
-    setQuietSpaceError("");
-
-    try {
-      // One write persists the text and marks the chosen sections as shared.
-      // Only treat it as shared once the backend has actually saved it.
-      await saveReflection(apiUrl, {
-        privateNote: trimmedPrivate,
-        facilitatorNote: trimmedFacilitator,
-        freeWriting: trimmedFreeWriting,
-        shareGuided: shareSelection.guidedAnswers && hasGuidedText,
-        shareFreeWriting: shareSelection.freeWriting && hasFreeWritingText,
-      });
-
-      setIsReflectionShared(true);
-    } catch {
-      setQuietSpaceError(
-        "We couldn't share this with the facilitator. Your writing is safe here — please try again.",
-      );
-    } finally {
-      setIsSharingReflection(false);
-    }
   }
 
   function handleExit() {
@@ -370,13 +246,13 @@ export default function Home() {
       isSending={isSending}
       errorMessage={errorMessage}
       messageBody={messageBody}
-      privateNote={privateNote}
-      facilitatorNote={facilitatorNote}
-      freeWritingNote={freeWritingNote}
-      shareSelection={shareSelection}
-      isSharingReflection={isSharingReflection}
-      isReflectionShared={isReflectionShared}
-      quietSpaceError={quietSpaceError}
+      privateNote={quiet.privateNote}
+      facilitatorNote={quiet.facilitatorNote}
+      freeWritingNote={quiet.freeWritingNote}
+      shareSelection={quiet.shareSelection}
+      isSharingReflection={quiet.isSharingReflection}
+      isReflectionShared={quiet.isReflectionShared}
+      quietSpaceError={quiet.quietSpaceError}
       selectedParticipant={selectedParticipant}
       isParticipantListOpen={isParticipantListOpen}
       isParticipantListPinned={isParticipantListPinned}
@@ -391,12 +267,12 @@ export default function Home() {
       onExit={handleExit}
       onSendMessage={handleSendMessage}
       onMessageBodyChange={setMessageBody}
-      onPrivateNoteChange={handlePrivateNoteChange}
-      onFacilitatorNoteChange={handleFacilitatorNoteChange}
-      onFreeWritingNoteChange={handleFreeWritingNoteChange}
-      onShareSelectionChange={handleShareSelectionChange}
+      onPrivateNoteChange={quiet.handlePrivateNoteChange}
+      onFacilitatorNoteChange={quiet.handleFacilitatorNoteChange}
+      onFreeWritingNoteChange={quiet.handleFreeWritingNoteChange}
+      onShareSelectionChange={quiet.handleShareSelectionChange}
       onExitQuietSpace={handleExitQuietSpace}
-      onShareReflection={handleShareReflection}
+      onShareReflection={quiet.handleShareReflection}
     />
   );
 }

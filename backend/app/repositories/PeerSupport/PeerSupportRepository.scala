@@ -41,7 +41,18 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
 
   def findGroup(groupId: Int): Future[ReturnSupportGroup] =
     db.run(groupQuerier.selectGroup(groupId).result.head)
-      .map(ReturnSupportGroup.apply)
+      .map { case (name, facilitatorName, duration, day, time) =>
+        // Day and time live in the DB; expose them as plain strings so the
+        // existing Json.writes macro can serialise them without a LocalTime
+        // writer (e.g. "FRIDAY", "17:00").
+        ReturnSupportGroup(
+          name,
+          facilitatorName,
+          duration,
+          day.name(),
+          time.toString
+        )
+      }
 
   def participantsForGroup(
       groupId: Int

@@ -1,7 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { BrandMark } from "../components/DesignPrimitives";
 import { fallbackApiUrl, fetchOnboarding, saveOnboarding } from "../lib/api";
 import {
   OnboardingPayload,
@@ -244,7 +246,13 @@ function responseToAnswers(resp: OnboardingResponse): Answers {
   };
 }
 
+// Matching isn't built yet, so finishing the survey goes straight to the
+// dashboard. Flip this to show the "still finding your group" pending screen
+// (SubmitScreen) instead, once real matching exists.
+const SHOW_PENDING_SCREEN_AFTER_FINISH = false;
+
 export function OnboardingSurvey() {
+  const router = useRouter();
   const [section, setSection] = useState(0);
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS);
   const [finished, setFinished] = useState(false);
@@ -260,6 +268,7 @@ export function OnboardingSurvey() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Pre-fill from any saved answers so "pick up where I left off" survives a refresh.
   useEffect(() => {
@@ -329,6 +338,23 @@ export function OnboardingSurvey() {
       return { ...prev, [key]: [...withoutSkip, value] };
     });
 
+  // The first section holds the only two required answers: call name and age.
+  const firstSectionComplete =
+    answers.callName.trim().length > 0 && answers.age.trim().length > 0;
+
+  // Block navigation away from the first section until the required answers are
+  // in, surfacing a gentle error. Returns true if navigation should be held.
+  const blockIncompleteFirstSection = (target: number) => {
+    if (section === 0 && target !== 0 && !firstSectionComplete) {
+      setValidationError(
+        "Your name and age are needed to set up your space — please add them before moving on.",
+      );
+      return true;
+    }
+    setValidationError(null);
+    return false;
+  };
+
   // Leaving the first section the first time → hold navigation and show the
   // pause prompt; `target` is where the user was heading.
   const leaveFirstSection = (target: number) => {
@@ -343,12 +369,20 @@ export function OnboardingSurvey() {
   const goBack = () => setSection((s) => Math.max(0, s - 1));
   const goNext = async () => {
     if (section < LAST_SECTION) {
+      if (blockIncompleteFirstSection(section + 1)) return;
       if (leaveFirstSection(section + 1)) return;
       setSection((s) => s + 1);
       return;
     }
-    // Finish — persist the whole survey as a completed submission.
-    if (await persist(OnboardingStatus.Complete)) setFinished(true);
+    // Finish — persist the whole survey as a completed submission, then move
+    // straight into the dashboard (or the pending screen, if matching is on).
+    if (await persist(OnboardingStatus.Complete)) {
+      if (SHOW_PENDING_SCREEN_AFTER_FINISH) {
+        setFinished(true);
+      } else {
+        router.push("/dashboard");
+      }
+    }
   };
 
   const onSaveAndFinishLater = async () => {
@@ -382,6 +416,7 @@ export function OnboardingSurvey() {
 
   const goToSection = (index: number) => {
     setFinished(false);
+    if (blockIncompleteFirstSection(index)) return;
     if (leaveFirstSection(index)) return;
     setSection(index);
   };
@@ -421,12 +456,17 @@ export function OnboardingSurvey() {
           style={{
             display: "flex",
             alignItems: "center",
+            gap: 14,
             padding: "18px 30px",
             borderBottom: "2px solid var(--line)",
           }}
         >
-          <span className="h-title" style={{ fontSize: 22, color: "var(--ink)" }}>
-            Setting up your space
+          <BrandMark small />
+          <span
+            className="h-title"
+            style={{ fontSize: 18, color: "var(--muted)" }}
+          >
+            · Setting up your space
           </span>
           <div style={{ flex: 1 }} />
           <button
@@ -486,6 +526,22 @@ export function OnboardingSurvey() {
           )}
         </div>
       </div>
+
+      {validationError && !firstSectionComplete && (
+        <div style={{ flex: "0 0 auto", padding: "0 40px 6px" }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 14,
+              lineHeight: 1.4,
+              textAlign: "center",
+              color: "#9c5b54",
+            }}
+          >
+            {validationError}
+          </p>
+        </div>
+      )}
 
       {saveError && (
         <div style={{ flex: "0 0 auto", padding: "0 40px 6px" }}>
@@ -695,7 +751,7 @@ function SectionAbout({
       {/* single · chips */}
       <Qn
         q="How old are you?"
-        optional
+        needed
         why="to gently place you with people at a similar stage of life."
         use="Only used to match your group; never shown."
       >
@@ -863,8 +919,10 @@ function SectionInYourTime({
 // ============================================================ MOMENT SCREENS
 
 // Submit → the "Tender moments" first screen (StateFinding from the design):
-// finishing onboarding lands on a warm "still finding your group" state, with
-// the quiet space open in the meantime.
+// the warm "still finding your group" pending state, with the quiet space open
+// in the meantime. Retained for when real matching exists — currently the
+// survey routes straight to the dashboard instead (see
+// SHOW_PENDING_SCREEN_AFTER_FINISH).
 function SubmitScreen() {
   return (
     <Screen>
