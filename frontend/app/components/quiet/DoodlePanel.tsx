@@ -280,11 +280,14 @@ export function DoodlePanel({
                   })`,
                 }}
               >
+                {/* object-contain (not cover) so the whole wide canvas shows in
+                    the thumbnail — edge content isn't cropped to look blank. */}
                 {/* eslint-disable-next-line @next/next/no-img-element -- a base64 canvas data URL, nothing for next/image to optimise */}
                 <img
                   src={doodle.imageData}
                   alt="A doodle you kept"
-                  className="h-24 w-32 rounded-sm object-cover"
+                  className="h-20 w-40 rounded-sm object-contain"
+                  style={{ background: CANVAS_FILL }}
                 />
               </div>
             ))}
