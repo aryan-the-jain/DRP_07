@@ -592,7 +592,7 @@ function PausePopup({
             type="button"
             className="btn warm"
             style={{ fontSize: 16 }}
-            onClick={onEnter}
+            onClick={onContinue}
           >
             Keep going, gently <Icon name={IconName.Chev} size={15} c="var(--paper)" />
           </button>
@@ -600,7 +600,7 @@ function PausePopup({
             type="button"
             className="btn ghost"
             style={{ fontSize: 15.5, borderColor: "var(--calm)", color: "#3c5a4c" }}
-            onClick={onContinue}
+            onClick={onEnter}
           >
             Take me in — I’ll finish later
           </button>
