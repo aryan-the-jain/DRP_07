@@ -21,7 +21,6 @@ type ChatRoomProps = {
   participants: Participant[];
   messages: GroupMessage[];
   facilitatorMessages: GroupMessage[];
-  hasLeftRoom: boolean;
   isLoading: boolean;
   isSending: boolean;
   errorMessage: string;
@@ -62,7 +61,6 @@ export function ChatRoom({
   participants,
   messages,
   facilitatorMessages,
-  hasLeftRoom,
   isLoading,
   isSending,
   errorMessage,
@@ -96,25 +94,11 @@ export function ChatRoom({
   onShareReflection,
 }: ChatRoomProps) {
   const facilitatorName = group?.facilitatorName ?? "Sean";
-  const groupName = group?.name ?? "Friday Group";
 
   return (
     <main className="h-screen overflow-hidden bg-paper px-4 py-5 text-ink sm:px-6 lg:px-8">
       <section className="panel mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
-        {hasLeftRoom ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center p-6 text-center">
-            <div className="sk v2 max-w-md px-7 py-8">
-              <h1 className="h-title text-3xl text-ink">
-                You&apos;ve left {groupName}.
-              </h1>
-              <p className="mt-3 text-[15px] leading-relaxed text-muted">
-                Thank you for taking part. It&apos;s safe to close this tab when
-                you&apos;re ready.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <>
+        <>
             <ChatHeader
               activeTab={activeTab}
               group={group}
@@ -195,8 +179,7 @@ export function ChatRoom({
                 />
               </div>
             )}
-          </>
-        )}
+        </>
       </section>
     </main>
   );

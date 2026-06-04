@@ -200,15 +200,17 @@ body {
   cursor: pointer;
   transition:
     transform 0.12s ease,
-    background-color 0.15s ease,
-    border-color 0.15s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease,
     opacity 0.15s ease;
 }
 .btn:hover:not(:disabled) {
   transform: translateY(-1px);
 }
 .btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.985);
+  transform: translateY(0) scale(0.96);
 }
 .btn:focus-visible {
   outline: none;
@@ -219,16 +221,28 @@ body {
 .btn:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+  transform: none;
+  box-shadow: none;
 }
 .btn.warm {
   background: var(--warm);
   border-color: transparent;
   color: #fff;
 }
+/* Primary — leans into a warmer/deeper orange with a soft glow on hover */
+.btn.warm:hover:not(:disabled) {
+  background: oklch(0.62 0.105 48);
+  box-shadow: 0 4px 14px color-mix(in oklch, var(--warm) 45%, transparent);
+}
 .btn.calm {
   background: var(--calm);
   border-color: transparent;
   color: #fff;
+}
+/* Calm primary — settles into a deeper sage on hover */
+.btn.calm:hover:not(:disabled) {
+  background: oklch(0.6 0.06 165);
+  box-shadow: 0 4px 14px color-mix(in oklch, var(--calm) 40%, transparent);
 }
 .btn.calm:focus-visible {
   box-shadow:
@@ -240,9 +254,31 @@ body {
   border-color: var(--line);
   color: var(--muted);
 }
+/* Secondary — settles into a soft grey on hover */
+.btn.ghost:hover:not(:disabled) {
+  background: color-mix(in oklch, var(--line) 28%, var(--paper));
+  border-color: var(--faint);
+  color: var(--ink);
+}
 .btn.sm {
   padding: 6px 13px;
   font-size: 13.5px;
+}
+
+/* Every button shares the onboarding survey's click/hover feel: a gentle lift on
+   hover and a satisfying press on click. `.btn` defines its own (matching)
+   variants above; the rules below extend the same motion to all other buttons
+   — icon buttons, tabs, swatches, avatars. The base transition is element-level
+   (low specificity) so any existing Tailwind `transition` keeps winning and only
+   buttons lacking one gain a smooth transform. */
+button {
+  transition: transform 0.12s ease;
+}
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+button:not(:disabled):active {
+  transform: translateY(0) scale(0.96);
 }
 
 /* ---- inputs / textareas ---- */

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatRoom } from "./components/ChatRoom";
@@ -33,6 +34,7 @@ function sameMessages(a: GroupMessage[], b: GroupMessage[]) {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [group, setGroup] = useState<SupportGroup | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isParticipantListHovered, setIsParticipantListHovered] =
@@ -49,7 +51,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [hasLeftRoom, setHasLeftRoom] = useState(false);
   const participantListRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const isParticipantListOpen =
@@ -111,17 +112,13 @@ export default function Home() {
   // manual refresh. Errors are swallowed: a dropped poll just keeps the last
   // good conversation rather than surfacing an error mid-session.
   useEffect(() => {
-    if (hasLeftRoom) {
-      return;
-    }
-
     const intervalId = window.setInterval(() => {
       void loadMessages().catch(() => {});
       void loadFacilitatorMessages().catch(() => {});
     }, MESSAGE_POLL_INTERVAL_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [hasLeftRoom, loadMessages, loadFacilitatorMessages]);
+  }, [loadMessages, loadFacilitatorMessages]);
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -177,10 +174,6 @@ export default function Home() {
   async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (hasLeftRoom) {
-      return;
-    }
-
     const trimmedMessage = messageBody.trim();
 
     if (!trimmedMessage) {
@@ -226,11 +219,8 @@ export default function Home() {
   }
 
   function handleExit() {
-    setHasLeftRoom(true);
-    setSelectedParticipant(null);
-    setIsParticipantListHovered(false);
-    setIsParticipantListPinned(false);
-    setMessageBody("");
+    // Leaving the room returns the participant to their dashboard home base.
+    router.push("/dashboard");
   }
 
   return (
@@ -241,7 +231,6 @@ export default function Home() {
       participants={participants}
       messages={messages}
       facilitatorMessages={facilitatorMessages}
-      hasLeftRoom={hasLeftRoom}
       isLoading={isLoading}
       isSending={isSending}
       errorMessage={errorMessage}
