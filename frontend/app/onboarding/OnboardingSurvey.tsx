@@ -80,8 +80,8 @@ const CULTURAL: Choice[] = [
 
 // section 3 · in your own time (grief)
 const RECENCY: Choice[] = [
-  { text: "In the last few weeks" },
-  { text: "In the last few months" },
+  { text: "Within the last few weeks" },
+  { text: "Within the last few months" },
   { text: "Around 6 months ago" },
   { text: "Longer ago" },
   { text: NOT_SAY, skip: true },
@@ -291,7 +291,7 @@ export function OnboardingSurvey() {
       setSaveError(
         error instanceof Error
           ? error.message
-          : "We couldn't save your answers just now.",
+          : "We couldn’t save your answers just now.",
       );
       return false;
     } finally {
@@ -585,7 +585,7 @@ function PausePopup({
         >
           <Icon name={IconName.Mug} size={28} c="var(--calm)" />
           <span className="h-title" style={{ fontSize: 27, color: "#3c5a4c" }}>
-            That’s everything we need.
+            That’s everything we need for the moment.
           </span>
         </div>
         <p
@@ -596,8 +596,7 @@ function PausePopup({
             margin: "0 0 8px",
           }}
         >
-          You can stop right here — your space is ready, and you can step into it
-          now.
+          You can stop right here — we’ll match you to a group and let you know when it’s ready.
         </p>
         <p
           style={{
@@ -607,7 +606,7 @@ function PausePopup({
             margin: "0 0 22px",
           }}
         >
-          There’s a little more that helps us find the right group for you, but
+          There’s a little more that helps us to find the best group for you, but
           it’s entirely optional and there’s no rush at all. Come back to it
           whenever you feel ready.
         </p>
@@ -618,7 +617,7 @@ function PausePopup({
             style={{ fontSize: 16 }}
             onClick={onContinue}
           >
-            Keep going, gently <Icon name={IconName.Chev} size={15} c="var(--paper)" />
+            Keep going, at your pace <Icon name={IconName.Chev} size={15} c="var(--paper)" />
           </button>
           <button
             type="button"
@@ -626,7 +625,7 @@ function PausePopup({
             style={{ fontSize: 15.5, borderColor: "var(--calm)", color: "#3c5a4c" }}
             onClick={onEnter}
           >
-            Take me in — I’ll finish later
+            Come back later
           </button>
         </div>
       </div>
@@ -656,7 +655,7 @@ function SectionAbout({
       <Qn
         q="What would you like us to call you?"
         needed
-        why="it’s the name your circle and facilitator will see."
+        why="it’s the name your group and facilitator will see."
         use="Your real name is never shown."
       >
         <TextField
@@ -672,7 +671,7 @@ function SectionAbout({
       <Qn
         q="Which pronouns feel right?"
         optional
-        why="so your facilitator and group address you the way you’d like."
+        why="so your facilitator and group can address you the way you’d like."
       >
         <OptChips
           items={PRONOUNS}
@@ -696,7 +695,7 @@ function SectionAbout({
       <Qn
         q="How old are you?"
         optional
-        why="to gently place you with people at a similar stage of life."
+        why="to place you with people at a similar stage of life."
         use="Only used to match your group; never shown."
       >
         <OptChips
@@ -731,9 +730,9 @@ function SectionMore({
       />
       {/* text · underline only */}
       <Qn
-        q="Got a fun fact about yourself?"
+        q="Got a fact about yourself?"
         optional
-        why="a gentle way for people to find common ground."
+        why="it helps you to find people with common interests."
         use="Shared with your group to help you connect."
       >
         <UnderlineField
@@ -747,7 +746,7 @@ function SectionMore({
 
       {/* multiple + 'other' typed (skip is mutually exclusive) */}
       <Qn
-        q="What do you enjoy?"
+        q="Have you got any hobbies?"
         optional
         why="small shared interests can make a first meeting feel easier."
       >
@@ -773,7 +772,7 @@ function SectionMore({
       <Qn
         q="What’s your cultural background?"
         optional
-        why="only if you’d like to — it can help your group feel familiar and understood."
+        why="having others in your group with similar backgrounds can help you with any cultural practices/customs."
       >
         <OptChips
           items={CULTURAL}
@@ -836,7 +835,7 @@ function SectionInYourTime({
       <Qn
         q="Who did you lose?"
         optional
-        why="so the people you meet have walked something similar."
+        why="so you can receive support from those who understand what it’s like."
         use="Only ever shared with your group if you choose to."
       >
         <OptChips
