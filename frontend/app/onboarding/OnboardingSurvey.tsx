@@ -606,7 +606,7 @@ function PausePopup({
             margin: "0 0 22px",
           }}
         >
-          There’s a little more that helps us find to the best group for you, but
+          There’s a little more that helps us to find the best group for you, but
           it’s entirely optional and there’s no rush at all. Come back to it
           whenever you feel ready.
         </p>
