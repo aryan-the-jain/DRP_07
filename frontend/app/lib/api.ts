@@ -1,6 +1,8 @@
 import {
-  Doodle,
   GroupMessage,
+  OnboardingPayload,
+  OnboardingResponse,
+  Doodle,
   MeditationPlaylist,
   Participant,
   ReflectionResponse,
@@ -140,6 +142,46 @@ export async function saveReflection(
   if (!response.ok) {
     throw new Error(
       "We couldn't save your reflection. Please check your connection and try again.",
+    );
+  }
+
+  return response.json();
+}
+
+export async function fetchOnboarding(
+  apiUrl: string,
+): Promise<OnboardingResponse | null> {
+  const response = await fetch(
+    `${apiUrl}/participants/${participantId}/onboarding`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Could not load your saved answers.");
+  }
+
+  // Backend returns the saved object or JSON null (no prior survey answers).
+  return response.json();
+}
+
+export async function saveOnboarding(
+  apiUrl: string,
+  payload: OnboardingPayload,
+): Promise<OnboardingResponse> {
+  const response = await fetch(
+    `${apiUrl}/participants/${participantId}/onboarding`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "We couldn't save your answers just now. Please check your connection and try again.",
     );
   }
 

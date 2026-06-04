@@ -61,3 +61,23 @@ export type ReflectionResponse = {
   sharedFreeWritingAt: string | null;
   createdAt: string;
 };
+
+export enum OnboardingStatus {
+  Draft = "draft",
+  Complete = "complete",
+}
+
+export type OnboardingPayload = {
+  callName: string;
+  pronouns: string | null;
+  age: string | null;
+  funFact: string;
+  hobbies: string | null;
+  culturalBackground: string | null;
+  griefRecency: string | null;
+  whoLost: string | null;
+  status: OnboardingStatus;
+};
+
+// Mirrors the backend `ReturnOnboarding`. `hobbies` is a JSON-encoded string[].
+export type OnboardingResponse = { participantId: number } & OnboardingPayload;

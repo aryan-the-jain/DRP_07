@@ -129,3 +129,15 @@ case class MeditationPlaylist(
     createdAt: LocalDateTime,
     updatedAt: LocalDateTime
 )
+
+case class UpdateOnboarding(
+    callName: String,
+    pronouns: Option[String],
+    age: Option[String],
+    funFact: String,
+    hobbies: Option[String],
+    culturalBackground: Option[String],
+    griefRecency: Option[String],
+    whoLost: Option[String],
+    status: String
+)

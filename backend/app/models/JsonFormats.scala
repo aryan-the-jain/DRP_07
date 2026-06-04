@@ -66,4 +66,10 @@ object JsonFormats {
 
   given returnReflectionResponse: Writes[ReturnReflectionResponse] =
     Json.writes[ReturnReflectionResponse]
+
+  given updateOnboardingReads: Reads[UpdateOnboarding] =
+    Json.reads[UpdateOnboarding]
+
+  given returnOnboardingWrites: Writes[ReturnOnboarding] =
+    Json.writes[ReturnOnboarding]
 }

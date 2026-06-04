@@ -223,7 +223,8 @@ export default function Home() {
       return;
     }
 
-    const endpoint = activeTab === "group" ? "messages" : "facilitator-messages";
+    const endpoint =
+      activeTab === "group" ? "messages" : "facilitator-messages";
     const facilitatorId = participants.find(
       (participant) => participant.role === "facilitator",
     )?.id;

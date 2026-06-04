@@ -17,6 +17,16 @@ class ParticipantsTable(tag: Tag)
   def funFact = column[String]("fun_fact")
   def role = column[Role]("role")
 
+  // Onboarding survey fields (see V7 migration). Kept out of the `*` projection
+  // so the existing `Participant` mapping and queries are untouched.
+  def pronouns = column[Option[String]]("pronouns")
+  def age = column[Option[String]]("age")
+  def hobbies = column[Option[String]]("hobbies")
+  def culturalBackground = column[Option[String]]("cultural_background")
+  def griefRecency = column[Option[String]]("grief_recency")
+  def whoLost = column[Option[String]]("who_lost")
+  def onboardingStatus = column[String]("onboarding_status")
+
   def * = (participantId, name, initials, country, aboutMe, funFact, role)
     .mapTo[Participant]
 }

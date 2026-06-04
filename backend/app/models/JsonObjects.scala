@@ -61,3 +61,16 @@ case class ReturnReflectionResponse(
     createdAt: LocalDateTime,
     sharedAt: Option[String]
 )
+
+case class ReturnOnboarding(
+    participantId: Int,
+    callName: String,
+    pronouns: Option[String],
+    age: Option[String],
+    funFact: String,
+    hobbies: Option[String],
+    culturalBackground: Option[String],
+    griefRecency: Option[String],
+    whoLost: Option[String],
+    status: String
+)
