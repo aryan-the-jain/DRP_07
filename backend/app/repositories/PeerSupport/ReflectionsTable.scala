@@ -15,7 +15,8 @@ class ReflectionsTable(tag: Tag) extends Table[Reflection](tag, "reflections") {
   def sharedGuided = column[Boolean]("shared_guided")
   def sharedGuidedAt = column[Option[LocalDateTime]]("shared_guided_at")
   def sharedFreeWriting = column[Boolean]("shared_free_writing")
-  def sharedFreeWritingAt = column[Option[LocalDateTime]]("shared_free_writing_at")
+  def sharedFreeWritingAt =
+    column[Option[LocalDateTime]]("shared_free_writing_at")
   def createdAt = column[LocalDateTime]("created_at")
 
   def * =

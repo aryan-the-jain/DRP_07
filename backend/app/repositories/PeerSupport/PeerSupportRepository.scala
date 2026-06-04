@@ -123,17 +123,18 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
             )
           )
 
-        db.run(update).map(_ =>
-          existing.copy(
-            privateNote = privateNote,
-            facilitatorNote = facilitatorNote,
-            freeWriting = freeWriting,
-            sharedGuided = sharedGuided,
-            sharedGuidedAt = sharedGuidedAt,
-            sharedFreeWriting = sharedFreeWriting,
-            sharedFreeWritingAt = sharedFreeWritingAt
+        db.run(update)
+          .map(_ =>
+            existing.copy(
+              privateNote = privateNote,
+              facilitatorNote = facilitatorNote,
+              freeWriting = freeWriting,
+              sharedGuided = sharedGuided,
+              sharedGuidedAt = sharedGuidedAt,
+              sharedFreeWriting = sharedFreeWriting,
+              sharedFreeWritingAt = sharedFreeWritingAt
+            )
           )
-        )
 
       case None =>
         val reflection = Reflection(
@@ -236,9 +237,10 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
       updatedAt = now
     )
     val insert = (userDoodles returning userDoodles.map(_.id)) += doodle
-    db.run(insert).map(newId =>
-      ReturnDoodle(newId, doodle.imageData, doodle.sharedWithFacilitator, now)
-    )
+    db.run(insert)
+      .map(newId =>
+        ReturnDoodle(newId, doodle.imageData, doodle.sharedWithFacilitator, now)
+      )
   }
 
   /* The participant's kept doodles for this group, most recent first. Private to
@@ -255,14 +257,16 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
         )
         .sortBy(_.createdAt.desc)
         .result
-    ).map(_.map(doodle =>
-      ReturnDoodle(
-        doodle.id,
-        doodle.imageData,
-        doodle.sharedWithFacilitator,
-        doodle.createdAt
+    ).map(
+      _.map(doodle =>
+        ReturnDoodle(
+          doodle.id,
+          doodle.imageData,
+          doodle.sharedWithFacilitator,
+          doodle.createdAt
+        )
       )
-    ))
+    )
 
   def sendGroupMessage(
       groupId: Int,

@@ -115,5 +115,7 @@ class PeerSupportController @Inject() (
     if (groupId <= 0 || participantId <= 0)
       Action(BadRequest(Json.obj("error" -> "Invalid room or participant")))
     else
-      peerSupportRepository.doodlesForParticipant(groupId, participantId).returnOk()
+      peerSupportRepository
+        .doodlesForParticipant(groupId, participantId)
+        .returnOk()
 }
