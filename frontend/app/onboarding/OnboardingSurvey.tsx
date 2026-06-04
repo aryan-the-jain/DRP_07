@@ -25,8 +25,9 @@ import {
 } from "./SurveyParts";
 
 // ---- answer option sets ----
-// "Other" reveals a typed field; the skip option is gently set apart.
+// "Other" / "In your own words" reveal typed fields; the skip option is gently set apart.
 const OTHER = "Other";
+const WHO_OTHER = "In your own words";
 const NOT_SAY = "I’d rather not say";
 
 const PRONOUNS: Choice[] = [
@@ -34,6 +35,15 @@ const PRONOUNS: Choice[] = [
   { text: "He / him" },
   { text: "They / them" },
   { text: OTHER },
+  { text: NOT_SAY, skip: true },
+];
+
+const AGE_RANGES: Choice[] = [
+  { text: "Under 18" },
+  { text: "18–21" },
+  { text: "22–25" },
+  { text: "26–30" },
+  { text: "31+" },
   { text: NOT_SAY, skip: true },
 ];
 
@@ -68,18 +78,20 @@ const CULTURAL: Choice[] = [
   { text: NOT_SAY, skip: true },
 ];
 
-// section 3 · in your own time (grief — kept from the design's wf-survey.jsx)
+// section 3 · in your own time (grief)
 const RECENCY: Choice[] = [
   { text: "In the last few weeks" },
-  { text: "A few months ago" },
+  { text: "In the last few months" },
+  { text: "Around 6 months ago" },
   { text: "Longer ago" },
   { text: NOT_SAY, skip: true },
 ];
 const WHO_LOST: Choice[] = [
   { text: "A family member" },
+  { text: "A partner" },
   { text: "A friend" },
   { text: "A pet" },
-  { text: "Someone else" },
+  { text: WHO_OTHER },
   { text: NOT_SAY, skip: true },
 ];
 
@@ -97,17 +109,19 @@ type Answers = {
   culturalOther: string;
   recency: string;
   whoLost: string;
+  whoLostOther: string;
 };
 
 enum TextKey {
   CallName = "callName",
   PronounsOther = "pronounsOther",
-  Age = "age",
   FunFact = "funFact",
   CulturalOther = "culturalOther",
+  WhoLostOther = "whoLostOther",
 }
 enum SingleKey {
   Pronouns = "pronouns",
+  Age = "age",
   Cultural = "cultural",
   Recency = "recency",
   WhoLost = "whoLost",
@@ -125,6 +139,7 @@ const EMPTY_ANSWERS: Answers = {
   culturalOther: "",
   recency: "",
   whoLost: "",
+  whoLostOther: "",
 };
 
 // ---- mapping between the survey's `Answers` and the backend payload ----
@@ -134,10 +149,12 @@ const EMPTY_ANSWERS: Answers = {
 const knownTexts = (choices: Choice[]): string[] =>
   choices.filter((c) => !c.skip && c.text !== OTHER).map((c) => c.text);
 
-// A single-choice answer (which may use "Other") → the value to store, or null.
-function flattenChoice(value: string, other: string): string | null {
-  if (!value || value === NOT_SAY) return null;
-  if (value === OTHER) {
+// A single-choice answer (which may use "Other" / WHO_OTHER) → the value to store, or null.
+// NOT_SAY is stored as-is so the button stays highlighted on reload.
+function flattenChoice(value: string, other: string, otherTrigger = OTHER): string | null {
+  if (!value) return null;
+  if (value === NOT_SAY) return NOT_SAY;
+  if (value === otherTrigger) {
     const trimmed = other.trim();
     return trimmed.length > 0 ? trimmed : null;
   }
@@ -145,18 +162,21 @@ function flattenChoice(value: string, other: string): string | null {
 }
 
 // A single-choice answer with only a skip option → the value to store, or null.
+// NOT_SAY is stored as-is so the button stays highlighted on reload.
 function flattenSkip(value: string): string | null {
-  return !value || value === NOT_SAY ? null : value;
+  return !value ? null : value;
 }
 
-// A stored value → the matching chip, or "Other" + the typed value.
+// A stored value → the matching chip, or otherText + the typed value.
 function expandChoice(
   stored: string | null,
   choices: Choice[],
+  otherText = OTHER,
 ): { value: string; other: string } {
   if (!stored) return { value: "", other: "" };
+  if (stored === NOT_SAY) return { value: NOT_SAY, other: "" };
   if (knownTexts(choices).includes(stored)) return { value: stored, other: "" };
-  return { value: OTHER, other: stored };
+  return { value: otherText, other: stored };
 }
 
 function answersToPayload(
@@ -164,20 +184,19 @@ function answersToPayload(
   status: OnboardingStatus,
 ): OnboardingPayload {
   const hobbies = [
-    ...answers.hobbies.filter((h) => h !== OTHER && h !== NOT_SAY),
+    ...answers.hobbies.filter((h) => h !== OTHER),
     ...answers.hobbiesOther.map((h) => h.trim()).filter((h) => h.length > 0),
   ];
-  const age = parseInt(answers.age.trim(), 10);
 
   return {
     callName: answers.callName.trim(),
     pronouns: flattenChoice(answers.pronouns, answers.pronounsOther),
-    age: Number.isNaN(age) ? null : age,
+    age: flattenSkip(answers.age),
     funFact: answers.funFact.trim(),
     hobbies: hobbies.length > 0 ? JSON.stringify(hobbies) : null,
     culturalBackground: flattenChoice(answers.cultural, answers.culturalOther),
     griefRecency: flattenSkip(answers.recency),
-    whoLost: flattenSkip(answers.whoLost),
+    whoLost: flattenChoice(answers.whoLost, answers.whoLostOther, WHO_OTHER),
     status,
   };
 }
@@ -201,22 +220,27 @@ function responseToAnswers(resp: OnboardingResponse): Answers {
     }
   }
   const known = knownTexts(HOBBIES);
+  const notSayHobbies = storedHobbies.includes(NOT_SAY);
   const hobbies = storedHobbies.filter((h) => known.includes(h));
-  const hobbiesOther = storedHobbies.filter((h) => !known.includes(h));
+  const hobbiesOther = storedHobbies.filter((h) => !known.includes(h) && h !== NOT_SAY);
   if (hobbiesOther.length > 0) hobbies.push(OTHER);
+  if (notSayHobbies) hobbies.push(NOT_SAY);
+
+  const whoLost = expandChoice(resp.whoLost, WHO_LOST, WHO_OTHER);
 
   return {
     callName: resp.callName ?? "",
     pronouns: pronouns.value,
     pronounsOther: pronouns.other,
-    age: resp.age != null ? String(resp.age) : "",
+    age: resp.age ?? "",
     funFact: resp.funFact ?? "",
     hobbies,
     hobbiesOther,
     cultural: cultural.value,
     culturalOther: cultural.other,
     recency: resp.griefRecency ?? "",
-    whoLost: resp.whoLost ?? "",
+    whoLost: whoLost.value,
+    whoLostOther: whoLost.other,
   };
 }
 
@@ -458,7 +482,7 @@ export function OnboardingSurvey() {
             />
           )}
           {section === 2 && (
-            <SectionInYourTime answers={answers} selectSingle={selectSingle} />
+            <SectionInYourTime answers={answers} setText={setText} selectSingle={selectSingle} />
           )}
         </div>
       </div>
@@ -668,19 +692,17 @@ function SectionAbout({
         )}
       </Qn>
 
-      {/* text · boxed field */}
+      {/* single · chips */}
       <Qn
         q="How old are you?"
-        needed
+        optional
         why="to gently place you with people at a similar stage of life."
         use="Only used to match your group; never shown."
       >
-        <TextField
-          id="age"
-          label="How old are you?"
-          placeholder="e.g. 21"
-          value={answers.age}
-          onChange={(v) => setText(TextKey.Age, v)}
+        <OptChips
+          items={AGE_RANGES}
+          isSelected={(text) => answers.age === text}
+          onToggle={(text) => selectSingle(SingleKey.Age, text)}
         />
       </Qn>
     </div>
@@ -774,12 +796,14 @@ function SectionMore({
   );
 }
 
-// Section 3 · in your own time — the two grief questions (kept).
+// Section 3 · in your own time — the two grief questions.
 function SectionInYourTime({
   answers,
+  setText,
   selectSingle,
 }: {
   answers: Answers;
+  setText: (key: TextKey, value: string) => void;
   selectSingle: (key: SingleKey, value: string) => void;
 }) {
   return (
@@ -808,7 +832,7 @@ function SectionInYourTime({
           ))}
         </OptList>
       </Qn>
-      {/* single · inline chips */}
+      {/* single · inline chips; "In your own words" reveals a typed field */}
       <Qn
         q="Who did you lose?"
         optional
@@ -818,10 +842,19 @@ function SectionInYourTime({
         <OptChips
           items={WHO_LOST}
           isSelected={(text) => answers.whoLost === text}
-          onToggle={(text) =>
-            selectSingle(SingleKey.WhoLost, answers.whoLost === text ? "" : text)
-          }
+          onToggle={(text) => selectSingle(SingleKey.WhoLost, text)}
         />
+        {answers.whoLost === WHO_OTHER && (
+          <div style={{ marginTop: 12 }}>
+            <UnderlineField
+              id="whoLostOther"
+              label="Who you lost"
+              placeholder="In your own words…"
+              value={answers.whoLostOther}
+              onChange={(v) => setText(TextKey.WhoLostOther, v)}
+            />
+          </div>
+        )}
       </Qn>
     </div>
   );

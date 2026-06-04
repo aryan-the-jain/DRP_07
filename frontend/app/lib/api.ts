@@ -11,7 +11,7 @@ import {
 } from "./types";
 
 export const groupId = 1;
-export const participantId = 1;
+export const participantId = 7;
 export const fallbackApiUrl = "http://localhost:9000";
 
 function sortMessages(messages: GroupMessage[]) {

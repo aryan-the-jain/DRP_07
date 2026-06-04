@@ -70,7 +70,7 @@ export enum OnboardingStatus {
 export type OnboardingPayload = {
   callName: string;
   pronouns: string | null;
-  age: number | null;
+  age: string | null;
   funFact: string;
   hobbies: string | null;
   culturalBackground: string | null;

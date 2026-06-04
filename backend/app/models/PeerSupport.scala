@@ -133,7 +133,7 @@ case class MeditationPlaylist(
 case class UpdateOnboarding(
     callName: String,
     pronouns: Option[String],
-    age: Option[Int],
+    age: Option[String],
     funFact: String,
     hobbies: Option[String],
     culturalBackground: Option[String],
