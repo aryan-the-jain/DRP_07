@@ -1,5 +1,7 @@
 import { FormEvent } from "react";
 
+import { LineIcon } from "./DesignPrimitives";
+
 type MessageComposerProps = {
   activeTab: "group" | "facilitator";
   facilitatorName: string;
@@ -21,8 +23,10 @@ export function MessageComposer({
   onMessageBodyChange,
   onSendMessage,
 }: MessageComposerProps) {
+  const isFacilitatorTab = activeTab === "facilitator";
+
   return (
-    <footer className="shrink-0 border-t border-stone-200 bg-[#faf7f1] px-4 py-4 sm:px-5">
+    <footer className="shrink-0 border-t-2 border-dashed border-line bg-card px-4 py-4 sm:px-5">
       <form
         onSubmit={onSendMessage}
         className="mx-auto flex max-w-4xl items-center gap-3"
@@ -32,11 +36,11 @@ export function MessageComposer({
         </label>
         <input
           id="message"
-          className="min-h-12 flex-1 rounded-full border border-stone-300 bg-white px-5 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:ring-4 focus:ring-stone-200"
+          className={`field min-h-12 flex-1 !rounded-full px-5 ${isFacilitatorTab ? "calm" : ""}`}
           placeholder={
-            activeTab === "group"
-              ? "Type message..."
-              : `Type a private message to ${facilitatorName}...`
+            isFacilitatorTab
+              ? `Write a private message to ${facilitatorName}…`
+              : "Share something with the group…"
           }
           value={messageBody}
           onChange={(event) => onMessageBodyChange(event.target.value)}
@@ -45,15 +49,22 @@ export function MessageComposer({
         <button
           type="submit"
           disabled={isSending || isLoading}
-          className="flex h-12 min-w-12 items-center justify-center rounded-full bg-stone-900 px-5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`btn ${isFacilitatorTab ? "calm" : "warm"} inline-flex h-12 min-w-12 items-center justify-center gap-2 !rounded-full px-5`}
           aria-label="Send message"
         >
-          {isSending ? "..." : "Send"}
+          <LineIcon name="send" size={18} />
+          <span className="hidden sm:inline">
+            {isSending ? "Sending…" : "Send"}
+          </span>
         </button>
       </form>
 
       {errorMessage && (
-        <p className="mx-auto mt-3 max-w-4xl text-sm text-red-700">
+        <p
+          role="alert"
+          className="mx-auto mt-3 flex max-w-4xl items-center gap-2 text-sm text-warm-ink"
+        >
+          <LineIcon name="heart" size={14} />
           {errorMessage}
         </p>
       )}

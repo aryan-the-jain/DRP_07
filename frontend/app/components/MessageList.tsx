@@ -1,7 +1,9 @@
 import { RefObject } from "react";
 
+import { participantId } from "../lib/api";
 import { formatMessageTime, initialsFor } from "../lib/format";
 import { ActiveTab, GroupMessage, Participant } from "../lib/types";
+import { AvatarCircle } from "./DesignPrimitives";
 import { FacilitatorMessageModal } from "./FacilitatorMessageModal";
 
 type MessageListProps = {
@@ -11,7 +13,7 @@ type MessageListProps = {
   facilitatorMessages: GroupMessage[];
   isLoading: boolean;
   messagesEndRef: RefObject<HTMLDivElement | null>;
-  findParticipantByName: (name: string) => Participant | undefined;
+  findParticipantById: (id: number) => Participant | undefined;
   onOpenParticipantProfile: (participant: Participant) => void;
 };
 
@@ -22,7 +24,7 @@ export function MessageList({
   facilitatorMessages,
   isLoading,
   messagesEndRef,
-  findParticipantByName,
+  findParticipantById,
   onOpenParticipantProfile,
 }: MessageListProps) {
   const visibleMessages = activeTab === "group" ? messages : facilitatorMessages;
@@ -30,8 +32,9 @@ export function MessageList({
   return (
     <section className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
       {isLoading ? (
-        <div className="flex h-full min-h-[14rem] items-center justify-center text-sm text-stone-500">
-          Loading Friday Group...
+        <div className="flex h-full min-h-[14rem] flex-col items-center justify-center gap-2 text-muted">
+          <span className="scrawl text-xl text-faint">settling in…</span>
+          <span className="text-sm">Loading the Friday Group</span>
         </div>
       ) : (
         <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -40,21 +43,27 @@ export function MessageList({
           )}
 
           {visibleMessages.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-stone-300 bg-[#faf7f1] p-6 text-center text-sm text-stone-600">
+            <div className="sk thin soft dash bg-paper p-6 text-center text-[15px] leading-relaxed text-muted">
               {activeTab === "group"
                 ? "No messages yet. You can start gently when you are ready."
                 : `No private messages yet. You can write to ${facilitatorName} here when you are ready.`}
             </div>
           ) : (
-            visibleMessages.map((message) => {
-              const participant = findParticipantByName(message.senderName);
+            visibleMessages.map((message, index) => {
+              const participant = findParticipantById(message.id);
+              const displayName = participant?.displayName ?? "Unknown";
+              const isFacilitator = participant?.role === "facilitator";
+              const isOwn = message.id === participantId;
 
               return (
-                <article key={message.id} className="flex gap-3 sm:gap-4">
+                <article
+                  key={`${message.id}-${message.createdAt}-${index}`}
+                  className={`flex gap-3 sm:gap-4 ${isOwn ? "flex-row-reverse" : ""}`}
+                >
                   <button
                     type="button"
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-[#eee6da] text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-[#e6ddcf] focus:outline-none focus:ring-4 focus:ring-stone-200 disabled:cursor-default disabled:hover:border-stone-300 disabled:hover:bg-[#eee6da]"
-                    aria-label={`Open ${message.senderName}'s profile`}
+                    className="rounded-full transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warm disabled:cursor-default disabled:hover:opacity-100"
+                    aria-label={`Open ${displayName}'s profile`}
                     disabled={!participant}
                     onClick={() => {
                       if (participant) {
@@ -62,14 +71,22 @@ export function MessageList({
                       }
                     }}
                   >
-                    {initialsFor(message.senderName)}
+                    <AvatarCircle
+                      initials={participant?.initials ?? initialsFor(displayName)}
+                      tone={isFacilitator ? "calm" : "warm"}
+                      sizeClass="h-10 w-10 text-sm"
+                    />
                   </button>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <div
+                    className={`flex min-w-0 flex-1 flex-col ${isOwn ? "items-end" : "items-start"}`}
+                  >
+                    <div
+                      className={`mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 ${isOwn ? "justify-end" : ""}`}
+                    >
                       <button
                         type="button"
-                        className="text-sm font-semibold text-stone-950 transition hover:text-stone-700 focus:outline-none focus:underline disabled:cursor-default disabled:hover:text-stone-950"
+                        className="text-sm font-semibold text-ink transition hover:text-warm-ink focus:outline-none focus:underline disabled:cursor-default disabled:hover:text-ink"
                         disabled={!participant}
                         onClick={() => {
                           if (participant) {
@@ -77,14 +94,21 @@ export function MessageList({
                           }
                         }}
                       >
-                        {message.senderName}
+                        {displayName}
                       </button>
-                      <time className="text-xs text-stone-500">
+                      {isFacilitator && (
+                        <span className="chip calm px-2 py-0 text-[11px]">
+                          facilitator
+                        </span>
+                      )}
+                      <time className="text-xs text-faint">
                         {formatMessageTime(message.createdAt)}
                       </time>
                     </div>
 
-                    <div className="w-fit max-w-full rounded-[1.25rem] rounded-tl-sm border border-stone-200 bg-white px-4 py-3 text-sm leading-6 text-stone-800 shadow-sm sm:text-base">
+                    <div
+                      className={`bubble w-fit max-w-full text-[15px] leading-6 text-ink sm:text-base ${isFacilitator ? "calm" : ""} ${isOwn ? "mine" : ""}`}
+                    >
                       {message.body}
                     </div>
                   </div>

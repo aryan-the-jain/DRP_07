@@ -4,7 +4,7 @@ import models.*
 import models.JsonFormats.given
 import play.api.libs.json.*
 import play.api.mvc.*
-import repositories.PeerSupportRepository
+import repositories.PeerSupport.PeerSupportRepository
 
 import javax.inject.*
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,14 +31,35 @@ class PeerSupportController @Inject() (
   def participants(groupId: Int): Action[AnyContent] =
     peerSupportRepository.participantsForGroup(groupId).returnOk()
 
+  def participantInfo(participantId: Int): Action[AnyContent] =
+    peerSupportRepository.participantInfo(participantId).returnOk()
+
   def messages(groupId: Int): Action[AnyContent] =
-    peerSupportRepository.groupMessagesForGroup(groupId).returnOk()
+    peerSupportRepository.groupMessages(groupId).returnOk()
 
-  def facilitatorMessages(groupId: Int): Action[AnyContent] =
-    peerSupportRepository.facilitatorMessagesForGroup(groupId).returnOk()
+  def facilitatorMessages(
+      groupId: Int,
+      participantId: Int
+  ): Action[AnyContent] =
+    peerSupportRepository.facilitatorMessages(groupId, participantId).returnOk()
 
-  def shareReflection(reflectionId: Int): Action[AnyContent] =
-    peerSupportRepository.shareReflection(reflectionId).returnOk()
+  def latestReflection(
+      groupId: Int,
+      participantId: Int
+  ): Action[AnyContent] =
+    peerSupportRepository.latestReflection(groupId, participantId).returnOk()
+
+  def supportLinks(groupId: Int): Action[AnyContent] =
+    if (groupId <= 0)
+      Action(BadRequest(Json.obj("error" -> "Invalid room")))
+    else
+      peerSupportRepository.activeLinksForGroup(groupId).returnOk()
+
+  def meditationPlaylists(groupId: Int): Action[AnyContent] =
+    if (groupId <= 0)
+      Action(BadRequest(Json.obj("error" -> "Invalid room")))
+    else
+      peerSupportRepository.activeMeditationPlaylists(groupId).returnOk()
 
   /* Validates the request and returns an object of JsSuccess(A, _), where A is CreateMessage or
      CreateReflection.  If this inner A is well-formed, we then map it into the actual GroupMessage
@@ -57,15 +78,14 @@ class PeerSupportController @Inject() (
       }
   }
 
-  def createMessage(groupId: Int): Action[JsValue] = createNew(
-    peerSupportRepository.createMessage(groupId, _, MessageType.GROUP_WIDE),
-    (m: CreateMessage) => m.body.trim.nonEmpty
+  def sendGroupMessage(groupId: Int): Action[JsValue] = createNew(
+    peerSupportRepository.sendGroupMessage(groupId, _),
+    (m: CreateGroupMessage) => m.body.trim.nonEmpty
   )
 
-  def createFacilitatorMessage(groupId: Int): Action[JsValue] = createNew(
-    peerSupportRepository
-      .createMessage(groupId, _, MessageType.FACILITATOR_DIRECT),
-    (m: CreateMessage) => m.body.trim.nonEmpty
+  def sendFacilitatorMessage(groupId: Int): Action[JsValue] = createNew(
+    peerSupportRepository.sendFacilitatorMessage(groupId, _),
+    (m: CreateFacilitatorMessage) => m.body.trim.nonEmpty
   )
 
   def createReflection(groupId: Int): Action[JsValue] = createNew(
@@ -75,5 +95,27 @@ class PeerSupportController @Inject() (
 
   private def hasReflectionText(reflection: CreateReflection): Boolean =
     reflection.privateNote.exists(_.trim.nonEmpty) ||
-      reflection.facilitatorNote.exists(_.trim.nonEmpty)
+      reflection.facilitatorNote.exists(_.trim.nonEmpty) ||
+      reflection.freeWriting.exists(_.trim.nonEmpty)
+
+  def saveDoodle(groupId: Int): Action[JsValue] = createNew(
+    peerSupportRepository.saveDoodle(groupId, _),
+    (d: CreateDoodle) => isValidDoodle(d)
+  )
+
+  // Reject empty or oversized payloads gracefully. PNG data URLs are large, so we
+  // cap the stored size rather than accept an unbounded blob.
+  private val MaxDoodleDataLength = 3_000_000
+  private def isValidDoodle(doodle: CreateDoodle): Boolean =
+    doodle.participantId > 0 &&
+      doodle.imageData.startsWith("data:image/png;base64,") &&
+      doodle.imageData.length <= MaxDoodleDataLength
+
+  def doodles(groupId: Int, participantId: Int): Action[AnyContent] =
+    if (groupId <= 0 || participantId <= 0)
+      Action(BadRequest(Json.obj("error" -> "Invalid room or participant")))
+    else
+      peerSupportRepository
+        .doodlesForParticipant(groupId, participantId)
+        .returnOk()
 }

@@ -6,40 +6,58 @@ export type ReflectionShareSelection = {
 };
 
 export type SupportGroup = {
-  id: number;
   name: string;
   facilitatorName: string;
   scheduledDurationMinutes: number;
-  createdAt: string;
 };
 
 export type Participant = {
   id: number;
-  groupId: number;
   displayName: string;
   initials: string;
+  country: string;
   aboutMe: string;
   funFact: string;
   role: string;
-  createdAt: string;
 };
 
 export type GroupMessage = {
   id: number;
-  groupId: number;
-  senderName: string;
-  senderRole: string;
   body: string;
-  messageType: string;
+  createdAt: string;
+};
+
+export type SupportLink = {
+  id: number;
+  title: string;
+  url: string;
+  description: string | null;
+};
+
+export type MeditationPlaylist = {
+  title: string;
+  description: string | null;
+  spotifyUrl: string;
+  trackCount: number | null;
+};
+
+export type Doodle = {
+  id: number;
+  imageData: string;
+  sharedWithFacilitator: boolean;
   createdAt: string;
 };
 
 export type ReflectionResponse = {
   id: number;
   groupId: number;
+  participantId: number;
   privateNote: string | null;
   facilitatorNote: string | null;
-  sharedWithFacilitator: boolean;
+  freeWriting: string | null;
+  sharedGuided: boolean;
+  sharedGuidedAt: string | null;
+  sharedFreeWriting: boolean;
+  sharedFreeWritingAt: string | null;
   createdAt: string;
-  sharedAt: string | null;
 };

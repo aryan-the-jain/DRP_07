@@ -1,0 +1,63 @@
+package models
+
+import java.time.LocalDateTime
+
+case class ReturnSupportGroup(
+    name: String,
+    facilitatorName: String,
+    scheduledDurationMinutes: Int
+)
+
+case class ReturnParticipant(
+    id: Int,
+    displayName: String,
+    initials: String,
+    country: String,
+    aboutMe: String,
+    funFact: String,
+    role: Role
+)
+
+case class ReturnGroupMessage(
+    id: Int,
+    body: String,
+    createdAt: LocalDateTime
+)
+
+case class ReturnFacilitatorMessage(
+    fromId: Int,
+    toId: Int,
+    body: String,
+    createdAt: LocalDateTime
+)
+
+case class ReturnSupportLink(
+    id: Int,
+    title: String,
+    url: String,
+    description: Option[String]
+)
+
+case class ReturnMeditationPlaylist(
+    title: String,
+    description: Option[String],
+    spotifyUrl: String,
+    trackCount: Option[Int]
+)
+
+case class ReturnDoodle(
+    id: Int,
+    imageData: String,
+    sharedWithFacilitator: Boolean,
+    createdAt: LocalDateTime
+)
+
+case class ReturnReflectionResponse(
+    id: Int,
+    groupId: Int,
+    privateNote: Option[String],
+    facilitatorNote: Option[String],
+    sharedWithFacilitator: Boolean,
+    createdAt: LocalDateTime,
+    sharedAt: Option[String]
+)

@@ -1,6 +1,15 @@
-import { GroupMessage, Participant, ReflectionResponse, SupportGroup } from "./types";
+import {
+  Doodle,
+  GroupMessage,
+  MeditationPlaylist,
+  Participant,
+  ReflectionResponse,
+  SupportGroup,
+  SupportLink,
+} from "./types";
 
 export const groupId = 1;
+export const participantId = 1;
 export const fallbackApiUrl = "http://localhost:9000";
 
 function sortMessages(messages: GroupMessage[]) {
@@ -41,35 +50,55 @@ export async function fetchGroupMessages(apiUrl: string): Promise<GroupMessage[]
   return sortMessages(await response.json());
 }
 
+type FacilitatorMessageResponse = {
+  fromId: number;
+  toId: number;
+  body: string;
+  createdAt: string;
+};
+
 export async function fetchFacilitatorMessages(
   apiUrl: string,
 ): Promise<GroupMessage[]> {
   const response = await fetch(
-    `${apiUrl}/groups/${groupId}/facilitator-messages`,
+    `${apiUrl}/groups/${groupId}/${participantId}/facilitator-messages`,
   );
 
   if (!response.ok) {
     throw new Error("Could not load private messages.");
   }
 
-  return sortMessages(await response.json());
+  // The facilitator endpoint returns { fromId, toId, body, createdAt }; map the
+  // sender (fromId) onto `id` so it matches the shape MessageList expects.
+  const messages = (await response.json()) as FacilitatorMessageResponse[];
+  return sortMessages(
+    messages.map(({ fromId, body, createdAt }) => ({
+      id: fromId,
+      body,
+      createdAt,
+    })),
+  );
 }
 
 export async function sendMessage(
   apiUrl: string,
   endpoint: "messages" | "facilitator-messages",
   body: string,
+  facilitatorId?: number,
 ) {
+  // The backend expects { participantId, body } for the group chat and
+  // { fromId, toId, body } for a private message to the facilitator.
+  const payload =
+    endpoint === "messages"
+      ? { participantId, body }
+      : { fromId: participantId, toId: facilitatorId, body };
+
   const response = await fetch(`${apiUrl}/groups/${groupId}/${endpoint}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      senderName: "You",
-      senderInitials: "Y",
-      body,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -77,76 +106,121 @@ export async function sendMessage(
   }
 }
 
+export type ReflectionInput = {
+  privateNote: string;
+  facilitatorNote: string;
+  freeWriting: string;
+  shareGuided: boolean;
+  shareFreeWriting: boolean;
+};
+
+/* Upserts the current participant's reflection. The backend stores every
+   section and marks guided / free writing as shared independently, so this
+   resolves only when the write actually persisted. */
 export async function saveReflection(
   apiUrl: string,
-  privateNote: string,
-  facilitatorNote: string,
+  reflection: ReflectionInput,
 ): Promise<ReflectionResponse> {
-  try {
-    const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        privateNote: privateNote || null,
-        facilitatorNote: facilitatorNote || null,
-      }),
-    });
+  const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      participantId,
+      privateNote: reflection.privateNote || null,
+      facilitatorNote: reflection.facilitatorNote || null,
+      freeWriting: reflection.freeWriting || null,
+      shareGuided: reflection.shareGuided,
+      shareFreeWriting: reflection.shareFreeWriting,
+    }),
+  });
 
-    if (!response.ok) {
-      throw new Error(
-        "We couldn't save your reflection. Please check your connection and try again.",
-      );
-    }
-
-    return response.json();
-  } catch (error) {
-    if (error instanceof Error && error.message !== "Failed to fetch") {
-      throw error;
-    }
-
+  if (!response.ok) {
     throw new Error(
       "We couldn't save your reflection. Please check your connection and try again.",
     );
   }
+
+  return response.json();
 }
 
-export async function shareReflection(apiUrl: string, reflectionId: number) {
-  try {
-    const response = await fetch(`${apiUrl}/reflections/${reflectionId}/share`, {
-      method: "PATCH",
-      headers: {
-        Accept: "application/json",
-      },
-    });
+export async function fetchSupportLinks(
+  apiUrl: string,
+): Promise<SupportLink[]> {
+  const response = await fetch(`${apiUrl}/groups/${groupId}/support-links`);
 
-    if (!response.ok) {
-      throw new Error(
-        "We couldn't share this with the facilitator yet. Your text is still here.",
-      );
-    }
-  } catch (error) {
-    if (error instanceof Error && error.message !== "Failed to fetch") {
-      throw error;
-    }
-
-    throw new Error(
-      "We couldn't share this with the facilitator yet. Your text is still here.",
-    );
+  if (!response.ok) {
+    throw new Error("Could not load resources.");
   }
+
+  return (await response.json()) as SupportLink[];
+}
+
+export async function fetchMeditationPlaylists(
+  apiUrl: string,
+): Promise<MeditationPlaylist[]> {
+  const response = await fetch(
+    `${apiUrl}/groups/${groupId}/meditation-playlists`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Could not load playlists.");
+  }
+
+  return (await response.json()) as MeditationPlaylist[];
+}
+
+export async function saveDoodle(
+  apiUrl: string,
+  imageData: string,
+  shareWithFacilitator: boolean,
+): Promise<Doodle> {
+  const response = await fetch(`${apiUrl}/groups/${groupId}/doodles`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      participantId,
+      imageData,
+      sharedWithFacilitator: shareWithFacilitator,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not keep your doodle.");
+  }
+
+  return response.json();
+}
+
+export async function fetchDoodles(apiUrl: string): Promise<Doodle[]> {
+  const response = await fetch(
+    `${apiUrl}/groups/${groupId}/participants/${participantId}/doodles`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Could not load your doodles.");
+  }
+
+  return (await response.json()) as Doodle[];
 }
 
 export async function fetchLatestReflection(
   apiUrl: string,
 ): Promise<ReflectionResponse | null> {
   try {
-    const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`);
-    if (response.ok) {
-      return response.json();
+    const response = await fetch(
+      `${apiUrl}/groups/${groupId}/participants/${participantId}/reflection`,
+    );
+
+    if (!response.ok) {
+      return null;
     }
-    return null;
+
+    return (await response.json()) as ReflectionResponse | null;
   } catch {
     return null;
   }

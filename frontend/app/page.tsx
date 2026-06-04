@@ -10,12 +10,9 @@ import {
   fetchGroupMessages,
   fetchLatestReflection,
   fetchParticipants,
-  groupId,
   saveReflection,
   sendMessage,
-  shareReflection,
 } from "./lib/api";
-import { initialsFor } from "./lib/format";
 import {
   ActiveTab,
   GroupMessage,
@@ -23,6 +20,24 @@ import {
   ReflectionShareSelection,
   SupportGroup,
 } from "./lib/types";
+
+// How often to refresh the conversation so other people's messages appear
+// without a manual refresh. Gentle cadence to match the calm tone.
+const MESSAGE_POLL_INTERVAL_MS = 5000;
+
+// Messages carry no stable id, so compare by content to avoid replacing state
+// (and re-scrolling) when a poll returns the same conversation.
+function sameMessages(a: GroupMessage[], b: GroupMessage[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every(
+    (message, index) =>
+      message.id === b[index].id &&
+      message.body === b[index].body &&
+      message.createdAt === b[index].createdAt,
+  );
+}
 
 export default function Home() {
   const [group, setGroup] = useState<SupportGroup | null>(null);
@@ -40,11 +55,12 @@ export default function Home() {
   const [privateNote, setPrivateNote] = useState("");
   const [facilitatorNote, setFacilitatorNote] = useState("");
   const [freeWritingNote, setFreeWritingNote] = useState("");
-  const [shareSelection, setShareSelection] =
-    useState<ReflectionShareSelection>({
+  const [shareSelection, setShareSelection] = useState<ReflectionShareSelection>(
+    {
       guidedAnswers: false,
       freeWriting: false,
-    });
+    },
+  );
   const [isSharingReflection, setIsSharingReflection] = useState(false);
   const [isReflectionShared, setIsReflectionShared] = useState(false);
   const [quietSpaceError, setQuietSpaceError] = useState("");
@@ -63,11 +79,15 @@ export default function Home() {
   }, []);
 
   const loadMessages = useCallback(async () => {
-    setMessages(await fetchGroupMessages(apiUrl));
+    const next = await fetchGroupMessages(apiUrl);
+    setMessages((previous) => (sameMessages(previous, next) ? previous : next));
   }, [apiUrl]);
 
   const loadFacilitatorMessages = useCallback(async () => {
-    setFacilitatorMessages(await fetchFacilitatorMessages(apiUrl));
+    const next = await fetchFacilitatorMessages(apiUrl);
+    setFacilitatorMessages((previous) =>
+      sameMessages(previous, next) ? previous : next,
+    );
   }, [apiUrl]);
 
   const loadReflectionDraft = useCallback(async () => {
@@ -76,7 +96,14 @@ export default function Home() {
       if (reflection) {
         setPrivateNote(reflection.privateNote ?? "");
         setFacilitatorNote(reflection.facilitatorNote ?? "");
-        setIsReflectionShared(reflection.sharedWithFacilitator);
+        setFreeWritingNote(reflection.freeWriting ?? "");
+        setShareSelection({
+          guidedAnswers: reflection.sharedGuided,
+          freeWriting: reflection.sharedFreeWriting,
+        });
+        setIsReflectionShared(
+          reflection.sharedGuided || reflection.sharedFreeWriting,
+        );
       }
     } catch {
       // Gracefully ignore since it is just a draft load
@@ -114,6 +141,22 @@ export default function Home() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [messages]);
+
+  // Poll so other people's messages (and facilitator replies) appear without a
+  // manual refresh. Errors are swallowed: a dropped poll just keeps the last
+  // good conversation rather than surfacing an error mid-session.
+  useEffect(() => {
+    if (hasLeftRoom) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void loadMessages().catch(() => {});
+      void loadFacilitatorMessages().catch(() => {});
+    }, MESSAGE_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [hasLeftRoom, loadMessages, loadFacilitatorMessages]);
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -159,28 +202,11 @@ export default function Home() {
     setSelectedParticipant(null);
   }
 
-  function findParticipantByName(name: string) {
-    const facilitatorName = group?.facilitatorName ?? "Sean";
-
-    if (name.toLowerCase() === facilitatorName.toLowerCase()) {
-      return {
-        id: 0,
-        groupId: groupId,
-        displayName: facilitatorName,
-        initials: initialsFor(facilitatorName),
-        aboutMe:
-          "I am facilitating this peer-support group. I am here to help keep this space safe, calm, and supportive for everyone.",
-        funFact:
-          "I bake bread on weekends and always make sure there is hot tea ready.",
-        role: "facilitator",
-        createdAt: "",
-      };
-    }
-
-    return participants.find(
-      (participant) =>
-        participant.displayName.toLowerCase() === name.toLowerCase(),
-    );
+  // FIXED: Shifted lookup logic from names to backend participant IDs
+  function findParticipantById(id: number) {
+    if (id === undefined || id === null) return undefined;
+    
+    return participants.find((p) => p.id === id);
   }
 
   async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
@@ -197,13 +223,21 @@ export default function Home() {
       return;
     }
 
+    const endpoint = activeTab === "group" ? "messages" : "facilitator-messages";
+    const facilitatorId = participants.find(
+      (participant) => participant.role === "facilitator",
+    )?.id;
+
+    if (endpoint === "facilitator-messages" && facilitatorId === undefined) {
+      setErrorMessage("Your message could not be sent. Please try again.");
+      return;
+    }
+
     setIsSending(true);
     setErrorMessage("");
 
-    const endpoint = activeTab === "group" ? "messages" : "facilitator-messages";
-
     try {
-      await sendMessage(apiUrl, endpoint, trimmedMessage);
+      await sendMessage(apiUrl, endpoint, trimmedMessage, facilitatorId);
 
       setMessageBody("");
       if (activeTab === "group") {
@@ -221,14 +255,22 @@ export default function Home() {
   async function handleExitQuietSpace() {
     const trimmedPrivate = privateNote.trim();
     const trimmedFacilitator = facilitatorNote.trim();
+    const trimmedFreeWriting = freeWritingNote.trim();
+    const hasAnyText = Boolean(
+      trimmedPrivate || trimmedFacilitator || trimmedFreeWriting,
+    );
 
-    if (!isReflectionShared && (trimmedPrivate || trimmedFacilitator)) {
+    // Persist whatever they wrote as a private draft (not shared) so it is
+    // restored next time. Best-effort: don't block leaving on a failed save.
+    if (!isReflectionShared && hasAnyText) {
       try {
-        await saveReflection(
-          apiUrl,
-          trimmedPrivate,
-          trimmedFacilitator,
-        );
+        await saveReflection(apiUrl, {
+          privateNote: trimmedPrivate,
+          facilitatorNote: trimmedFacilitator,
+          freeWriting: trimmedFreeWriting,
+          shareGuided: false,
+          shareFreeWriting: false,
+        });
       } catch {
         // Quietly fail since this is a draft save
       }
@@ -286,21 +328,21 @@ export default function Home() {
     setQuietSpaceError("");
 
     try {
-      if (shareSelection.guidedAnswers && hasGuidedText) {
-        const reflectionData = await saveReflection(
-          apiUrl,
-          trimmedPrivate,
-          trimmedFacilitator,
-        );
-        const reflectionId = reflectionData.id;
-
-        await shareReflection(apiUrl, reflectionId);
-      }
+      // One write persists the text and marks the chosen sections as shared.
+      // Only treat it as shared once the backend has actually saved it.
+      await saveReflection(apiUrl, {
+        privateNote: trimmedPrivate,
+        facilitatorNote: trimmedFacilitator,
+        freeWriting: trimmedFreeWriting,
+        shareGuided: shareSelection.guidedAnswers && hasGuidedText,
+        shareFreeWriting: shareSelection.freeWriting && hasFreeWritingText,
+      });
 
       setIsReflectionShared(true);
     } catch {
-      // Graceful offline fallback simulation for presentation/local testing
-      setIsReflectionShared(true);
+      setQuietSpaceError(
+        "We couldn't share this with the facilitator. Your writing is safe here — please try again.",
+      );
     } finally {
       setIsSharingReflection(false);
     }
@@ -316,6 +358,7 @@ export default function Home() {
 
   return (
     <ChatRoom
+      apiUrl={apiUrl}
       activeTab={activeTab}
       group={group}
       participants={participants}
@@ -338,7 +381,7 @@ export default function Home() {
       isParticipantListPinned={isParticipantListPinned}
       participantListRef={participantListRef}
       messagesEndRef={messagesEndRef}
-      findParticipantByName={findParticipantByName}
+      findParticipantById={findParticipantById}
       onParticipantListHoverChange={setIsParticipantListHovered}
       onParticipantListPinnedChange={setIsParticipantListPinned}
       onOpenParticipantProfile={openParticipantProfile}
