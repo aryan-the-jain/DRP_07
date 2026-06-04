@@ -750,7 +750,7 @@ function SectionAbout({
       {/* single · chips */}
       <Qn
         q="How old are you?"
-        optional
+        needed
         why="to place you with people at a similar stage of life."
         use="Only used to match your group; never shown."
       >
