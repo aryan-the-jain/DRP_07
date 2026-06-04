@@ -594,7 +594,7 @@ function PausePopup({
             style={{ fontSize: 16 }}
             onClick={onEnter}
           >
-            Take me in — I’ll finish later
+            Keep going, gently <Icon name={IconName.Chev} size={15} c="var(--paper)" />
           </button>
           <button
             type="button"
@@ -602,7 +602,7 @@ function PausePopup({
             style={{ fontSize: 15.5, borderColor: "var(--calm)", color: "#3c5a4c" }}
             onClick={onContinue}
           >
-            Keep going, gently <Icon name={IconName.Chev} size={15} c="var(--calm)" />
+            Take me in — I’ll finish later
           </button>
         </div>
       </div>
