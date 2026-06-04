@@ -6,10 +6,14 @@ import models.Role
 import java.time.{DayOfWeek, LocalTime}
 
 object Instances {
+  // TODO: Replace with valueOf
   given roleColumnType: BaseColumnType[Role] =
     MappedColumnType.base[Role, String](
       role => role.show,
-      role => Role.valueOf(role)
+      {
+        case value if value == Role.PARTICIPANT.show => Role.PARTICIPANT
+        case value if value == Role.FACILITATOR.show => Role.FACILITATOR
+      }
     )
 
   given DayOfWeekColumnType: BaseColumnType[DayOfWeek] =
