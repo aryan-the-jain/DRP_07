@@ -121,7 +121,7 @@ export function NoRushNotice({ onDismiss }: { onDismiss: () => void }) {
       <Icon name={IconName.Mug} size={20} c="var(--calm)" />
       <span style={{ flex: 1, fontSize: 15, color: "#3c5a4c" }}>
         There’s no rush. You can stop whenever you need and pick this up later.
-        Just click the button in the top right when you want a break, we'll save your progress.
+        Just click the button in the top right when you want a break, we’ll save your progress.
       </span>
       <button
         type="button"
