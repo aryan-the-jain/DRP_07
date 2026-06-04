@@ -5,7 +5,9 @@ import java.time.LocalDateTime
 case class ReturnSupportGroup(
     name: String,
     facilitatorName: String,
-    scheduledDurationMinutes: Int
+    scheduledDurationMinutes: Int,
+    dayOfWeek: String,
+    scheduledTime: String
 )
 
 case class ReturnParticipant(

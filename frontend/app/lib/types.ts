@@ -9,6 +9,10 @@ export type SupportGroup = {
   name: string;
   facilitatorName: string;
   scheduledDurationMinutes: number;
+  // Day ("FRIDAY") and time ("17:00") of the scheduled session, straight from
+  // the DB. Optional-tolerant so the UI still renders if the backend lags.
+  dayOfWeek?: string;
+  scheduledTime?: string;
 };
 
 export type Participant = {

@@ -26,6 +26,9 @@ type QuietReflectionRoomProps = {
   onShareSelectionChange: (selection: ReflectionShareSelection) => void;
   onExitQuietSpace: () => void;
   onShareReflection: () => void | Promise<void>;
+  // Label for the back button. Defaults to the in-room "Back to the group"; the
+  // standalone /quiet route passes a simpler "Back".
+  backLabel?: string;
 };
 
 const reflectionTabs: Array<{
@@ -63,6 +66,7 @@ export function QuietReflectionRoom({
   onShareSelectionChange,
   onExitQuietSpace,
   onShareReflection,
+  backLabel = "Back to the group",
 }: QuietReflectionRoomProps) {
   const [activeReflectionTab, setActiveReflectionTab] =
     useState<ReflectionTab>("calming");
@@ -133,7 +137,7 @@ export function QuietReflectionRoom({
               className="btn sm inline-flex items-center gap-2"
             >
               <LineIcon name="arrowLeft" size={16} />
-              Back to the group
+              {backLabel}
             </button>
 
             {showShareButton && (

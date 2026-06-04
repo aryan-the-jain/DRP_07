@@ -12,10 +12,11 @@ class GroupQueries(
     private val groupParticipants: TableQuery[GroupParticipantsTable],
     private val participants: TableQuery[ParticipantsTable]
 ) {
-  /* Returns the group name, facilitator name, group conversation duration given groupId. */
+  /* Returns the group name, facilitator name, conversation duration, day and
+   * time given groupId. */
   def selectGroup(groupId: Int): Query[
-    (Rep[String], Rep[String], Rep[Int]),
-    (String, String, Int),
+    (Rep[String], Rep[String], Rep[Int], Rep[DayOfWeek], Rep[LocalTime]),
+    (String, String, Int, DayOfWeek, LocalTime),
     Seq
   ] = {
     for
@@ -23,7 +24,7 @@ class GroupQueries(
       gp <- groupParticipants if gp.groupId === g.groupId
       p <- participants
       if gp.participantId === p.participantId && p.role === Role.FACILITATOR
-    yield (g.name, p.name, g.duration)
+    yield (g.name, p.name, g.duration, g.day, g.time)
   }
 
   /* Selects the participant ID of the group facilitator. */

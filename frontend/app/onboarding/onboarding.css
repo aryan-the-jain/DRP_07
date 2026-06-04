@@ -133,6 +133,15 @@
   background: oklch(0.6 0.06 165);
 }
 
+/* The global stylesheet gives every <button> a hover lift + click press so the
+   rest of the app matches these .btn controls. The survey's own option chips,
+   shards and save-pill are deliberately still (colour-only hover), so opt them
+   back out here — only the .btn buttons above should move. */
+.onboarding-root button:not(.btn):hover,
+.onboarding-root button:not(.btn):active {
+  transform: none;
+}
+
 /* ---- chips (meta tags on the invitation card) ---- */
 .onboarding-root .chip {
   display: inline-flex;

@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 
+import { BrandMark } from "../components/DesignPrimitives";
 import { Icon, IconName } from "./Icon";
 
 // Full-screen frame for the standalone "moment" screens (submit, saved,
-// invitation). Centred calm column, no logo header.
+// invitation). The "alongside" logo sits at the top, then a centred calm column.
 export function Screen({ children }: { children: ReactNode }) {
   return (
     <div
@@ -14,6 +15,15 @@ export function Screen({ children }: { children: ReactNode }) {
         flexDirection: "column",
       }}
     >
+      <div
+        style={{
+          flex: "0 0 auto",
+          padding: "18px 24px",
+          borderBottom: "2px solid var(--line)",
+        }}
+      >
+        <BrandMark small />
+      </div>
       <div
         style={{
           flex: 1,
