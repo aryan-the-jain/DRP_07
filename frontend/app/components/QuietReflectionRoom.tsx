@@ -178,7 +178,7 @@ export function QuietReflectionRoom({
           <div className="pt-1 text-center">
             <p className="leader [color:var(--calm)]">A space just for you</p>
             <h2 className="h-title uline mt-1 inline-block text-3xl text-[var(--calm-ink)]">
-              Quiet space to reflect
+              Quiet space to reflect!!!!
             </h2>
             <p className="mx-auto mt-3 flex max-w-md items-center justify-center gap-2 text-[15px] leading-relaxed text-muted">
               <LineIcon name="quiet" size={16} />

@@ -69,14 +69,13 @@ export default function DashboardPage() {
   const firstName = self?.displayName?.split(" ")[0] ?? "";
 
   return (
-    <main className="h-screen overflow-hidden bg-paper px-4 py-5 text-ink sm:px-6 lg:px-8">
-      <section className="panel relative mx-auto flex h-full min-h-0 max-w-4xl flex-col overflow-hidden shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
-        <header className="shrink-0 border-b-2 border-dashed border-line bg-card p-4 sm:p-5">
-          <BrandMark />
-        </header>
+    <main className="fixed inset-0 flex flex-col overflow-hidden bg-paper text-ink">
+      <header className="shrink-0 border-b-2 border-dashed border-line px-6 py-4 sm:px-10 sm:py-5">
+        <BrandMark />
+      </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-card px-4 py-6 sm:px-8">
-          <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-8 sm:px-10 lg:px-16">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
             {isLoading ? (
               <p className="py-12 text-center text-[15px] text-muted">
                 Setting up your space…
@@ -147,16 +146,15 @@ export default function DashboardPage() {
                 </section>
               </>
             )}
-          </div>
         </div>
+      </div>
 
-        {selectedParticipant && (
-          <ParticipantProfileModal
-            participant={selectedParticipant}
-            onClose={() => setSelectedParticipant(null)}
-          />
-        )}
-      </section>
+      {selectedParticipant && (
+        <ParticipantProfileModal
+          participant={selectedParticipant}
+          onClose={() => setSelectedParticipant(null)}
+        />
+      )}
     </main>
   );
 }
