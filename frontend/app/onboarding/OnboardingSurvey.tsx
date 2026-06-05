@@ -271,8 +271,12 @@ export function OnboardingSurvey() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Pre-fill from any saved answers so "pick up where I left off" survives a refresh.
+  // Returning from the quiet space (entered from the "saved" screen) carries a
+  // `resume=1` param, so land back on that screen rather than the bare survey.
   useEffect(() => {
     let active = true;
+    const resuming =
+      new URLSearchParams(window.location.search).get("resume") === "1";
     fetchOnboarding(apiUrl)
       .then((saved) => {
         if (active && saved) setAnswers(responseToAnswers(saved));
@@ -281,7 +285,10 @@ export function OnboardingSurvey() {
         // Saved answers couldn't be reached — start the survey fresh.
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) {
+          if (resuming) setSavedForLater(true);
+          setLoading(false);
+        }
       });
     return () => {
       active = false;
@@ -436,7 +443,16 @@ export function OnboardingSurvey() {
 
   // Saved & finishing later → a calm, reassuring screen back into the survey.
   if (savedForLater) {
-    return <SavedScreen onResume={() => setSavedForLater(false)} />;
+    return (
+      <SavedScreen
+        onResume={() => setSavedForLater(false)}
+        onEnterQuietSpace={() =>
+          router.push(
+            `/quiet?return=${encodeURIComponent("/onboarding?resume=1")}`,
+          )
+        }
+      />
+    );
   }
 
   return (
@@ -955,7 +971,13 @@ function SubmitScreen() {
 
 // Save & finish later → a reassuring "your place is held" screen with the same
 // quiet space, plus a clear way straight back into the survey.
-function SavedScreen({ onResume }: { onResume: () => void }) {
+function SavedScreen({
+  onResume,
+  onEnterQuietSpace,
+}: {
+  onResume: () => void;
+  onEnterQuietSpace: () => void;
+}) {
   return (
     <Screen>
       <div style={{ textAlign: "center" }}>
@@ -993,7 +1015,7 @@ function SavedScreen({ onResume }: { onResume: () => void }) {
       >
         Pick up where I left off <Icon name={IconName.Chev} size={16} c="#fff" />
       </button>
-      <QuietSpaceCard />
+      <QuietSpaceCard onEnter={onEnterQuietSpace} />
     </Screen>
   );
 }

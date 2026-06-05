@@ -181,17 +181,19 @@ export function QuietReflectionRoom({
               Quiet space to reflect
             </h2>
             <p className="mx-auto mt-3 flex max-w-md items-center justify-center gap-2 text-[15px] leading-relaxed text-muted">
-              <LineIcon name="quiet" size={16} />
+              {/* TODO: fix the placement of the icon
+              <LineIcon name="quiet" size={16} /> */}
               Take a calm moment for yourself. You can write your thoughts down
               freely.
             </p>
           </div>
 
-          {isReflectionShared && (
+          {/* TODO: add this back, add dismiss button, only show in chat-room */}
+          {/* {isReflectionShared && (
             <div className="sk thin v2 [border-color:var(--calm)] bg-calm-soft p-4 text-center text-[15px] font-semibold text-calm-ink animate-fadeIn">
               Your reflection has been shared with the facilitator.
             </div>
-          )}
+          )} */}
 
           {quietSpaceError && (
             <div
