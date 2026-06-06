@@ -5,6 +5,8 @@ import models.FacilitatorMessage
 import slick.jdbc.PostgresProfile.api.*
 import slick.sql.FixedSqlAction
 
+import repositories.tables.FacilitatorMessagesTable
+
 // TODO: Factor out with GroupMessageQueries.
 class FacilitatorMessageQueries(
     private val messagesTable: TableQuery[FacilitatorMessagesTable]

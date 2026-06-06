@@ -8,6 +8,8 @@ import java.time.LocalDateTime
 import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
+import repositories.tables.*
+
 // TODO: Sort this out.  It's just yucky.
 @Singleton
 class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
@@ -293,66 +295,6 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
     )
     db.run(query)
     groupMessages(groupId) // TODO: Get rid
-  }
-
-  def onboarding(participantId: Int): Future[Option[ReturnOnboarding]] = {
-    val query = participants
-      .filter(_.participantId === participantId)
-      .map(p =>
-        (
-          p.participantId,
-          p.name,
-          p.pronouns,
-          p.age,
-          p.funFact,
-          p.hobbies,
-          p.culturalBackground,
-          p.griefRecency,
-          p.whoLost,
-          p.onboardingStatus
-        )
-      )
-
-    db.run(query.result.headOption).map(_.map(ReturnOnboarding.apply))
-  }
-
-  def saveOnboarding(
-      participantId: Int,
-      data: UpdateOnboarding
-  ): Future[Option[ReturnOnboarding]] = {
-    val query = participants.filter(_.participantId === participantId)
-    val updateAction = query
-      .map(p =>
-        (
-          p.name,
-          p.pronouns,
-          p.age,
-          p.funFact,
-          p.hobbies,
-          p.culturalBackground,
-          p.griefRecency,
-          p.whoLost,
-          p.onboardingStatus
-        )
-      )
-      .update(
-        (
-          data.callName,
-          data.pronouns,
-          data.age,
-          data.funFact,
-          data.hobbies,
-          data.culturalBackground,
-          data.griefRecency,
-          data.whoLost,
-          data.status
-        )
-      )
-
-    db.run(updateAction).flatMap {
-      case 0 => Future.successful(None)
-      case _ => onboarding(participantId)
-    }
   }
 
   def sendFacilitatorMessage(

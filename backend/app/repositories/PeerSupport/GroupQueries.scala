@@ -6,6 +6,11 @@ import Instances.given
 
 import java.time.{DayOfWeek, LocalTime}
 import play.api.http.MediaRange.parse
+import repositories.tables.{
+  SupportGroupsTable,
+  GroupParticipantsTable,
+  ParticipantsTable
+}
 
 class GroupQueries(
     private val groups: TableQuery[SupportGroupsTable],

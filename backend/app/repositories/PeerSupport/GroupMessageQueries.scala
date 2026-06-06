@@ -5,6 +5,8 @@ import java.time.LocalDateTime
 import slick.sql.FixedSqlAction
 import slick.jdbc.PostgresProfile.api.*
 
+import repositories.tables.GroupMessagesTable
+
 class GroupMessageQueries(
     private val messagesTable: TableQuery[GroupMessagesTable]
 ) {

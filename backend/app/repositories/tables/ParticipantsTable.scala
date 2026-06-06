@@ -1,8 +1,8 @@
-package repositories.PeerSupport
+package repositories.tables
 
 import models.*
 import slick.jdbc.PostgresProfile.api.*
-import Instances.given
+import repositories.PeerSupport.Instances.given
 
 import java.time.LocalDateTime
 
