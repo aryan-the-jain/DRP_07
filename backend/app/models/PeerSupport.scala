@@ -20,11 +20,16 @@ case class SupportGroup(
 case class Participant(
     participantId: Int,
     name: String,
+    pronouns: Option[String],
     initials: String,
-    country: String,
-    aboutMe: String,
-    funFact: String,
-    role: Role
+    age: Option[String], // TODO: Convert to enum!!
+    culturalBackground: Option[String],
+    hobbies: List[String],
+    fact: String,
+    griefRecency: Option[String], // TODO: ENUM!
+    whoLost: Option[String],
+    role: Role,
+    onboardingStatus: String // TODO: Enum!!!!!!!!
 )
 
 case class GroupParticipants(
@@ -134,8 +139,8 @@ case class UpdateOnboarding(
     callName: String,
     pronouns: Option[String],
     age: Option[String],
-    funFact: String,
-    hobbies: Option[String],
+    fact: String,
+    hobbies: List[String],
     culturalBackground: Option[String],
     griefRecency: Option[String],
     whoLost: Option[String],

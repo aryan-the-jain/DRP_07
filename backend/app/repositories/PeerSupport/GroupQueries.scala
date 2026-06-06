@@ -45,13 +45,13 @@ class GroupQueries(
     (
         Rep[Int],
         Rep[String],
+        Rep[Option[String]],
         Rep[String],
-        Rep[String],
-        Rep[String],
+        Rep[List[String]],
         Rep[String],
         Rep[Role]
     ),
-    (Int, String, String, String, String, String, Role),
+    (Int, String, Option[String], String, List[String], String, Role),
     Seq
   ] = {
     val ps = for
@@ -60,10 +60,10 @@ class GroupQueries(
     yield (
       p.participantId,
       p.name,
+      p.pronouns,
       p.initials,
-      p.country,
-      p.aboutMe,
-      p.funFact,
+      p.hobbies,
+      p.fact,
       p.role
     )
     ps.sortBy(p => (p._7.desc, p._2.asc))
@@ -88,28 +88,28 @@ class GroupQueries(
     yield (g.day, g.time, g.duration)
   }
 
-  /* Returns the information about a participant given the groupId and participantId. */
+  /* Returns the information about a participant given the participantId. */
   def selectParticipantInfo(participantId: Int): Query[
     (
         Rep[Int],
         Rep[String],
+        Rep[Option[String]],
         Rep[String],
-        Rep[String],
-        Rep[String],
+        Rep[List[String]],
         Rep[String],
         Rep[Role]
     ),
-    (Int, String, String, String, String, String, Role),
+    (Int, String, Option[String], String, List[String], String, Role),
     Seq
   ] = {
     for p <- participants if p.participantId === participantId
     yield (
       p.participantId,
       p.name,
+      p.pronouns,
       p.initials,
-      p.country,
-      p.aboutMe,
-      p.funFact,
+      p.hobbies,
+      p.fact,
       p.role
     )
   }

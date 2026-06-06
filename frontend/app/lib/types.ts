@@ -18,10 +18,10 @@ export type SupportGroup = {
 export type Participant = {
   id: number;
   displayName: string;
+  pronouns: string | null;
   initials: string;
-  country: string;
-  aboutMe: string;
-  funFact: string;
+  hobbies: string[];
+  fact: string;
   role: string;
 };
 
@@ -76,7 +76,7 @@ export type OnboardingPayload = {
   pronouns: string | null;
   age: string | null;
   funFact: string;
-  hobbies: string | null;
+  hobbies: string[];
   culturalBackground: string | null;
   griefRecency: string | null;
   whoLost: string | null;

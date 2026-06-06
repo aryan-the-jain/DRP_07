@@ -13,10 +13,10 @@ case class ReturnSupportGroup(
 case class ReturnParticipant(
     id: Int,
     displayName: String,
+    pronouns: Option[String],
     initials: String,
-    country: String,
-    aboutMe: String,
-    funFact: String,
+    hobbies: List[String],
+    fact: String,
     role: Role
 )
 
@@ -70,7 +70,7 @@ case class ReturnOnboarding(
     pronouns: Option[String],
     age: Option[String],
     funFact: String,
-    hobbies: Option[String],
+    hobbies: List[String],
     culturalBackground: Option[String],
     griefRecency: Option[String],
     whoLost: Option[String],

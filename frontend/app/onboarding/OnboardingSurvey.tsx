@@ -195,7 +195,7 @@ function answersToPayload(
     pronouns: flattenChoice(answers.pronouns, answers.pronounsOther),
     age: flattenSkip(answers.age),
     funFact: answers.funFact.trim(),
-    hobbies: hobbies.length > 0 ? JSON.stringify(hobbies) : null,
+    hobbies: hobbies,
     culturalBackground: flattenChoice(answers.cultural, answers.culturalOther),
     griefRecency: flattenSkip(answers.recency),
     whoLost: flattenChoice(answers.whoLost, answers.whoLostOther, WHO_OTHER),
@@ -208,19 +208,19 @@ function responseToAnswers(resp: OnboardingResponse): Answers {
   const cultural = expandChoice(resp.culturalBackground, CULTURAL);
 
   // `hobbies` is a JSON-encoded string[]; parse it defensively.
-  let storedHobbies: string[] = [];
-  if (resp.hobbies) {
-    try {
-      const parsed = JSON.parse(resp.hobbies);
-      if (Array.isArray(parsed)) {
-        storedHobbies = parsed.filter(
-          (h): h is string => typeof h === "string",
-        );
-      }
-    } catch {
-      storedHobbies = [];
-    }
-  }
+  let storedHobbies: string[] = resp.hobbies;
+  // if (resp.hobbies) {
+  //   try {
+  //     const parsed = JSON.parse(resp.hobbies);
+  //     if (Array.isArray(parsed)) {
+  //       storedHobbies = parsed.filter(
+  //         (h): h is string => typeof h === "string",
+  //       );
+  //     }
+  //   } catch {
+  //     storedHobbies = [];
+  //   }
+  // }
   const known = knownTexts(HOBBIES);
   const notSayHobbies = storedHobbies.includes(NOT_SAY);
   const hobbies = storedHobbies.filter((h) => known.includes(h));
