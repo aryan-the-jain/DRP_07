@@ -37,7 +37,7 @@ class OnboardingRepository @Inject() (executionContext: ExecutionContext) {
   ): Future[Option[ReturnOnboarding]] = {
     val query =
       querier.insertNewOnboardingInformation(participantId, onboardingInfo)
-
+    // Comment to retrigger the deployment
     db.run(query).flatMap {
       case 0 => Future.successful(None)
       case _ => onboarding(participantId)
