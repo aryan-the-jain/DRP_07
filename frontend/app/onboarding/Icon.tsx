@@ -12,6 +12,9 @@ export enum IconName {
   Mug = "mug",
   Bookmark = "bookmark",
   X = "x",
+  Shield = "shield",
+  Book = "book",
+  Chat = "chat",
 }
 
 type IconProps = {
@@ -74,6 +77,30 @@ export function Icon({
     ),
     [IconName.Bookmark]: <path {...p} d="M6 3.5h10v15l-5-3.6-5 3.6z" />,
     [IconName.X]: <path {...p} d="M5 5l12 12M17 5L5 17" />,
+    [IconName.Shield]: (
+      <>
+        <path {...p} d="M11 2.5l7 2.5v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9v-5z" />
+        <path {...p} d="M8 11l2.2 2.2L15 8.5" />
+      </>
+    ),
+    [IconName.Book]: (
+      <>
+        <path
+          {...p}
+          d="M11 5.5C9.5 4 6.5 3.5 4 4v12c2.5-.5 5.5 0 7 1.5 1.5-1.5 4.5-2 7-1.5V4c-2.5-.5-5.5 0-7 1.5z"
+        />
+        <path {...p} d="M11 5.5v12" />
+      </>
+    ),
+    [IconName.Chat]: (
+      <>
+        <path
+          {...p}
+          d="M3.5 5.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8l-4 3.5V14.5a2 2 0 0 1-.5-1.3z"
+        />
+        <path {...p} d="M7 8h8M7 11h5" />
+      </>
+    ),
   };
   return (
     <svg
