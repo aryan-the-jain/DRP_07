@@ -9,20 +9,11 @@ import javax.inject.*
 import scala.concurrent.{ExecutionContext, Future}
 
 import repositories.tables.*
+import repositories.Repository
 
 @Singleton
-class QuietRoomRepository @Inject() (executionContext: ExecutionContext) {
-  private given ExecutionContext = executionContext
-
-  private val databaseConfig = DatabaseConfig.fromEnvironment()
-
-  private val db = Database.forURL(
-    url = databaseConfig.jdbcUrl,
-    user = databaseConfig.username,
-    password = databaseConfig.password,
-    driver = "org.postgresql.Driver"
-  )
-
+class QuietRoomRepository @Inject() (executionContext: ExecutionContext)
+    extends Repository(executionContext) {
   private val reflections = TableQuery[ReflectionsTable]
   private val supportLinks = TableQuery[SupportLinksTable]
   private val meditationPlaylists = TableQuery[MeditationPlaylistsTable]

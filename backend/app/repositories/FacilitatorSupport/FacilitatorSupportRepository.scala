@@ -9,22 +9,12 @@ import javax.inject.*
 import scala.concurrent.{ExecutionContext, Future}
 
 import repositories.tables.FacilitatorMessagesTable
+import repositories.Repository
 
 @Singleton
 class FacilitatorSupportRepository @Inject() (
     executionContext: ExecutionContext
-) {
-  private given ExecutionContext = executionContext
-
-  private val databaseConfig = DatabaseConfig.fromEnvironment()
-
-  private val db = Database.forURL(
-    url = databaseConfig.jdbcUrl,
-    user = databaseConfig.username,
-    password = databaseConfig.password,
-    driver = "org.postgresql.Driver"
-  )
-
+) extends Repository(executionContext) {
   private val facilitatorMessages = TableQuery[FacilitatorMessagesTable]
   private val facilitatorMessageQuerier = FacilitatorMessageQueries(
     facilitatorMessages

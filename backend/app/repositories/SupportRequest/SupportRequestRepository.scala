@@ -7,21 +7,12 @@ import slick.jdbc.PostgresProfile.api.*
 import java.time.LocalDateTime
 import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
+import repositories.Repository
 
 // TODO: Is any of this used anywhere?
 @Singleton
-class SupportRequestRepository @Inject() (executionContext: ExecutionContext) {
-  private given ExecutionContext = executionContext
-
-  private val databaseConfig = DatabaseConfig.fromEnvironment()
-
-  private val db = Database.forURL(
-    url = databaseConfig.jdbcUrl,
-    user = databaseConfig.username,
-    password = databaseConfig.password,
-    driver = "org.postgresql.Driver"
-  )
-
+class SupportRequestRepository @Inject() (executionContext: ExecutionContext)
+    extends Repository(executionContext) {
   private class SupportRequestsTable(tag: Tag)
       extends Table[SupportRequest](tag, "support_requests") {
 

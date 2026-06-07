@@ -9,21 +9,12 @@ import javax.inject.*
 import scala.concurrent.{ExecutionContext, Future}
 
 import repositories.tables.*
+import repositories.Repository
 
 // TODO: Sort this out.  It's just yucky.
 @Singleton
-class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
-  private given ExecutionContext = executionContext
-
-  private val databaseConfig = DatabaseConfig.fromEnvironment()
-
-  private val db = Database.forURL(
-    url = databaseConfig.jdbcUrl,
-    user = databaseConfig.username,
-    password = databaseConfig.password,
-    driver = "org.postgresql.Driver"
-  )
-
+class PeerSupportRepository @Inject() (executionContext: ExecutionContext)
+    extends Repository(executionContext) {
   private val supportGroups = TableQuery[SupportGroupsTable]
   private val participants = TableQuery[ParticipantsTable]
   private val groupParticipants = TableQuery[GroupParticipantsTable]

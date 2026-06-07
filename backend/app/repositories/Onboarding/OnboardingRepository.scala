@@ -7,22 +7,13 @@ import javax.inject.*
 import scala.concurrent.{ExecutionContext, Future}
 
 import repositories.tables.ParticipantsTable
+import repositories.Repository
 import models.*
 
 // TODO: Factor this out with PeerSupportRepository.
 @Singleton
-class OnboardingRepository @Inject() (executionContext: ExecutionContext) {
-  private given ExecutionContext = executionContext
-
-  private val databaseConfig = DatabaseConfig.fromEnvironment()
-
-  private val db = Database.forURL(
-    url = databaseConfig.jdbcUrl,
-    user = databaseConfig.username,
-    password = databaseConfig.password,
-    driver = "org.postgresql.Driver"
-  )
-
+class OnboardingRepository @Inject() (executionContext: ExecutionContext)
+    extends Repository(executionContext) {
   private val participants = TableQuery[ParticipantsTable]
   private val querier = OnboardingQueries(participants)
 
@@ -37,7 +28,6 @@ class OnboardingRepository @Inject() (executionContext: ExecutionContext) {
   ): Future[Option[ReturnOnboarding]] = {
     val query =
       querier.insertNewOnboardingInformation(participantId, onboardingInfo)
-    // Comment to retrigger the deployment
     db.run(query).flatMap {
       case 0 => Future.successful(None)
       case _ => onboarding(participantId)
