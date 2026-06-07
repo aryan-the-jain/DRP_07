@@ -183,7 +183,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--hand);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   color: #3c5a4c;
   background: var(--calm-soft);
@@ -203,7 +203,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--hand);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   color: #7a4a2e;
   background: var(--warm-soft);
@@ -217,10 +217,10 @@
   display: flex;
   gap: 10px;
   align-items: stretch;
-  font-size: 14.5px;
+  font-size: 16.5px;
   color: var(--muted);
   line-height: 1.4;
-  max-width: 560px;
+  max-width: 680px;
 }
 .onboarding-root .whyask .wbar {
   width: 3px;
@@ -232,7 +232,7 @@
   color: var(--ink);
   font-weight: 400;
   font-family: var(--scrawl);
-  font-size: 17px;
+  font-size: 18px;
 }
 
 /* ---- prominent 'save & come back later' pill ---- */
