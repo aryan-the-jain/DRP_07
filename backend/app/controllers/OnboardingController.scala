@@ -14,9 +14,7 @@ class OnboardingController @Inject() (
     cc: ControllerComponents,
     onboardingRepository: OnboardingRepository,
     executionContext: ExecutionContext
-) extends AbstractController(cc) {
-  private given ExecutionContext = executionContext
-
+) extends Controller(cc, executionContext) {
   /* Returns the saved onboarding survey answers for a participant so the survey
      Returns the saved object or JSON null. */
   def onboarding(participantId: Int): Action[AnyContent] = Action.async {

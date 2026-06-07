@@ -17,13 +17,7 @@ class PeerSupportController @Inject() (
     cc: ControllerComponents,
     peerSupportRepository: PeerSupportRepository,
     executionContext: ExecutionContext
-) extends AbstractController(cc) {
-  private given ExecutionContext = executionContext
-
-  extension [A](req: Future[A])
-    def returnOk()(using Writes[A]): Action[AnyContent] = Action.async {
-      req.map(v => Ok(Json.toJson(v)))
-    }
+) extends Controller(cc, executionContext) {
 
   def group(groupId: Int): Action[AnyContent] =
     peerSupportRepository.findGroup(groupId).returnOk()
@@ -54,23 +48,6 @@ class PeerSupportController @Inject() (
       Action(BadRequest(Json.obj("error" -> "Invalid room")))
     else
       peerSupportRepository.activeMeditationPlaylists(groupId).returnOk()
-
-  /* Validates the request and returns an object of JsSuccess(A, _), where A is CreateMessage or
-     CreateReflection.  If this inner A is well-formed, we then map it into the actual GroupMessage
-     or Reflection, convert it to JSON and return the object.  In the event of an error, we return
-     a generic error message because the frontend will handle it as needed. */
-  private def createNew[A, B](
-      create: A => Future[B],
-      successCond: A => Boolean
-  )(using Reads[A], Writes[B]): Action[JsValue] = Action.async(parse.json) {
-    req =>
-      req.body.validate[A] match {
-        case JsSuccess(createe, _) if successCond(createe) =>
-          create(createe).map(saved => Created(Json.toJson(saved)))
-        case _ =>
-          Future.successful(BadRequest(Json.obj("error" -> "Message failed")))
-      }
-  }
 
   def sendGroupMessage(groupId: Int): Action[JsValue] = createNew(
     peerSupportRepository.sendGroupMessage(groupId, _),

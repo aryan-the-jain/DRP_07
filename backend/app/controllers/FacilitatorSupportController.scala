@@ -14,26 +14,7 @@ class FacilitatorSupportController @Inject() (
     cc: ControllerComponents,
     facilitatorSupportRepository: FacilitatorSupportRepository,
     executionContext: ExecutionContext
-) extends AbstractController(cc) {
-  private given ExecutionContext = executionContext
-
-  extension [A](req: Future[A])
-    def returnOk()(using Writes[A]): Action[AnyContent] = Action.async {
-      req.map(v => Ok(Json.toJson(v)))
-    }
-
-  private def createNew[A, B](
-      create: A => Future[B],
-      successCond: A => Boolean
-  )(using Reads[A], Writes[B]): Action[JsValue] = Action.async(parse.json) {
-    req =>
-      req.body.validate[A] match {
-        case JsSuccess(createe, _) if successCond(createe) =>
-          create(createe).map(saved => Created(Json.toJson(saved)))
-        case _ =>
-          Future.successful(BadRequest(Json.obj("error" -> "Message failed")))
-      }
-  }
+) extends Controller(cc, executionContext) {
 
   def facilitatorMessages(
       groupId: Int,
