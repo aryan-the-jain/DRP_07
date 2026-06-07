@@ -69,7 +69,7 @@ case class ReturnOnboarding(
     callName: String,
     pronouns: Option[String],
     age: Option[String],
-    funFact: String,
+    fact: String,
     hobbies: List[String],
     culturalBackground: Option[String],
     griefRecency: Option[String],

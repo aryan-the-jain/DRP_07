@@ -104,7 +104,7 @@ type Answers = {
   pronouns: string;
   pronounsOther: string;
   age: string;
-  funFact: string;
+  fact: string;
   hobbies: string[];
   hobbiesOther: string[];
   cultural: string;
@@ -117,7 +117,7 @@ type Answers = {
 enum TextKey {
   CallName = "callName",
   PronounsOther = "pronounsOther",
-  FunFact = "funFact",
+  Fact = "fact",
   CulturalOther = "culturalOther",
   WhoLostOther = "whoLostOther",
 }
@@ -134,7 +134,7 @@ const EMPTY_ANSWERS: Answers = {
   pronouns: "",
   pronounsOther: "",
   age: "",
-  funFact: "",
+  fact: "",
   hobbies: [],
   hobbiesOther: [],
   cultural: "",
@@ -194,7 +194,7 @@ function answersToPayload(
     callName: answers.callName.trim(),
     pronouns: flattenChoice(answers.pronouns, answers.pronounsOther),
     age: flattenSkip(answers.age),
-    funFact: answers.funFact.trim(),
+    fact: answers.fact.trim(),
     hobbies: hobbies,
     culturalBackground: flattenChoice(answers.cultural, answers.culturalOther),
     griefRecency: flattenSkip(answers.recency),
@@ -235,7 +235,7 @@ function responseToAnswers(resp: OnboardingResponse): Answers {
     pronouns: pronouns.value,
     pronounsOther: pronouns.other,
     age: resp.age ?? "",
-    funFact: resp.funFact ?? "",
+    fact: resp.fact ?? "",
     hobbies,
     hobbiesOther,
     cultural: cultural.value,
@@ -417,7 +417,7 @@ export function OnboardingSurvey() {
         answers.pronouns ||
         answers.age.trim(),
     ),
-    Boolean(answers.funFact.trim() || answers.hobbies.length > 0 || answers.cultural),
+    Boolean(answers.fact.trim() || answers.hobbies.length > 0 || answers.cultural),
     Boolean(answers.recency || answers.whoLost),
   ];
 
@@ -808,11 +808,11 @@ function SectionMore({
         use="Shared with your group to help you connect."
       >
         <UnderlineField
-          id="funFact"
+          id="fact"
           label="A fun fact about you"
           placeholder="Anything at all…"
-          value={answers.funFact}
-          onChange={(v) => setText(TextKey.FunFact, v)}
+          value={answers.fact}
+          onChange={(v) => setText(TextKey.Fact, v)}
         />
       </Qn>
 

@@ -75,7 +75,7 @@ export type OnboardingPayload = {
   callName: string;
   pronouns: string | null;
   age: string | null;
-  funFact: string;
+  fact: string;
   hobbies: string[];
   culturalBackground: string | null;
   griefRecency: string | null;
