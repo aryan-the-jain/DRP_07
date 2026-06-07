@@ -27,7 +27,6 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   private val supportGroups = TableQuery[SupportGroupsTable]
   private val participants = TableQuery[ParticipantsTable]
   private val groupParticipants = TableQuery[GroupParticipantsTable]
-  private val facilitatorMessages = TableQuery[FacilitatorMessagesTable]
   private val groupMessages = TableQuery[GroupMessagesTable]
   private val reflections = TableQuery[ReflectionsTable]
   private val supportLinks = TableQuery[SupportLinksTable]
@@ -37,9 +36,6 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   private val groupQuerier =
     GroupQueries(supportGroups, groupParticipants, participants)
   private val groupMessageQuerier = GroupMessageQueries(groupMessages)
-  private val facilitatorMessageQuerier = FacilitatorMessageQueries(
-    facilitatorMessages
-  )
 
   def findGroup(groupId: Int): Future[ReturnSupportGroup] =
     db.run(groupQuerier.selectGroup(groupId).result.head)
@@ -71,16 +67,6 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
   def groupMessages(groupId: Int): Future[Seq[ReturnGroupMessage]] =
     db.run(groupMessageQuerier.selectMessagesFromParticipant(groupId).result)
       .map(_.map(ReturnGroupMessage.apply))
-
-  def facilitatorMessages(
-      groupId: Int,
-      participantId: Int
-  ): Future[Seq[ReturnFacilitatorMessage]] =
-    db.run(
-      facilitatorMessageQuerier
-        .selectPrivateMessages(groupId, participantId)
-        .result
-    ).map(_.map(ReturnFacilitatorMessage.apply))
 
   /* Upsert the participant's reflection for this group: store every section and
      mark guided / free writing as shared with the facilitator independently.
@@ -295,21 +281,5 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext) {
     )
     db.run(query)
     groupMessages(groupId) // TODO: Get rid
-  }
-
-  def sendFacilitatorMessage(
-      groupId: Int,
-      message: CreateFacilitatorMessage
-  ): Future[Int] = {
-    val query = facilitatorMessageQuerier.insertNewMessage(
-      FacilitatorMessage(
-        message.fromId,
-        message.toId,
-        groupId,
-        message.body,
-        LocalDateTime.now()
-      )
-    )
-    db.run(query)
   }
 }

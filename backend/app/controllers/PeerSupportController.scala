@@ -37,12 +37,6 @@ class PeerSupportController @Inject() (
   def messages(groupId: Int): Action[AnyContent] =
     peerSupportRepository.groupMessages(groupId).returnOk()
 
-  def facilitatorMessages(
-      groupId: Int,
-      participantId: Int
-  ): Action[AnyContent] =
-    peerSupportRepository.facilitatorMessages(groupId, participantId).returnOk()
-
   def latestReflection(
       groupId: Int,
       participantId: Int
@@ -81,11 +75,6 @@ class PeerSupportController @Inject() (
   def sendGroupMessage(groupId: Int): Action[JsValue] = createNew(
     peerSupportRepository.sendGroupMessage(groupId, _),
     (m: CreateGroupMessage) => m.body.trim.nonEmpty
-  )
-
-  def sendFacilitatorMessage(groupId: Int): Action[JsValue] = createNew(
-    peerSupportRepository.sendFacilitatorMessage(groupId, _),
-    (m: CreateFacilitatorMessage) => m.body.trim.nonEmpty
   )
 
   def createReflection(groupId: Int): Action[JsValue] = createNew(

@@ -1,4 +1,4 @@
-package repositories.PeerSupport
+package repositories.FacilitatorSupport
 
 import java.time.LocalDateTime
 import models.FacilitatorMessage

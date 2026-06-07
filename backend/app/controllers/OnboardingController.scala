@@ -25,6 +25,7 @@ class OnboardingController @Inject() (
       .map(result => Ok(Json.toJson(result)))
   }
 
+  // TODO: Factor out to use the thing in PeerSupportController.
   /* Saves the onboarding survey (a "draft" on "save & come back later", or
      "complete" on finish).  Drafts are lenient; a complete submission must carry
      a call name and an age. */
