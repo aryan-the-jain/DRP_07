@@ -11,7 +11,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import repositories.tables.*
 import repositories.Repository
 
-// TODO: Sort this out.  It's just yucky.
 @Singleton
 class PeerSupportRepository @Inject() (executionContext: ExecutionContext)
     extends Repository(executionContext) {

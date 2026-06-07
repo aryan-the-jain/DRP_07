@@ -10,7 +10,6 @@ import repositories.tables.ParticipantsTable
 import repositories.Repository
 import models.*
 
-// TODO: Factor this out with PeerSupportRepository.
 @Singleton
 class OnboardingRepository @Inject() (executionContext: ExecutionContext)
     extends Repository(executionContext) {
