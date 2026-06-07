@@ -34,19 +34,33 @@ function titleCaseDay(dayOfWeek: string): string {
   return dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1).toLowerCase();
 }
 
+// Days from today until the next occurrence of the given weekday (0 = today).
+function daysUntilWeekday(weekdayIndex: number, from = new Date()): number {
+  const today = new Date(from);
+  today.setHours(0, 0, 0, 0);
+  return (weekdayIndex - today.getDay() + 7) % 7;
+}
+
 // The next calendar date (today or later) that falls on the given weekday.
 function nextDateForWeekday(weekdayIndex: number, from = new Date()): Date {
   const result = new Date(from);
   result.setHours(0, 0, 0, 0);
-  const delta = (weekdayIndex - result.getDay() + 7) % 7;
-  result.setDate(result.getDate() + delta);
+  result.setDate(result.getDate() + daysUntilWeekday(weekdayIndex, from));
   return result;
+}
+
+// A gentle countdown label for the next session ("today" / "tomorrow" / "in N days").
+function relativeDayLabel(daysAway: number): string {
+  if (daysAway <= 0) return "today";
+  if (daysAway === 1) return "tomorrow";
+  return `in ${daysAway} days`;
 }
 
 export type SessionSchedule = {
   dayLabel: string; // "Friday"
   dateLabel: string; // "6 June"
   timeLabel: string; // "5:00 pm"
+  relative: string; // "in 3 days"
   full: string; // "Friday, 6 June · 5:00 pm"
 };
 
@@ -64,9 +78,16 @@ export function formatSessionSchedule(
   const timeLabel = formatTimeOfDay(scheduledTime);
 
   if (weekdayIndex === undefined) {
-    return { dayLabel, dateLabel: "", timeLabel, full: `${dayLabel} · ${timeLabel}` };
+    return {
+      dayLabel,
+      dateLabel: "",
+      timeLabel,
+      relative: "",
+      full: `${dayLabel} · ${timeLabel}`,
+    };
   }
 
+  const daysAway = daysUntilWeekday(weekdayIndex);
   const date = nextDateForWeekday(weekdayIndex);
   const dateLabel = new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
@@ -77,6 +98,7 @@ export function formatSessionSchedule(
     dayLabel,
     dateLabel,
     timeLabel,
+    relative: relativeDayLabel(daysAway),
     full: `${dayLabel}, ${dateLabel} · ${timeLabel}`,
   };
 }
