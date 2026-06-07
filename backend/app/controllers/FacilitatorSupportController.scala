@@ -20,7 +20,9 @@ class FacilitatorSupportController @Inject() (
       groupId: Int,
       participantId: Int
   ): Action[AnyContent] =
-    facilitatorSupportRepository.facilitatorMessages(groupId, participantId).returnOk()
+    facilitatorSupportRepository
+      .facilitatorMessages(groupId, participantId)
+      .returnOk()
 
   def sendFacilitatorMessage(groupId: Int): Action[JsValue] = createNew(
     facilitatorSupportRepository.sendFacilitatorMessage(groupId, _),

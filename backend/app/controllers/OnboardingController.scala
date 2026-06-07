@@ -23,28 +23,13 @@ class OnboardingController @Inject() (
       .map(result => Ok(Json.toJson(result)))
   }
 
-  // TODO: Factor out to use the thing in PeerSupportController.
   /* Saves the onboarding survey (a "draft" on "save & come back later", or
      "complete" on finish).  Drafts are lenient; a complete submission must carry
      a call name and an age. */
-  def saveOnboarding(participantId: Int): Action[JsValue] =
-    Action.async(parse.json) { req =>
-      req.body.validate[UpdateOnboarding] match {
-        case JsSuccess(onboarding, _) if isValidOnboarding(onboarding) =>
-          onboardingRepository.saveOnboarding(participantId, onboarding).map {
-            case Some(saved) => Ok(Json.toJson(saved))
-            case None => NotFound(Json.obj("error" -> "Participant not found"))
-          }
-        case JsSuccess(_, _) =>
-          Future.successful(
-            BadRequest(Json.obj("error" -> "Onboarding failed"))
-          )
-        case JsError(errors) =>
-          Future.successful(
-            BadRequest(Json.obj("error" -> JsError.toJson(errors)))
-          )
-      }
-    }
+  def saveOnboarding(participantId: Int): Action[JsValue] = createNew(
+    onboardingRepository.saveOnboarding(participantId, _),
+    (onboarding: UpdateOnboarding) => isValidOnboarding(onboarding)
+  )
 
   private def isValidOnboarding(onboarding: UpdateOnboarding): Boolean =
     onboarding.status match {

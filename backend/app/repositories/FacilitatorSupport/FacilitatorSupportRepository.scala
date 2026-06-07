@@ -11,7 +11,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import repositories.tables.FacilitatorMessagesTable
 
 @Singleton
-class FacilitatorSupportRepository @Inject() (executionContext: ExecutionContext) {
+class FacilitatorSupportRepository @Inject() (
+    executionContext: ExecutionContext
+) {
   private given ExecutionContext = executionContext
 
   private val databaseConfig = DatabaseConfig.fromEnvironment()

@@ -11,15 +11,16 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 abstract class Controller(
-  cc: ControllerComponents,
-  executionContext: ExecutionContext
+    cc: ControllerComponents,
+    executionContext: ExecutionContext
 ) extends AbstractController(cc) {
   protected given ExecutionContext = executionContext
 
   extension [A](req: Future[A])
-    protected def returnOk()(using Writes[A]): Action[AnyContent] = Action.async {
-      req.map(v => Ok(Json.toJson(v)))
-    }
+    protected def returnOk()(using Writes[A]): Action[AnyContent] =
+      Action.async {
+        req.map(v => Ok(Json.toJson(v)))
+      }
 
   /* Validates the request and returns an object of JsSuccess(A, _), where A is CreateMessage or
      CreateReflection.  If this inner A is well-formed, we then map it into the actual GroupMessage
