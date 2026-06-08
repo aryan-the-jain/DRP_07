@@ -27,9 +27,11 @@ import {
 } from "./SurveyParts";
 
 // ---- answer option sets ----
-// "Other" / "In your own words" reveal typed fields; the skip option is gently set apart.
-const OTHER = "Other";
-const WHO_OTHER = "In your own words";
+// "In my own words" reveals a typed field; the skip option is gently set apart.
+// OTHER and WHO_OTHER share the same label but stay separate constants so each
+// question can pass its own reveal trigger through flattenChoice / expandChoice.
+const OTHER = "In my own words";
+const WHO_OTHER = "In my own words";
 const NOT_SAY = "I’d rather not say";
 
 const PRONOUNS: Choice[] = [
@@ -145,8 +147,8 @@ const EMPTY_ANSWERS: Answers = {
 };
 
 // ---- mapping between the survey's `Answers` and the backend payload ----
-// "Other" reveals a typed value and "I'd rather not say" is a skip, so both are
-// flattened away here: the backend only ever stores the final, plain value.
+// "In my own words" reveals a typed value and "I'd rather not say" is a skip, so
+// both are flattened away here: the backend only ever stores the final, plain value.
 
 const knownTexts = (choices: Choice[]): string[] =>
   choices.filter((c) => !c.skip && c.text !== OTHER).map((c) => c.text);
@@ -506,7 +508,7 @@ export function OnboardingSurvey() {
           padding: "14px 40px 24px",
         }}
       >
-        <div style={{ maxWidth: 600, margin: "8px auto 0" }}>
+        <div style={{ maxWidth: 720, margin: "8px auto 0" }}>
           {section === 0 && (
             <SectionAbout
               answers={answers}
@@ -842,7 +844,7 @@ function SectionMore({
             <UnderlineField
               id="culturalOther"
               label="Your cultural background"
-              placeholder="In your own words…"
+              placeholder="In my own words…"
               value={answers.culturalOther}
               onChange={(v) => setText(TextKey.CulturalOther, v)}
             />
@@ -889,7 +891,7 @@ function SectionInYourTime({
           ))}
         </OptList>
       </Qn>
-      {/* single · inline chips; "In your own words" reveals a typed field */}
+      {/* single · inline chips; "In my own words" reveals a typed field */}
       <Qn
         q="Who did you lose?"
         optional
@@ -906,7 +908,7 @@ function SectionInYourTime({
             <UnderlineField
               id="whoLostOther"
               label="Who you lost"
-              placeholder="In your own words…"
+              placeholder="In my own words…"
               value={answers.whoLostOther}
               onChange={(v) => setText(TextKey.WhoLostOther, v)}
             />
@@ -940,7 +942,7 @@ function SubmitScreen() {
         </div>
         <p
           style={{
-            fontSize: 15,
+            fontSize: 16,
             lineHeight: 1.45,
             color: "var(--muted)",
             margin: "12px 12px 0",
@@ -983,7 +985,7 @@ function SavedScreen({
         </div>
         <p
           style={{
-            fontSize: 15,
+            fontSize: 16,
             lineHeight: 1.45,
             color: "var(--muted)",
             margin: "12px 12px 0",

@@ -36,7 +36,7 @@ export function WhyAsk({ why, use }: { why: string; use?: string }) {
         <b>Why we ask:</b> {why}
         {use && (
           <>
-            {" · "}
+            {" "}
             <span style={{ color: "var(--ink)" }}>{use}</span>
           </>
         )}
@@ -62,7 +62,7 @@ export function Qn({
   children: ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: 26 }}>
+    <div style={{ marginBottom: 44 }}>
       <div
         style={{
           display: "flex",
@@ -72,7 +72,7 @@ export function Qn({
           marginBottom: why ? 9 : 12,
         }}
       >
-        <span className="h-title" style={{ fontSize: 24 }}>
+        <span className="h-title" style={{ fontSize: 25 }}>
           {q}
         </span>
         {optional && <OptionalTag />}
@@ -97,7 +97,7 @@ export function SectionHead({ title, sub }: { title: string; sub?: string }) {
         {title}
       </span>
       {sub && (
-        <div style={{ fontSize: 15.5, color: "var(--muted)", marginTop: 10 }}>
+        <div style={{ fontSize: 17, color: "var(--muted)", marginTop: 10 }}>
           {sub}
         </div>
       )}
