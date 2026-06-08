@@ -8,6 +8,7 @@ export type IconName =
   | "eraser"
   | "externalLink"
   | "heart"
+  | "home"
   | "mail"
   | "people"
   | "pen"
@@ -69,6 +70,12 @@ export function LineIcon({
       <path
         {...pathProps}
         d="M11 18S3.5 13 3.5 8.2A3.7 3.7 0 0 1 11 6a3.7 3.7 0 0 1 7.5 2.2C18.5 13 11 18 11 18Z"
+      />
+    ),
+    home: (
+      <path
+        {...pathProps}
+        d="M4 18V9.5L11 4l7 5.5V18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z"
       />
     ),
     mail: (
