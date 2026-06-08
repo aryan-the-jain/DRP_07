@@ -1,9 +1,11 @@
-package repositories.PeerSupport
+package repositories.FacilitatorSupport
 
 import java.time.LocalDateTime
 import models.FacilitatorMessage
 import slick.jdbc.PostgresProfile.api.*
 import slick.sql.FixedSqlAction
+
+import repositories.tables.FacilitatorMessagesTable
 
 // TODO: Factor out with GroupMessageQueries.
 class FacilitatorMessageQueries(

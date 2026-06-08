@@ -21,4 +21,10 @@ object Instances {
       day => day.name(),
       day => DayOfWeek.valueOf(day)
     )
+
+  given hobbiesColumnType: BaseColumnType[List[String]] =
+    MappedColumnType.base[List[String], String](
+      hobbies => hobbies.mkString(", "),
+      hobbies => hobbies.split(", ").toList
+    )
 }

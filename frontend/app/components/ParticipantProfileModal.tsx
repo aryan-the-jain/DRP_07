@@ -56,19 +56,19 @@ export function ParticipantProfileModal({
 
         <div className="mt-5 space-y-3">
           <section className="sk thin soft v2 bg-paper p-4">
-            <h3 className="leader">About me</h3>
+            <h3 className="leader">Hobbies</h3>
             <p className="mt-2 text-[15px] leading-6 text-ink">
-              {participant.aboutMe}
+              {participant.hobbies.map(h => h.charAt(0).toUpperCase() + h.slice(1)).join(", ")}
             </p>
           </section>
 
           <section className="sk thin soft v3 bg-paper p-4">
             <h3 className="leader flex items-center gap-1.5">
               <LineIcon name="heart" size={13} />
-              Fun fact
+              Fact
             </h3>
             <p className="mt-2 text-[15px] leading-6 text-ink">
-              {participant.funFact}
+              {participant.fact}
             </p>
           </section>
         </div>
