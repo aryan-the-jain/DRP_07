@@ -2,8 +2,9 @@
 
 import { AvatarCircle, LineIcon } from "../components/DesignPrimitives";
 import { formatSessionSchedule } from "../lib/format";
-import { participantId } from "../lib/api";
+import { getParticipantId } from "../lib/api";
 import { Participant, SupportGroup } from "../lib/types";
+
 
 type ThisWeekCardProps = {
   group: SupportGroup | null;
@@ -67,7 +68,7 @@ export function ThisWeekCard({
   const facilitator = participants.find((p) => p.role === "facilitator");
   const members = participants.filter((p) => p.role !== "facilitator");
   // "Others" who'll be there — the members excluding the current participant.
-  const others = members.filter((p) => p.id !== participantId);
+  const others = members.filter((p) => p.id !== getParticipantId());
 
   return (
     <section className="sk v2 bg-card p-5 sm:p-6">
