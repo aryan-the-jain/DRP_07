@@ -262,6 +262,12 @@ export function OnboardingSurvey() {
   // Returning from the quiet space (entered from the "saved" screen) carries a
   // `resume=1` param, so land back on that screen rather than the bare survey.
   useEffect(() => {
+    const id = localStorage.getItem("current_participant_id");
+    if (!id) {
+      router.push("/login");
+      return;
+    }
+
     let active = true;
     const resuming =
       new URLSearchParams(window.location.search).get("resume") === "1";
@@ -281,7 +287,7 @@ export function OnboardingSurvey() {
     return () => {
       active = false;
     };
-  }, [apiUrl]);
+  }, [router, apiUrl]);
 
   // Persist the current answers (draft on "save later"/early exit, complete on
   // finish). Returns whether the save succeeded so callers can advance the UI.
