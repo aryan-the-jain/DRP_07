@@ -432,7 +432,15 @@ export function OnboardingSurvey() {
 
   // Finished the survey → the "tender moments" first screen (StateFinding).
   if (finished) {
-    return <SubmitScreen />;
+    return (
+      <SubmitScreen
+        onEnterQuietSpace={() =>
+          router.push(
+            `/quiet?return=${encodeURIComponent("/onboarding?resume=1")}`,
+          )
+        }
+      />
+    );
   }
 
   // Saved & finishing later → a calm, reassuring screen back into the survey.
@@ -932,7 +940,11 @@ function SectionInYourTime({
 // in the meantime. Retained for when real matching exists — currently the
 // survey routes straight to the dashboard instead (see
 // SHOW_PENDING_SCREEN_AFTER_FINISH).
-function SubmitScreen() {
+function SubmitScreen({
+  onEnterQuietSpace,
+}: {
+  onEnterQuietSpace?: () => void;
+}) {
   return (
     <Screen>
       <div style={{ textAlign: "center" }}>
@@ -958,7 +970,7 @@ function SubmitScreen() {
           moment yours is ready — there’s no rush, and no waiting room.
         </p>
       </div>
-      <QuietSpaceCard />
+      <QuietSpaceCard onEnter={onEnterQuietSpace} />
     </Screen>
   );
 }
