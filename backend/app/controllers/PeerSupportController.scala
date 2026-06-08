@@ -35,4 +35,10 @@ class PeerSupportController @Inject() (
     peerSupportRepository.sendGroupMessage(groupId, _),
     (m: CreateGroupMessage) => m.body.trim.nonEmpty
   )
+
+  def signUp: Action[JsValue] = createNew(
+    peerSupportRepository.signUp,
+    (req: SignUpRequest) => req.name.trim.nonEmpty
+  )
 }
+
