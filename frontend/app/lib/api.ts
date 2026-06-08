@@ -11,8 +11,36 @@ import {
 } from "./types";
 
 export const groupId = 1;
-export const participantId = 1;
+
+export function getParticipantId(): number {
+  if (typeof window !== "undefined") {
+    const id = localStorage.getItem("current_participant_id");
+    if (id) return parseInt(id, 10);
+  }
+  return 1;
+}
+
 export const fallbackApiUrl = "http://localhost:9000";
+
+export async function signUpParticipant(
+  apiUrl: string,
+  name: string,
+): Promise<Participant> {
+  const response = await fetch(`${apiUrl}/participants`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not sign up.");
+  }
+
+  return response.json();
+}
+
 
 function sortMessages(messages: GroupMessage[]) {
   return [...messages].sort(
@@ -63,7 +91,7 @@ export async function fetchFacilitatorMessages(
   apiUrl: string,
 ): Promise<GroupMessage[]> {
   const response = await fetch(
-    `${apiUrl}/groups/${groupId}/${participantId}/facilitator-messages`,
+    `${apiUrl}/groups/${groupId}/${getParticipantId()}/facilitator-messages`,
   );
 
   if (!response.ok) {
@@ -92,8 +120,8 @@ export async function sendMessage(
   // { fromId, toId, body } for a private message to the facilitator.
   const payload =
     endpoint === "messages"
-      ? { participantId, body }
-      : { fromId: participantId, toId: facilitatorId, body };
+      ? { participantId: getParticipantId(), body }
+      : { fromId: getParticipantId(), toId: facilitatorId, body };
 
   const response = await fetch(`${apiUrl}/groups/${groupId}/${endpoint}`, {
     method: "POST",
@@ -130,7 +158,7 @@ export async function saveReflection(
       Accept: "application/json",
     },
     body: JSON.stringify({
-      participantId,
+      participantId: getParticipantId(),
       privateNote: reflection.privateNote || null,
       facilitatorNote: reflection.facilitatorNote || null,
       freeWriting: reflection.freeWriting || null,
@@ -152,7 +180,7 @@ export async function fetchOnboarding(
   apiUrl: string,
 ): Promise<OnboardingResponse | null> {
   const response = await fetch(
-    `${apiUrl}/participants/${participantId}/onboarding`,
+    `${apiUrl}/participants/${getParticipantId()}/onboarding`,
   );
 
   if (!response.ok) {
@@ -168,7 +196,7 @@ export async function saveOnboarding(
   payload: OnboardingPayload,
 ): Promise<OnboardingResponse> {
   const response = await fetch(
-    `${apiUrl}/participants/${participantId}/onboarding`,
+    `${apiUrl}/participants/${getParticipantId()}/onboarding`,
     {
       method: "PATCH",
       headers: {
@@ -225,7 +253,7 @@ export async function saveDoodle(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      participantId,
+      participantId: getParticipantId(),
       imageData,
       sharedWithFacilitator: shareWithFacilitator,
     }),
@@ -240,7 +268,7 @@ export async function saveDoodle(
 
 export async function fetchDoodles(apiUrl: string): Promise<Doodle[]> {
   const response = await fetch(
-    `${apiUrl}/groups/${groupId}/participants/${participantId}/doodles`,
+    `${apiUrl}/groups/${groupId}/participants/${getParticipantId()}/doodles`,
   );
 
   if (!response.ok) {
@@ -255,7 +283,7 @@ export async function fetchLatestReflection(
 ): Promise<ReflectionResponse | null> {
   try {
     const response = await fetch(
-      `${apiUrl}/groups/${groupId}/participants/${participantId}/reflection`,
+      `${apiUrl}/groups/${groupId}/participants/${getParticipantId()}/reflection`,
     );
 
     if (!response.ok) {
@@ -267,3 +295,18 @@ export async function fetchLatestReflection(
     return null;
   }
 }
+
+export async function fetchParticipantInfo(
+  apiUrl: string,
+  id: number,
+): Promise<Participant | null> {
+  try {
+    const response = await fetch(`${apiUrl}/participants/${id}`);
+    if (!response.ok) return null;
+    const list = (await response.json()) as Participant[];
+    return list.length > 0 ? list[0] : null;
+  } catch {
+    return null;
+  }
+}
+
