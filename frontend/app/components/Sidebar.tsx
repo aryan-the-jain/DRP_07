@@ -8,7 +8,7 @@ import { fallbackApiUrl, fetchParticipantInfo, getParticipantId } from "../lib/a
 import { Participant } from "../lib/types";
 
 type SidebarProps = {
-  activeTab: "home" | "circles" | "invitations" | "quiet";
+  activeTab: "home" | "circles" | "invitations" | "quiet" | "profile";
 };
 
 export function Sidebar({ activeTab }: SidebarProps) {
@@ -52,6 +52,7 @@ export function Sidebar({ activeTab }: SidebarProps) {
     { name: "My circles", icon: "people" as IconName, path: "/circles", active: activeTab === "circles", impl: false },
     { name: "Invitations", icon: "mail" as IconName, path: "/invitations", active: activeTab === "invitations", impl: false },
     { name: "Quiet space", icon: "quiet" as IconName, path: "/quiet", active: activeTab === "quiet", impl: true },
+    { name: "Profile", icon: "user" as IconName, path: "/profile", active: activeTab === "profile", impl: true },
   ];
 
   return (
@@ -87,13 +88,13 @@ export function Sidebar({ activeTab }: SidebarProps) {
       </div>
 
       {/* Bottom Profile Section */}
-      <div className="flex flex-col gap-4 border-t-2 border-dashed border-line pt-5">
+      <div className="flex flex-col gap-3 border-t-2 border-dashed border-line pt-5">
         {currentUser && (
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col gap-1">
             <button
               type="button"
               onClick={() => router.push("/profile")}
-              className="flex items-center gap-3 text-left group min-w-0 flex-1 rounded-lg hover:bg-paper/30 p-1.5 transition-colors cursor-pointer"
+              className="flex items-center gap-3 text-left group min-w-0 rounded-lg hover:bg-paper/30 p-1.5 transition-colors cursor-pointer"
               aria-label="Edit your profile"
             >
               <AvatarCircle
@@ -110,28 +111,13 @@ export function Sidebar({ activeTab }: SidebarProps) {
                 </span>
               </div>
             </button>
-
             <button
               type="button"
               onClick={handleLogout}
-              className="p-2 text-muted hover:text-warm-ink hover:bg-paper/50 rounded-lg transition-colors cursor-pointer shrink-0"
-              aria-label="Sign out"
-              title="Sign out"
+              className="text-xs text-muted hover:text-warm-ink transition-colors pl-14 w-fit cursor-pointer font-medium hover:underline text-left"
+              title="Sign out or switch user"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.8}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
-                />
-              </svg>
+              Switch User / Sign Out
             </button>
           </div>
         )}

@@ -95,7 +95,7 @@ export default function ProfilePage() {
 
   return (
     <main className="fixed inset-0 flex overflow-hidden bg-paper text-ink">
-      <Sidebar activeTab="home" />
+      <Sidebar activeTab="profile" />
 
       {/* Main Content scrollable area */}
       <div className="flex-1 min-w-0 h-full overflow-y-auto px-6 py-8 sm:px-10 lg:px-16">
