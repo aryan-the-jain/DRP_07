@@ -7,6 +7,105 @@ import { Sidebar } from "../components/Sidebar";
 import { fallbackApiUrl, fetchOnboarding, saveOnboarding } from "../lib/api";
 import { OnboardingStatus, OnboardingPayload } from "../lib/types";
 
+type Choice = {
+  text: string;
+  skip?: boolean;
+};
+
+const OTHER = "In my own words";
+const NOT_SAY = "I’d rather not say";
+
+const PRONOUNS: Choice[] = [
+  { text: "She / her" },
+  { text: "He / him" },
+  { text: "They / them" },
+  { text: OTHER },
+  { text: NOT_SAY, skip: true },
+];
+
+const AGE_RANGES: Choice[] = [
+  { text: "Under 18" },
+  { text: "18–21" },
+  { text: "22–25" },
+  { text: "26–30" },
+  { text: "31+" },
+  { text: NOT_SAY, skip: true },
+];
+
+const HOBBIES: Choice[] = [
+  { text: "Reading" },
+  { text: "Music" },
+  { text: "Cooking" },
+  { text: "Gaming" },
+  { text: "Sport & fitness" },
+  { text: "Films & TV" },
+  { text: "Art & crafts" },
+  { text: "Photography" },
+  { text: "The outdoors" },
+  { text: "Gardening" },
+  { text: "Writing" },
+  { text: "Dancing" },
+  { text: "Volunteering" },
+  { text: "Animals & pets" },
+  { text: OTHER },
+  { text: NOT_SAY, skip: true },
+];
+
+const CULTURAL: Choice[] = [
+  { text: "White / European" },
+  { text: "Black / African / Caribbean" },
+  { text: "South Asian" },
+  { text: "East / Southeast Asian" },
+  { text: "Middle Eastern / North African" },
+  { text: "Latin American" },
+  { text: "Mixed / multiple" },
+  { text: OTHER },
+  { text: NOT_SAY, skip: true },
+];
+
+const RECENCY: Choice[] = [
+  { text: "Within the last few weeks" },
+  { text: "Within the last few months" },
+  { text: "Around 6 months ago" },
+  { text: "Longer ago" },
+  { text: NOT_SAY, skip: true },
+];
+
+const WHO_LOST: Choice[] = [
+  { text: "A family member" },
+  { text: "A partner" },
+  { text: "A friend" },
+  { text: "A pet" },
+  { text: OTHER },
+  { text: NOT_SAY, skip: true },
+];
+
+const VARY = ["", "v2", "v3"] as const;
+
+const knownTexts = (choices: Choice[]): string[] =>
+  choices.filter((c) => !c.skip && c.text !== OTHER).map((c) => c.text);
+
+function expandChoice(
+  stored: string | null,
+  choices: Choice[],
+  otherText = OTHER,
+): { value: string; other: string } {
+  if (!stored) return { value: "", other: "" };
+  if (stored === NOT_SAY) return { value: NOT_SAY, other: "" };
+  if (knownTexts(choices).includes(stored)) return { value: stored, other: "" };
+  return { value: otherText, other: stored };
+}
+
+function flattenChoice(value: string, other: string, otherTrigger = OTHER): string | null {
+  if (!value) return null;
+  if (value === NOT_SAY) return NOT_SAY;
+  if (value === otherTrigger) {
+    const trimmed = other.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  return value;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const apiUrl = useMemo(() => {
@@ -21,12 +120,17 @@ export default function ProfilePage() {
   // Form state
   const [callName, setCallName] = useState("");
   const [pronouns, setPronouns] = useState("");
+  const [pronounsOther, setPronounsOther] = useState("");
   const [age, setAge] = useState("");
   const [fact, setFact] = useState("");
-  const [hobbies, setHobbies] = useState("");
-  const [culturalBackground, setCulturalBackground] = useState("");
-  const [griefRecency, setGriefRecency] = useState("");
+  const [selectedHobbies, setSelectedHobbies] = useState<string[]>([]);
+  const [hobbiesOther, setHobbiesOther] = useState<string[]>([]);
+  const [newHobby, setNewHobby] = useState("");
+  const [cultural, setCultural] = useState("");
+  const [culturalOther, setCulturalOther] = useState("");
+  const [recency, setRecency] = useState("");
   const [whoLost, setWhoLost] = useState("");
+  const [whoLostOther, setWhoLostOther] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -36,13 +140,33 @@ export default function ProfilePage() {
         if (!active) return;
         if (data) {
           setCallName(data.callName || "");
-          setPronouns(data.pronouns || "");
+
+          const p = expandChoice(data.pronouns, PRONOUNS);
+          setPronouns(p.value);
+          setPronounsOther(p.other);
+
           setAge(data.age || "");
           setFact(data.fact || "");
-          setHobbies(data.hobbies ? data.hobbies.join(", ") : "");
-          setCulturalBackground(data.culturalBackground || "");
-          setGriefRecency(data.griefRecency || "");
-          setWhoLost(data.whoLost || "");
+
+          const knownH = knownTexts(HOBBIES);
+          const rawHobbies = data.hobbies || [];
+          const notSayHobbies = rawHobbies.includes(NOT_SAY);
+          const hList = rawHobbies.filter((h) => knownH.includes(h));
+          const hOther = rawHobbies.filter((h) => !knownH.includes(h) && h !== NOT_SAY);
+          if (hOther.length > 0) hList.push(OTHER);
+          if (notSayHobbies) hList.push(NOT_SAY);
+          setSelectedHobbies(hList);
+          setHobbiesOther(hOther);
+
+          const c = expandChoice(data.culturalBackground, CULTURAL);
+          setCultural(c.value);
+          setCulturalOther(c.other);
+
+          setRecency(data.griefRecency || "");
+
+          const w = expandChoice(data.whoLost, WHO_LOST);
+          setWhoLost(w.value);
+          setWhoLostOther(w.other);
         }
       })
       .catch(() => {
@@ -57,6 +181,27 @@ export default function ProfilePage() {
     };
   }, [apiUrl]);
 
+  const selectSingle = (
+    current: string,
+    setCurrent: (v: string) => void,
+    value: string
+  ) => {
+    setCurrent(current === value ? "" : value);
+  };
+
+  const toggleMultiHobbies = (value: string) => {
+    if (selectedHobbies.includes(value)) {
+      setSelectedHobbies(selectedHobbies.filter((v) => v !== value));
+      return;
+    }
+    if (value === NOT_SAY) {
+      setSelectedHobbies([NOT_SAY]);
+      return;
+    }
+    const withoutSkip = selectedHobbies.filter((v) => v !== NOT_SAY);
+    setSelectedHobbies([...withoutSkip, value]);
+  };
+
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!callName.trim()) {
@@ -68,15 +213,20 @@ export default function ProfilePage() {
     setErrorMessage("");
     setSuccessMessage("");
 
+    const finalHobbies = [
+      ...selectedHobbies.filter((h) => h !== OTHER),
+      ...hobbiesOther.map((h) => h.trim()).filter((h) => h.length > 0),
+    ];
+
     const payload: OnboardingPayload = {
       callName: callName.trim(),
-      pronouns: pronouns.trim() || null,
-      age: age.trim() || null,
+      pronouns: flattenChoice(pronouns, pronounsOther),
+      age: age || null,
       fact: fact.trim(),
-      hobbies: hobbies.split(",").map((h) => h.trim()).filter((h) => h.length > 0),
-      culturalBackground: culturalBackground.trim() || null,
-      griefRecency: griefRecency.trim() || null,
-      whoLost: whoLost.trim() || null,
+      hobbies: finalHobbies,
+      culturalBackground: flattenChoice(cultural, culturalOther),
+      griefRecency: recency || null,
+      whoLost: flattenChoice(whoLost, whoLostOther),
       status: OnboardingStatus.Complete,
     };
 
@@ -112,7 +262,7 @@ export default function ProfilePage() {
               Loading your details…
             </p>
           ) : (
-            <form onSubmit={handleSave} className="sk v2 bg-card p-6 sm:p-8 flex flex-col gap-5">
+            <form onSubmit={handleSave} className="sk v2 bg-card p-6 sm:p-8 flex flex-col gap-6">
               {/* Preferred Name */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="callName" className="text-sm font-semibold text-ink">
@@ -130,44 +280,63 @@ export default function ProfilePage() {
               </div>
 
               {/* Pronouns */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="pronouns" className="text-sm font-semibold text-ink">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-ink">
                   Pronouns
                 </label>
-                <input
-                  id="pronouns"
-                  type="text"
-                  value={pronouns}
-                  onChange={(e) => setPronouns(e.target.value)}
-                  placeholder="e.g. She/her, They/them"
-                  maxLength={30}
-                  className="field"
-                />
+                <div className="flex flex-wrap gap-2.5 mt-0.5">
+                  {PRONOUNS.map((o, i) => {
+                    const isSelected = pronouns === o.text;
+                    return (
+                      <button
+                        type="button"
+                        key={o.text}
+                        onClick={() => selectSingle(pronouns, setPronouns, o.text)}
+                        className={`sk thin soft ${VARY[i % 3]} chip-opt ${
+                          isSelected ? "sel" : ""
+                        } ${o.skip ? "skip" : ""}`}
+                      >
+                        {o.text}
+                      </button>
+                    );
+                  })}
+                </div>
+                {pronouns === OTHER && (
+                  <div className="mt-2 uinput">
+                    <input
+                      id="pronounsOther"
+                      type="text"
+                      placeholder="Your pronouns..."
+                      value={pronounsOther}
+                      onChange={(e) => setPronounsOther(e.target.value)}
+                      maxLength={30}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Age Range */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="age" className="text-sm font-semibold text-ink">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-ink">
                   Age range
                 </label>
-                <select
-                  id="age"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                  className="field appearance-none pr-8 bg-no-repeat bg-[right_12px_center]"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238d8478' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E")`,
-                    backgroundSize: '16px'
-                  }}
-                >
-                  <option value="">Select range...</option>
-                  <option value="Under 18">Under 18</option>
-                  <option value="18–21">18–21</option>
-                  <option value="22–25">22–25</option>
-                  <option value="26–30">26–30</option>
-                  <option value="31+">31+</option>
-                  <option value="I’d rather not say">I’d rather not say</option>
-                </select>
+                <div className="flex flex-wrap gap-2.5 mt-0.5">
+                  {AGE_RANGES.map((o, i) => {
+                    const isSelected = age === o.text;
+                    return (
+                      <button
+                        type="button"
+                        key={o.text}
+                        onClick={() => selectSingle(age, setAge, o.text)}
+                        className={`sk thin soft ${VARY[i % 3]} chip-opt ${
+                          isSelected ? "sel" : ""
+                        } ${o.skip ? "skip" : ""}`}
+                      >
+                        {o.text}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Fun Fact */}
@@ -187,66 +356,175 @@ export default function ProfilePage() {
               </div>
 
               {/* Hobbies */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="hobbies" className="text-sm font-semibold text-ink">
-                  Hobbies (comma-separated)
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-ink">
+                  Hobbies
                 </label>
-                <input
-                  id="hobbies"
-                  type="text"
-                  value={hobbies}
-                  onChange={(e) => setHobbies(e.target.value)}
-                  placeholder="e.g. Music, Cooking, Reading"
-                  className="field"
-                />
+                <div className="flex flex-wrap gap-2.5 mt-0.5">
+                  {HOBBIES.map((o, i) => {
+                    const isSelected = selectedHobbies.includes(o.text);
+                    return (
+                      <button
+                        type="button"
+                        key={o.text}
+                        onClick={() => toggleMultiHobbies(o.text)}
+                        className={`sk thin soft ${VARY[i % 3]} chip-opt ${
+                          isSelected ? "sel" : ""
+                        } ${o.skip ? "skip" : ""}`}
+                      >
+                        {o.text}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedHobbies.includes(OTHER) && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    {hobbiesOther.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {hobbiesOther.map((h) => (
+                          <button
+                            type="button"
+                            key={h}
+                            onClick={() => setHobbiesOther(hobbiesOther.filter((x) => x !== h))}
+                            title={`Remove "${h}"`}
+                            className="sk thin chip-opt sel text-sm py-1 px-3"
+                            style={{ gap: 8 }}
+                          >
+                            {h} <span className="opacity-80">×</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="uinput">
+                      <input
+                        type="text"
+                        placeholder="Add a custom hobby..."
+                        value={newHobby}
+                        onChange={(e) => setNewHobby(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const val = newHobby.trim();
+                            if (val && !hobbiesOther.includes(val)) {
+                              setHobbiesOther([...hobbiesOther, val]);
+                            }
+                            setNewHobby("");
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn ghost sm"
+                        onClick={() => {
+                          const val = newHobby.trim();
+                          if (val && !hobbiesOther.includes(val)) {
+                            setHobbiesOther([...hobbiesOther, val]);
+                          }
+                          setNewHobby("");
+                        }}
+                        disabled={!newHobby.trim()}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Cultural Background */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="cultural" className="text-sm font-semibold text-ink">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-ink">
                   Cultural background
                 </label>
-                <input
-                  id="cultural"
-                  type="text"
-                  value={culturalBackground}
-                  onChange={(e) => setCulturalBackground(e.target.value)}
-                  placeholder="e.g. White / European"
-                  maxLength={50}
-                  className="field"
-                />
+                <div className="flex flex-wrap gap-2.5 mt-0.5">
+                  {CULTURAL.map((o, i) => {
+                    const isSelected = cultural === o.text;
+                    return (
+                      <button
+                        type="button"
+                        key={o.text}
+                        onClick={() => selectSingle(cultural, setCultural, o.text)}
+                        className={`sk thin soft ${VARY[i % 3]} chip-opt ${
+                          isSelected ? "sel" : ""
+                        } ${o.skip ? "skip" : ""}`}
+                      >
+                        {o.text}
+                      </button>
+                    );
+                  })}
+                </div>
+                {cultural === OTHER && (
+                  <div className="mt-2 uinput">
+                    <input
+                      id="culturalOther"
+                      type="text"
+                      placeholder="Your cultural background..."
+                      value={culturalOther}
+                      onChange={(e) => setCulturalOther(e.target.value)}
+                      maxLength={50}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Who you lost */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="whoLost" className="text-sm font-semibold text-ink">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-ink">
                   Who did you lose?
                 </label>
-                <input
-                  id="whoLost"
-                  type="text"
-                  value={whoLost}
-                  onChange={(e) => setWhoLost(e.target.value)}
-                  placeholder="e.g. A family member"
-                  maxLength={50}
-                  className="field"
-                />
+                <div className="flex flex-wrap gap-2.5 mt-0.5">
+                  {WHO_LOST.map((o, i) => {
+                    const isSelected = whoLost === o.text;
+                    return (
+                      <button
+                        type="button"
+                        key={o.text}
+                        onClick={() => selectSingle(whoLost, setWhoLost, o.text)}
+                        className={`sk thin soft ${VARY[i % 3]} chip-opt ${
+                          isSelected ? "sel" : ""
+                        } ${o.skip ? "skip" : ""}`}
+                      >
+                        {o.text}
+                      </button>
+                    );
+                  })}
+                </div>
+                {whoLost === OTHER && (
+                  <div className="mt-2 uinput">
+                    <input
+                      id="whoLostOther"
+                      type="text"
+                      placeholder="Who did you lose..."
+                      value={whoLostOther}
+                      onChange={(e) => setWhoLostOther(e.target.value)}
+                      maxLength={50}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Recency */}
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="recency" className="text-sm font-semibold text-ink">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-ink">
                   How recently was your loss?
                 </label>
-                <input
-                  id="recency"
-                  type="text"
-                  value={griefRecency}
-                  onChange={(e) => setGriefRecency(e.target.value)}
-                  placeholder="e.g. Around 6 months ago"
-                  maxLength={50}
-                  className="field"
-                />
+                <div className="flex flex-wrap gap-2.5 mt-0.5">
+                  {RECENCY.map((o, i) => {
+                    const isSelected = recency === o.text;
+                    return (
+                      <button
+                        type="button"
+                        key={o.text}
+                        onClick={() => selectSingle(recency, setRecency, o.text)}
+                        className={`sk thin soft ${VARY[i % 3]} chip-opt ${
+                          isSelected ? "sel" : ""
+                        } ${o.skip ? "skip" : ""}`}
+                      >
+                        {o.text}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {successMessage && (
