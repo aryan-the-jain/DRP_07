@@ -146,3 +146,8 @@ case class UpdateOnboarding(
     whoLost: Option[String],
     status: String
 )
+
+case class SignUpRequest(
+    name: String
+)
+
