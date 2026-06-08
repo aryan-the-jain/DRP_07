@@ -1,6 +1,6 @@
 import { RefObject } from "react";
 
-import { participantId } from "../lib/api";
+import { getParticipantId } from "../lib/api";
 import { formatMessageTime, initialsFor } from "../lib/format";
 import { ActiveTab, GroupMessage, Participant } from "../lib/types";
 import { AvatarCircle } from "./DesignPrimitives";
@@ -53,7 +53,7 @@ export function MessageList({
               const participant = findParticipantById(message.id);
               const displayName = participant?.displayName ?? "Unknown";
               const isFacilitator = participant?.role === "facilitator";
-              const isOwn = message.id === participantId;
+              const isOwn = message.id === getParticipantId();
 
               return (
                 <article
