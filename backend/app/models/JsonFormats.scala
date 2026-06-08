@@ -72,4 +72,8 @@ object JsonFormats {
 
   given returnOnboardingWrites: Writes[ReturnOnboarding] =
     Json.writes[ReturnOnboarding]
+
+  given signUpRequestReads: Reads[SignUpRequest] =
+    Json.reads[SignUpRequest]
 }
+
