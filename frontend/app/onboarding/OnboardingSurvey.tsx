@@ -207,24 +207,10 @@ function responseToAnswers(resp: OnboardingResponse): Answers {
   const pronouns = expandChoice(resp.pronouns, PRONOUNS);
   const cultural = expandChoice(resp.culturalBackground, CULTURAL);
 
-  // `hobbies` is a JSON-encoded string[]; parse it defensively.
-  let storedHobbies: string[] = resp.hobbies;
-  // if (resp.hobbies) {
-  //   try {
-  //     const parsed = JSON.parse(resp.hobbies);
-  //     if (Array.isArray(parsed)) {
-  //       storedHobbies = parsed.filter(
-  //         (h): h is string => typeof h === "string",
-  //       );
-  //     }
-  //   } catch {
-  //     storedHobbies = [];
-  //   }
-  // }
   const known = knownTexts(HOBBIES);
-  const notSayHobbies = storedHobbies.includes(NOT_SAY);
-  const hobbies = storedHobbies.filter((h) => known.includes(h));
-  const hobbiesOther = storedHobbies.filter((h) => !known.includes(h) && h !== NOT_SAY);
+  const notSayHobbies = resp.hobbies.includes(NOT_SAY);
+  const hobbies = resp.hobbies.filter((h) => known.includes(h));
+  const hobbiesOther = resp.hobbies.filter((h) => !known.includes(h) && h !== NOT_SAY);
   if (hobbiesOther.length > 0) hobbies.push(OTHER);
   if (notSayHobbies) hobbies.push(NOT_SAY);
 
