@@ -52,7 +52,6 @@ export function Sidebar({ activeTab }: SidebarProps) {
     { name: "My circles", icon: "people" as IconName, path: "/circles", active: activeTab === "circles", impl: false },
     { name: "Invitations", icon: "mail" as IconName, path: "/invitations", active: activeTab === "invitations", impl: false },
     { name: "Quiet space", icon: "quiet" as IconName, path: "/quiet", active: activeTab === "quiet", impl: true },
-    { name: "Profile", icon: "user" as IconName, path: "/profile", active: activeTab === "profile", impl: true },
   ];
 
   return (
@@ -94,7 +93,11 @@ export function Sidebar({ activeTab }: SidebarProps) {
             <button
               type="button"
               onClick={() => router.push("/profile")}
-              className="flex items-center gap-3 text-left group min-w-0 rounded-lg hover:bg-paper/30 p-1.5 transition-colors cursor-pointer"
+              className={`w-full flex items-center gap-3 text-left group min-w-0 rounded-xl p-2 transition-all duration-150 cursor-pointer ${
+                activeTab === "profile"
+                  ? "bg-warm-soft text-warm-ink border border-warm/25 shadow-sm"
+                  : "hover:bg-paper/30"
+              }`}
               aria-label="Edit your profile"
             >
               <AvatarCircle
@@ -103,10 +106,14 @@ export function Sidebar({ activeTab }: SidebarProps) {
                 sizeClass="h-10 w-10 text-sm shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <span className="block text-sm font-bold text-ink truncate group-hover:text-warm-ink transition-colors">
+                <span className={`block text-sm font-bold truncate transition-colors ${
+                  activeTab === "profile" ? "text-warm-ink font-bold" : "text-ink group-hover:text-warm-ink"
+                }`}>
                   {currentUser.displayName}
                 </span>
-                <span className="block text-[11px] text-muted truncate">
+                <span className={`block text-[11px] truncate ${
+                  activeTab === "profile" ? "text-warm-ink/80" : "text-muted"
+                }`}>
                   {currentUser.pronouns || "Add pronouns"}
                 </span>
               </div>
