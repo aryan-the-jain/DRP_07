@@ -69,4 +69,39 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext)
     db.run(query)
     groupMessages(groupId) // TODO: Get rid
   }
+
+  def signUp(request: SignUpRequest): Future[ReturnParticipant] = {
+    val initials = if (request.name.trim.nonEmpty) request.name.trim.substring(0, 1).toUpperCase else "U"
+    val newParticipant = Participant(
+      participantId = 0,
+      name = request.name.trim,
+      pronouns = None,
+      initials = initials,
+      age = None,
+      culturalBackground = None,
+      hobbies = Nil,
+      fact = "",
+      griefRecency = None,
+      whoLost = None,
+      role = Role.PARTICIPANT,
+      onboardingStatus = "draft"
+    )
+
+    val action = for {
+      newId <- (participants returning participants.map(_.participantId)) += newParticipant
+      _ <- groupParticipants += GroupParticipants(1, newId)
+      p <- participants.filter(_.participantId === newId).result.head
+    } yield ReturnParticipant(
+      p.participantId,
+      p.name,
+      p.pronouns,
+      p.initials,
+      p.hobbies,
+      p.fact,
+      p.role
+    )
+
+    db.run(action.transactionally)
+  }
 }
+
