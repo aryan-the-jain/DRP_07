@@ -97,12 +97,18 @@ export default function Home() {
   }, [apiUrl, loadMessages, loadFacilitatorMessages]);
 
   useEffect(() => {
+    const id = localStorage.getItem("current_participant_id");
+    if (!id) {
+      router.push("/login");
+      return;
+    }
+
     const timeoutId = window.setTimeout(() => {
       void loadRoom();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [loadRoom]);
+  }, [router, loadRoom]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
