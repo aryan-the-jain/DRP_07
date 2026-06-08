@@ -200,6 +200,55 @@ body {
   color: var(--calm-ink);
 }
 
+/* ---- option style: inline chips (colour-only selection, no marker) ---- */
+.chip-opt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 18px;
+  font-size: 17px;
+  cursor: pointer;
+  color: var(--ink);
+  background: var(--card);
+  font-family: var(--hand);
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+.chip-opt.sel {
+  background: var(--warm);
+  border-color: transparent;
+  color: #fff;
+}
+.chip-opt.skip {
+  border-style: dashed;
+  border-color: var(--calm);
+  color: #3c5a4c;
+  font-style: italic;
+  background: transparent;
+}
+.chip-opt.skip.sel {
+  background: var(--calm);
+  border-style: solid;
+  color: #fff;
+}
+/* coloring on hover (no movement) — mirrors the back/next buttons */
+.chip-opt:hover {
+  border-color: var(--warm);
+  background: var(--warm-soft);
+}
+.chip-opt.sel:hover {
+  background: oklch(0.62 0.105 48);
+}
+.chip-opt.skip:hover {
+  border-color: var(--calm);
+  background: var(--calm-soft);
+}
+.chip-opt.skip.sel:hover {
+  background: oklch(0.6 0.06 165);
+}
+
 /* ---- buttons ---- */
 .btn {
   font-family: var(--hand);
@@ -324,6 +373,30 @@ button:not(:disabled):active {
 .field.calm:focus {
   border-color: var(--calm);
   box-shadow: 0 0 0 3px var(--calm-soft);
+}
+
+/* ---- text input style: underline only ---- */
+.uinput {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  color: var(--ink);
+  padding: 6px 2px 11px;
+  border-bottom: 2.5px dashed var(--line);
+}
+.uinput input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--hand);
+  font-size: 18px;
+  color: var(--ink);
+  caret-color: var(--warm);
+}
+.uinput input::placeholder {
+  color: var(--muted);
 }
 
 /* ---- chat bubble ---- */
