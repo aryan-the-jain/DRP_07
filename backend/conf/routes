@@ -24,3 +24,5 @@ GET     /groups/:groupId/support-links             controllers.QuietRoomControll
 GET     /groups/:groupId/meditation-playlists      controllers.QuietRoomController.meditationPlaylists(groupId: Int)
 POST    /groups/:groupId/doodles                   controllers.QuietRoomController.saveDoodle(groupId: Int)
 GET     /groups/:groupId/participants/:participantId/doodles   controllers.QuietRoomController.doodles(groupId: Int, participantId: Int)
+POST    /participants                              controllers.PeerSupportController.signUp
+
