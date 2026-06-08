@@ -1,4 +1,4 @@
-package repositories.PeerSupport
+package repositories.tables
 
 import models.*
 import slick.jdbc.PostgresProfile.api.*

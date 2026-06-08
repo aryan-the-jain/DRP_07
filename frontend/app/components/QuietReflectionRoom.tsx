@@ -31,26 +31,6 @@ type QuietReflectionRoomProps = {
   backLabel?: string;
 };
 
-const reflectionTabs: Array<{
-  id: ReflectionTab;
-  label: string;
-  description: string;
-  icon: string;
-}> = [
-  {
-    id: "guided",
-    label: "Guided questions",
-    description: "Reflect with gentle prompts",
-    icon: "Q",
-  },
-  {
-    id: "free",
-    label: "Free writing",
-    description: "Write freely and privately",
-    icon: "W",
-  },
-];
-
 export function QuietReflectionRoom({
   apiUrl,
   privateNote,
