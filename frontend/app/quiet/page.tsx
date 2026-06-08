@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
-import { BrandMark } from "../components/DesignPrimitives";
 import { QuietReflectionRoom } from "../components/QuietReflectionRoom";
+import { Sidebar } from "../components/Sidebar";
 import { fallbackApiUrl } from "../lib/api";
 import { useQuietSpace } from "../lib/useQuietSpace";
 
@@ -19,6 +19,13 @@ export default function QuietPage() {
 
   const quiet = useQuietSpace(apiUrl);
 
+  useEffect(() => {
+    const id = localStorage.getItem("current_participant_id");
+    if (!id) {
+      router.push("/login");
+    }
+  }, [router]);
+
   async function handleExit() {
     // Save any draft before leaving, then return where the visitor came from.
     // A `return` query param lets callers (e.g. onboarding) send the visitor
@@ -31,12 +38,11 @@ export default function QuietPage() {
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-paper px-4 py-5 text-ink sm:px-6 lg:px-8">
-      <section className="panel mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
-        <header className="shrink-0 border-b-2 border-dashed border-line bg-card p-4 sm:p-5">
-          <BrandMark />
-        </header>
+    <main className="fixed inset-0 flex overflow-hidden bg-paper text-ink">
+      <Sidebar activeTab="quiet" />
 
+      {/* Main Content */}
+      <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden">
         <QuietReflectionRoom
           apiUrl={apiUrl}
           privateNote={quiet.privateNote}
@@ -54,7 +60,7 @@ export default function QuietPage() {
           onShareReflection={quiet.handleShareReflection}
           backLabel="Back to your space"
         />
-      </section>
+      </div>
     </main>
   );
 }
