@@ -231,6 +231,7 @@ function WeatherTile({
   return (
     <button
       type="button"
+      data-metric-id="weather-checkin"
       onClick={() => onPick(w.key)}
       aria-pressed={selected}
       className={"sk thin" + (selected ? "" : " soft weather-tile")}

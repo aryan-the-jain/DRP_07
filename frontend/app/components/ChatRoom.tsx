@@ -129,6 +129,7 @@ export function ChatRoom({
                 onShareSelectionChange={onShareSelectionChange}
                 onExitQuietSpace={onExitQuietSpace}
                 onShareReflection={onShareReflection}
+                onMessageFacilitator={() => onSetActiveTab("facilitator")}
               />
             ) : (
               <div className="flex min-h-0 flex-1 flex-col bg-card">
@@ -155,6 +156,7 @@ export function ChatRoom({
                   <div className="relative group w-fit">
                     <button
                       type="button"
+                      data-metric-id="quiet-room"
                       onClick={() => onSetActiveTab("quiet")}
                       className="btn calm sm inline-flex items-center gap-2"
                     >

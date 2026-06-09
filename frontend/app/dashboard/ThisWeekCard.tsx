@@ -116,6 +116,7 @@ export function ThisWeekCard({
 
         <button
           type="button"
+          data-metric-id="join-group"
           onClick={onEnterRoom}
           className="btn warm inline-flex items-center gap-2"
         >

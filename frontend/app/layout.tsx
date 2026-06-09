@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Caveat, Nunito_Sans } from "next/font/google";
 import "./globals.css";
+import { MetricHarness } from "./metrics/MetricHarness";
 
 // Display / handwritten voice — used for titles and warm, human moments.
 const caveat = Caveat({
@@ -33,7 +34,10 @@ export default function RootLayout({
       lang="en"
       className={`h-full antialiased ${caveat.variable} ${nunitoSans.variable}`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        {children}
+        <MetricHarness />
+      </body>
     </html>
   );
 }
