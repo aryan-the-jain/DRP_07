@@ -441,7 +441,7 @@ function DurationField({ minutes, onChange }: { minutes: number; onChange: (m: n
           type="button"
           aria-label="Shorter"
         >
-          <Icon name="x" size={14} c="var(--muted)" style={{ transform: "rotate(45deg)" }} />
+          <Icon name="minus" size={15} c="var(--muted)" />
         </button>
         <span className="h-title" style={{ fontSize: 24, color: "var(--ink)", minWidth: 86, textAlign: "center" }}>
           {label}
@@ -458,7 +458,6 @@ function DurationField({ minutes, onChange }: { minutes: number; onChange: (m: n
         </button>
       </div>
       <span style={{ fontSize: 14, color: "var(--faint)", lineHeight: 1.35, maxWidth: 180 }}>
-        anywhere from 15 minutes to an hour, in 5-minute steps
       </span>
     </div>
   );

@@ -21,6 +21,7 @@ export type IconName =
   | "chevu"
   | "back"
   | "plus"
+  | "minus"
   | "check"
   | "x"
   | "heart"
@@ -105,6 +106,7 @@ export function Icon({
     chevu: <path {...p} d="M5 14l6-5 6 5" />,
     back: <path {...p} d="M13 4l-5 6 5 6" />,
     plus: <path {...p} d="M11 4v14M4 11h14" />,
+    minus: <path {...p} d="M4 11h14" />,
     check: <path {...p} d="M4 11l5 5 9-11" />,
     x: <path {...p} d="M5 5l12 12M17 5L5 17" />,
     heart: <path {...p} d="M11 18S3.5 13 3.5 8.2A3.7 3.7 0 0 1 11 6a3.7 3.7 0 0 1 7.5 2.2C18.5 13 11 18 11 18Z" />,
