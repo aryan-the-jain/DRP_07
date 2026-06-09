@@ -2,6 +2,7 @@ import { CSSProperties, ReactNode } from "react";
 
 export type IconName =
   | "arrowLeft"
+  | "brush"
   | "check"
   | "clock"
   | "close"
@@ -40,6 +41,12 @@ export function LineIcon({
 
   const paths: Record<IconName, ReactNode> = {
     arrowLeft: <path {...pathProps} d="M13 5 7 11l6 6M7 11h11" />,
+    brush: (
+      <>
+        <path {...pathProps} d="M17 3.5c1 1 .8 3.6-2 6.4L9.9 15l-3-3 5.1-5.1c2.8-2.8 5.4-3 6.4-2Z" />
+        <path {...pathProps} d="M9.9 15c-.5 1.8-2.3 3-4.2 2.6-1.2-.3-2.1-1.5-1.5-2.8.4-.9 1.2-1.5 2.2-1.7L9.9 15Z" />
+      </>
+    ),
     check: <path {...pathProps} d="M4 11l5 5 9-11" />,
     clock: (
       <>

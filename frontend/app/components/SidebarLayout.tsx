@@ -10,26 +10,79 @@ import { BrandMark, IconName, LineIcon } from "./DesignPrimitives";
 // Both the dashboard and the quiet space render their screens as children, so
 // the sidebar lives in one place rather than being duplicated per page.
 
-const NAV_ITEMS: Array<{
+// --- Nav items ---------------------------------------------------
+
+type NavItem = {
   href: string;
   label: string;
   icon: IconName;
-  // "calm" gives the item a sage pill so it's emphasised in the rail.
   tone?: "calm";
-}> = [
+  metricId?: string;
+};
+
+const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: "home" },
-  { href: "/quiet", label: "Quiet space", icon: "quiet", tone: "calm" },
+  { href: "/quiet/breathe", label: "Breathe", icon: "wind", tone: "calm" },
+  {
+    href: "/quiet/steady",
+    label: "Reset Focus",
+    icon: "quiet",
+    tone: "calm",
+    metricId: "calm-steady",
+  },
+  {
+    href: "/quiet/meditation",
+    label: "Meditation",
+    icon: "spotify",
+    tone: "calm",
+  },
+  {
+    href: "/quiet/doodle",
+    label: "Doodle",
+    icon: "brush",
+    tone: "calm",
+    metricId: "calm-doodle",
+  },
+  {
+    href: "/quiet/resources",
+    label: "Resources",
+    icon: "externalLink",
+    tone: "calm",
+  },
+  {
+    href: "/quiet/guided",
+    label: "Guided questions",
+    icon: "heart",
+    tone: "calm",
+  },
+  {
+    href: "/quiet/free",
+    label: "Free writing",
+    icon: "pen",
+    tone: "calm",
+    metricId: "reflect-free",
+  },
+  {
+    href: "/quiet/facilitator",
+    label: "Message facilitator",
+    icon: "mail",
+    tone: "calm",
+    metricId: "message-facilitator",
+  },
 ];
+
+// --- Persistence keys & breakpoint -----------------------------------------
 
 const STORAGE_KEY = "sidebar.collapsed";
 const MOBILE_BREAKPOINT = 768;
+
+// ---------------------------------------------------------------------------
 
 export function SidebarLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  // Restore the saved preference; with none, default to collapsed on narrow
-  // screens so the rail doesn't crowd the content.
+  // Restore saved preferences; default to collapsed on narrow screens.
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -42,7 +95,7 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timeoutId);
   }, []);
 
-  function toggle() {
+  function toggleCollapsed() {
     setCollapsed((prev) => {
       const next = !prev;
       try {
@@ -70,7 +123,7 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
         {/* collapse / expand toggle, floating on the divider */}
         <button
           type="button"
-          onClick={toggle}
+          onClick={toggleCollapsed}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="absolute -right-3 top-7 z-10 grid h-6 w-6 place-items-center rounded-full border border-line bg-card text-muted shadow-[0_2px_6px_rgba(68,52,35,0.12)] transition hover:text-ink"
         >
@@ -92,7 +145,7 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
 
         <nav
           aria-label="Primary"
-          className={`flex flex-col gap-1.5 py-2 ${collapsed ? "px-3" : "px-3"}`}
+          className="flex flex-1 flex-col gap-1.5 overflow-y-auto py-2 px-3"
         >
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href;
@@ -102,6 +155,7 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 title={collapsed ? item.label : undefined}
+                data-metric-id={item.metricId}
                 className={`nav-link ${item.tone === "calm" ? "calm" : ""} ${
                   active ? "active" : ""
                 } ${collapsed ? "justify-center" : ""}`}
@@ -114,7 +168,7 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* faint dotted rule near the bottom */}
-        <div className="mt-auto px-4 pb-5">
+        <div className="px-4 pb-5">
           <span
             aria-hidden="true"
             className="block border-t-2 border-dashed border-line"
