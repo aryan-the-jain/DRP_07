@@ -81,7 +81,8 @@ object JsonFormats {
   given returnFacilitatorGroupWrites: Writes[ReturnFacilitatorGroup] =
     Json.writes[ReturnFacilitatorGroup]
 
-  given returnFacilitatorParticipantWrites: Writes[ReturnFacilitatorParticipant] =
+  given returnFacilitatorParticipantWrites
+      : Writes[ReturnFacilitatorParticipant] =
     Json.writes[ReturnFacilitatorParticipant]
 
   given returnInboxEntryWrites: Writes[ReturnInboxEntry] =

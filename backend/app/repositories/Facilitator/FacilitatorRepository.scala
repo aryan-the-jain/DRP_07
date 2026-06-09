@@ -25,7 +25,13 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
   private val reflections = TableQuery[ReflectionsTable]
 
   private def member(p: Participant): ReturnFacilitatorMember =
-    ReturnFacilitatorMember(p.participantId, p.name, p.initials, p.pronouns, p.role)
+    ReturnFacilitatorMember(
+      p.participantId,
+      p.name,
+      p.initials,
+      p.pronouns,
+      p.role
+    )
 
   private def detail(
       p: Participant,
@@ -109,7 +115,9 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
     db.run(already.exists.result).flatMap {
       case true  => Future.successful(0)
       case false =>
-        db.run(groupParticipants += GroupParticipants(groupId, place.participantId))
+        db.run(
+          groupParticipants += GroupParticipants(groupId, place.participantId)
+        )
     }
   }
 
