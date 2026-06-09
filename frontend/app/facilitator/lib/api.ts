@@ -1,0 +1,155 @@
+// Facilitator API client — mirrors app/lib/api.ts (participant side): resolve the base
+// URL from NEXT_PUBLIC_API_URL with a localhost fallback, throw on non-2xx, return JSON.
+//
+// Single-facilitator prototype: the facilitator is the seeded participant with role
+// FACILITATOR (Sean), and the in-session room is the one live group — both hardcoded here
+// exactly as the participant app hardcodes its participant/group ids.
+
+import type {
+  FacGroupResponse,
+  FacMessageResponse,
+  FacParticipantResponse,
+  GroupMessageResponse,
+  InboxEntryResponse,
+} from "./data";
+
+export const fallbackApiUrl = "http://localhost:9000";
+export const facilitatorId = 8; // seeded "Sean", role FACILITATOR
+export const liveGroupId = 1; // the seeded Friday Group
+
+export function apiBase(): string {
+  return process.env.NEXT_PUBLIC_API_URL ?? fallbackApiUrl;
+}
+
+async function getJson<T>(url: string, errorMessage: string): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(errorMessage);
+  return response.json() as Promise<T>;
+}
+
+async function send<T>(
+  url: string,
+  method: "POST" | "PATCH",
+  body: unknown,
+  errorMessage: string,
+): Promise<T> {
+  const response = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(errorMessage);
+  return response.json() as Promise<T>;
+}
+
+// ---- reads ----
+export function fetchGroups(apiUrl: string): Promise<FacGroupResponse[]> {
+  return getJson(`${apiUrl}/facilitator/groups`, "Could not load your groups.");
+}
+
+export function fetchArrivals(apiUrl: string): Promise<FacParticipantResponse[]> {
+  return getJson(`${apiUrl}/facilitator/arrivals`, "Could not load new arrivals.");
+}
+
+export function fetchParticipant(
+  apiUrl: string,
+  participantId: number,
+): Promise<FacParticipantResponse> {
+  return getJson(
+    `${apiUrl}/facilitator/participants/${participantId}`,
+    "Could not load this person.",
+  );
+}
+
+export function fetchInbox(apiUrl: string, groupId: number): Promise<InboxEntryResponse[]> {
+  return getJson(
+    `${apiUrl}/facilitator/groups/${groupId}/inbox`,
+    "Could not load private messages.",
+  );
+}
+
+export function fetchGroupMessages(
+  apiUrl: string,
+  groupId: number,
+): Promise<GroupMessageResponse[]> {
+  return getJson(`${apiUrl}/groups/${groupId}/messages`, "Could not load messages.");
+}
+
+export function fetchPrivateThread(
+  apiUrl: string,
+  groupId: number,
+  participantId: number,
+): Promise<FacMessageResponse[]> {
+  return getJson(
+    `${apiUrl}/groups/${groupId}/${participantId}/facilitator-messages`,
+    "Could not load this thread.",
+  );
+}
+
+// ---- writes ----
+export type GroupInput = {
+  name: string;
+  dayOfWeek: string; // "FRIDAY"
+  scheduledTime: string; // "20:00"
+  scheduledDurationMinutes: number; // 15–60, in 5-min steps
+  description: string | null;
+};
+
+export function createGroup(apiUrl: string, input: GroupInput): Promise<FacGroupResponse> {
+  return send(`${apiUrl}/facilitator/groups`, "POST", input, "Could not create the group.");
+}
+
+export function updateGroup(
+  apiUrl: string,
+  groupId: number,
+  input: GroupInput,
+): Promise<number> {
+  return send(
+    `${apiUrl}/facilitator/groups/${groupId}`,
+    "PATCH",
+    input,
+    "Could not save the group.",
+  );
+}
+
+export function placeParticipant(
+  apiUrl: string,
+  groupId: number,
+  participantId: number,
+): Promise<number> {
+  return send(
+    `${apiUrl}/facilitator/groups/${groupId}/participants`,
+    "POST",
+    { participantId },
+    "Could not place this person.",
+  );
+}
+
+export function sendGroupMessage(
+  apiUrl: string,
+  groupId: number,
+  participantId: number,
+  body: string,
+): Promise<GroupMessageResponse[]> {
+  return send(
+    `${apiUrl}/groups/${groupId}/messages`,
+    "POST",
+    { participantId, body },
+    "Could not send the message.",
+  );
+}
+
+export function sendPrivateMessage(
+  apiUrl: string,
+  groupId: number,
+  fromId: number,
+  toId: number,
+  body: string,
+): Promise<unknown> {
+  return send(
+    `${apiUrl}/groups/${groupId}/facilitator-messages`,
+    "POST",
+    { fromId, toId, body },
+    "Could not send the message.",
+  );
+}

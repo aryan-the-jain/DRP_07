@@ -13,6 +13,8 @@ export type SupportGroup = {
   // the DB. Optional-tolerant so the UI still renders if the backend lags.
   dayOfWeek?: string;
   scheduledTime?: string;
+  // Optional "a few words members will see", set by the facilitator.
+  description?: string | null;
 };
 
 export type Participant = {

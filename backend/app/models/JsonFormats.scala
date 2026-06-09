@@ -72,4 +72,25 @@ object JsonFormats {
 
   given returnOnboardingWrites: Writes[ReturnOnboarding] =
     Json.writes[ReturnOnboarding]
+
+  // ---- facilitator-side views ----
+  // Leaf writes must precede the composites that nest them.
+  given returnFacilitatorMemberWrites: Writes[ReturnFacilitatorMember] =
+    Json.writes[ReturnFacilitatorMember]
+
+  given returnFacilitatorGroupWrites: Writes[ReturnFacilitatorGroup] =
+    Json.writes[ReturnFacilitatorGroup]
+
+  given returnFacilitatorParticipantWrites: Writes[ReturnFacilitatorParticipant] =
+    Json.writes[ReturnFacilitatorParticipant]
+
+  given returnInboxEntryWrites: Writes[ReturnInboxEntry] =
+    Json.writes[ReturnInboxEntry]
+
+  given createGroupReads: Reads[CreateGroup] = Json.reads[CreateGroup]
+
+  given updateGroupReads: Reads[UpdateGroup] = Json.reads[UpdateGroup]
+
+  given placeParticipantReads: Reads[PlaceParticipant] =
+    Json.reads[PlaceParticipant]
 }
