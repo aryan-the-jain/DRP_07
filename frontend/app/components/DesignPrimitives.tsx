@@ -8,6 +8,7 @@ export type IconName =
   | "eraser"
   | "externalLink"
   | "heart"
+  | "home"
   | "mail"
   | "people"
   | "pen"
@@ -71,6 +72,15 @@ export function LineIcon({
         d="M11 18S3.5 13 3.5 8.2A3.7 3.7 0 0 1 11 6a3.7 3.7 0 0 1 7.5 2.2C18.5 13 11 18 11 18Z"
       />
     ),
+    home: (
+      <>
+        <path {...pathProps} d="M3.5 10.5 11 4l7.5 6.5" />
+        <path
+          {...pathProps}
+          d="M5.5 9.7V17a1 1 0 0 0 1 1H9v-4.6h4V18h2.5a1 1 0 0 0 1-1V9.7"
+        />
+      </>
+    ),
     mail: (
       <>
         <rect {...pathProps} x="3" y="5" width="16" height="12" rx="2.5" />
@@ -124,7 +134,15 @@ export function LineIcon({
   );
 }
 
-export function BrandMark({ small = false }: { small?: boolean }) {
+export function BrandMark({
+  small = false,
+  markOnly = false,
+}: {
+  small?: boolean;
+  // Render just the concentric-circle mark, no wordmark — used by the
+  // collapsed sidebar rail.
+  markOnly?: boolean;
+}) {
   const ring = small ? "h-6 w-6" : "h-8 w-8";
 
   return (
@@ -133,9 +151,11 @@ export function BrandMark({ small = false }: { small?: boolean }) {
         <span className="absolute inset-1 rounded-full border border-[var(--warm)]" />
         <span className="absolute inset-[9px] rounded-full bg-[var(--warm)]" />
       </span>
-      <span className={`h-title text-[var(--ink)] ${small ? "text-xl" : "text-2xl"}`}>
-        alongside
-      </span>
+      {!markOnly && (
+        <span className={`h-title text-[var(--ink)] ${small ? "text-xl" : "text-2xl"}`}>
+          alongside
+        </span>
+      )}
     </div>
   );
 }

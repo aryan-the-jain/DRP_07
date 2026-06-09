@@ -1,12 +1,14 @@
 import { IconName, LineIcon } from "../DesignPrimitives";
 
-export type ReflectionTab = "calming" | "guided" | "free";
+export type ReflectionTab = "calming" | "guided" | "free" | "facilitator";
 
 const reflectionTabs: Array<{
   id: ReflectionTab;
   label: string;
   description: string;
   icon: IconName;
+  // Override for the UX-metrics target id; defaults to `reflect-<id>`.
+  metricId?: string;
 }> = [
   {
     id: "calming",
@@ -25,6 +27,13 @@ const reflectionTabs: Array<{
     label: "Free writing",
     description: "Write freely and privately",
     icon: "pen",
+  },
+  {
+    id: "facilitator",
+    label: "Message the facilitator",
+    description: "Write privately to them",
+    icon: "mail",
+    metricId: "message-facilitator",
   },
 ];
 
@@ -51,6 +60,7 @@ export function ReflectionTabList({
             key={tab.id}
             type="button"
             role="tab"
+            data-metric-id={tab.metricId ?? `reflect-${tab.id}`}
             aria-selected={isActive}
             onClick={() => onTabChange(tab.id)}
             disabled={disabled}

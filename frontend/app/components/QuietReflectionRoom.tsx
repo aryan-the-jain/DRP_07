@@ -26,9 +26,17 @@ type QuietReflectionRoomProps = {
   onShareSelectionChange: (selection: ReflectionShareSelection) => void;
   onExitQuietSpace: () => void;
   onShareReflection: () => void | Promise<void>;
+  // Open the direct private conversation with the facilitator. The quiet room
+  // doesn't host its own composer — this leads to the chat room's facilitator
+  // view, the single place private messages live.
+  onMessageFacilitator: () => void;
   // Label for the back button. Defaults to the in-room "Back to the group"; the
   // standalone /quiet route passes a simpler "Back".
   backLabel?: string;
+  // Whether to show the back button. The in-room quiet tab needs it (to return
+  // to the group); the standalone /quiet route hides it since the sidebar's
+  // Home already provides the way out.
+  showBackButton?: boolean;
 };
 
 export function QuietReflectionRoom({
@@ -46,7 +54,9 @@ export function QuietReflectionRoom({
   onShareSelectionChange,
   onExitQuietSpace,
   onShareReflection,
+  onMessageFacilitator,
   backLabel = "Back to the group",
+  showBackButton = true,
 }: QuietReflectionRoomProps) {
   const [activeReflectionTab, setActiveReflectionTab] =
     useState<ReflectionTab>("calming");
@@ -67,7 +77,12 @@ export function QuietReflectionRoom({
   // views which have nothing to share.
   const isDoodleActive =
     activeReflectionTab === "calming" && activeCalmingView === "doodle";
-  const showShareButton = activeReflectionTab !== "calming" || isDoodleActive;
+  // Share applies to the writing tabs and the doodle canvas — not to the
+  // calming views or the direct facilitator-message tab.
+  const showShareButton =
+    activeReflectionTab === "guided" ||
+    activeReflectionTab === "free" ||
+    isDoodleActive;
 
   useEffect(() => {
     if (!isShareDialogOpen || isReflectionBusy) {
@@ -109,16 +124,21 @@ export function QuietReflectionRoom({
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--calm-soft)] p-4 sm:p-5">
       <div className="panel flex min-h-full shrink-0 [border-color:var(--calm)] bg-card px-5 py-5 shadow-[0_18px_50px_rgba(58,52,45,0.10)] sm:px-7 sm:py-6">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+          {(showBackButton || showShareButton) && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-line pb-3">
-            <button
-              type="button"
-              onClick={onExitQuietSpace}
-              disabled={isReflectionBusy}
-              className="btn sm inline-flex items-center gap-2"
-            >
-              <LineIcon name="arrowLeft" size={16} />
-              {backLabel}
-            </button>
+            {showBackButton ? (
+              <button
+                type="button"
+                onClick={onExitQuietSpace}
+                disabled={isReflectionBusy}
+                className="btn sm inline-flex items-center gap-2"
+              >
+                <LineIcon name="arrowLeft" size={16} />
+                {backLabel}
+              </button>
+            ) : (
+              <span aria-hidden="true" />
+            )}
 
             {showShareButton && (
               <div className="relative group w-fit">
@@ -154,6 +174,7 @@ export function QuietReflectionRoom({
               </div>
             )}
           </div>
+          )}
 
           <div className="pt-1 text-center">
             <p className="leader [color:var(--calm)]">A space just for you</p>
@@ -189,7 +210,15 @@ export function QuietReflectionRoom({
               <ReflectionTabList
                 activeTab={activeReflectionTab}
                 disabled={isReflectionBusy}
-                onTabChange={setActiveReflectionTab}
+                onTabChange={(tab) => {
+                  // "Message the facilitator" isn't a panel — it leads straight
+                  // to the chat room's private facilitator conversation.
+                  if (tab === "facilitator") {
+                    onMessageFacilitator();
+                    return;
+                  }
+                  setActiveReflectionTab(tab);
+                }}
               />
 
               <div className="mx-auto w-full max-w-3xl space-y-5">

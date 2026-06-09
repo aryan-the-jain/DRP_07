@@ -15,7 +15,7 @@ export type CalmingView =
 
 const calmingViews: Array<{ id: CalmingView; label: string }> = [
   { id: "breathe", label: "Breathe" },
-  { id: "steady", label: "Steady me" },
+  { id: "steady", label: "Reset Focus" },
   { id: "meditation", label: "Meditation" },
   { id: "doodle", label: "Doodle" },
   { id: "resources", label: "Resources" },
@@ -47,6 +47,7 @@ export function CalmingCorner({
               key={view.id}
               type="button"
               role="tab"
+              data-metric-id={`calm-${view.id}`}
               aria-selected={isActive}
               onClick={() => onActiveViewChange(view.id)}
               className={`btn sm ${isActive ? "calm" : "ghost"}`}

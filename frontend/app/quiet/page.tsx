@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 
-import { BrandMark } from "../components/DesignPrimitives";
 import { QuietReflectionRoom } from "../components/QuietReflectionRoom";
+import { SidebarLayout } from "../components/SidebarLayout";
 import { fallbackApiUrl } from "../lib/api";
 import { useQuietSpace } from "../lib/useQuietSpace";
 
@@ -31,13 +31,10 @@ export default function QuietPage() {
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-paper px-4 py-5 text-ink sm:px-6 lg:px-8">
-      <section className="panel mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
-        <header className="shrink-0 border-b-2 border-dashed border-line bg-card p-4 sm:p-5">
-          <BrandMark />
-        </header>
-
-        <QuietReflectionRoom
+    <SidebarLayout>
+      <main className="h-full overflow-hidden bg-paper px-4 py-5 text-ink sm:px-6 lg:px-8">
+        <section className="panel mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden shadow-[0_24px_80px_rgba(68,52,35,0.14)]">
+          <QuietReflectionRoom
           apiUrl={apiUrl}
           privateNote={quiet.privateNote}
           facilitatorNote={quiet.facilitatorNote}
@@ -52,9 +49,11 @@ export default function QuietPage() {
           onShareSelectionChange={quiet.handleShareSelectionChange}
           onExitQuietSpace={handleExit}
           onShareReflection={quiet.handleShareReflection}
-          backLabel="Back to your space"
-        />
-      </section>
-    </main>
+          onMessageFacilitator={() => router.push("/facilitator")}
+          showBackButton={false}
+          />
+        </section>
+      </main>
+    </SidebarLayout>
   );
 }
