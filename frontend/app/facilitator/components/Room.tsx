@@ -6,7 +6,7 @@
 // privately. A message in the rail opens that person's message view; a reflection opens
 // their reflection view.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatMessageTime } from "../../lib/format";
 import { Avatar, DashRule, Icon, RoomHeader } from "./Primitives";
@@ -241,6 +241,25 @@ export function ChatDrawer() {
   const [draft, setDraft] = useState("");
   const [panelOpen, setPanelOpen] = useState(true);
   const [panelWidth, setPanelWidth] = useState(360);
+  const [splitterHover, setSplitterHover] = useState(false);
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  const onSplitterMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    dragRef.current = { startX: e.clientX, startWidth: panelWidth };
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      const delta = dragRef.current.startX - ev.clientX;
+      setPanelWidth(Math.max(300, Math.min(700, dragRef.current.startWidth + delta)));
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
 
   const loadMessages = useCallback(async () => {
     try {
@@ -382,8 +401,41 @@ export function ChatDrawer() {
           </div>
         </div>
 
+        {panelOpen && (
+          <div
+            onMouseDown={onSplitterMouseDown}
+            onMouseEnter={() => setSplitterHover(true)}
+            onMouseLeave={() => setSplitterHover(false)}
+            title="Drag to resize"
+            style={{
+              width: 16,
+              flex: "0 0 16px",
+              cursor: "col-resize",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              position: "relative",
+              userSelect: "none",
+              transition: "background .15s",
+            }}
+          >
+            <div style={{
+              position: "absolute",
+              top: 0, bottom: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
+              borderLeft: `1.5px solid ${splitterHover ? "var(--warm)" : "var(--line)"}`,
+              transition: "border-color .15s",
+            }} />
+            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 3, opacity: splitterHover ? 1 : 0.35, transition: "opacity .15s" }}>
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={{ width: 10, height: 2.5, borderRadius: 2, background: splitterHover ? "var(--warm)" : "var(--faint)", transition: "background .15s" }} />
+              ))}
+            </div>
+          </div>
+        )}
         {panelOpen ? (
-          <div className="stack" style={{ width: panelWidth, flex: "0 0 auto", borderLeft: "2px dashed var(--line)", background: "var(--paper)" }}>
+          <div className="stack" style={{ width: panelWidth, flex: "0 0 auto", background: "var(--paper)" }}>
             {/* header */}
             <div className="row" style={{ padding: "16px 18px 12px", gap: 9 }}>
               <Icon name="lock" size={17} c="var(--warm)" />
@@ -399,29 +451,6 @@ export function ChatDrawer() {
               >
                 <Icon name="chev" size={15} c="var(--muted)" />
               </button>
-            </div>
-
-            {/* controls — visibility + panel width */}
-            <div className="row" style={{ padding: "0 18px 12px", gap: 14 }}>
-              <div className="row" style={{ gap: 8 }}>
-                <Icon name="eye" size={15} c="var(--muted)" />
-                <span style={{ fontSize: 13, color: "var(--muted)" }}>Visible</span>
-                <Toggle on={panelOpen} onChange={setPanelOpen} />
-              </div>
-              <div className="row" style={{ gap: 8, flex: 1 }}>
-                <Icon name="bubbleLines" size={15} c="var(--muted)" />
-                <input
-                  type="range"
-                  className="rng"
-                  min={300}
-                  max={440}
-                  value={panelWidth}
-                  onChange={(e) => setPanelWidth(Number(e.target.value))}
-                  style={{ flex: 1 }}
-                  title="Panel width"
-                  aria-label="Panel width"
-                />
-              </div>
             </div>
 
             {/* legend */}
@@ -464,12 +493,18 @@ export function ChatDrawer() {
               cursor: "pointer",
             }}
           >
+            <button
+                className="btn ghost icon sm"
+                title="Show the private panel"
+                onClick={() => setPanelOpen(true)}
+                style={{ borderColor: "var(--line)" }}
+              >
+            <Icon name="chev" size={16} c="var(--muted)" style={{ transform: "rotate(180deg)" }} />
+            </button>
             <Icon name="lock" size={18} c="var(--warm)" />
-            <span className="h-title" style={{ writingMode: "vertical-rl", fontSize: 16, color: "var(--muted)" }}>
+            <span className="h-title" style={{ writingMode: "vertical-rl", fontSize: 20, color: "var(--muted)" }}>
               Privately with you
             </span>
-            <div style={{ flex: 1 }} />
-            <Icon name="chev" size={16} c="var(--muted)" style={{ transform: "rotate(180deg)" }} />
           </div>
         )}
       </div>
