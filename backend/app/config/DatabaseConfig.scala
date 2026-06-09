@@ -10,12 +10,24 @@ final case class DatabaseConfig(
 
 object DatabaseConfig {
   def fromEnvironment(): DatabaseConfig = {
-    val databaseUrl = sys.env.getOrElse(
-      "DATABASE_URL",
-      throw new IllegalStateException(
-        "DATABASE_URL environment variable is not set"
+    val databaseUrl = sys.env.get("DATABASE_URL")
+      .orElse {
+        import java.nio.file.{Files, Paths}
+        val envPath = Paths.get(".env")
+        if (Files.exists(envPath)) {
+          import scala.jdk.CollectionConverters._
+          Files.readAllLines(envPath).asScala
+            .map(_.trim)
+            .find(_.startsWith("DATABASE_URL="))
+            .map(_.stripPrefix("DATABASE_URL="))
+            .map(_.replaceAll("^\"|\"$|^'|'$", ""))
+        } else None
+      }
+      .getOrElse(
+        throw new IllegalStateException(
+          "DATABASE_URL environment variable is not set and no .env file was found"
+        )
       )
-    )
 
     val uri = new URI(databaseUrl)
 
