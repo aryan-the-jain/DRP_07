@@ -96,6 +96,7 @@ case class ReturnFacilitatorGroup(
     dayOfWeek: String,
     scheduledTime: String,
     scheduledDurationMinutes: Int,
+    creationTime: LocalDateTime,
     description: Option[String],
     members: Seq[ReturnFacilitatorMember]
 )
@@ -115,6 +116,7 @@ case class ReturnFacilitatorParticipant(
     whoLost: Option[String],
     role: Role,
     onboardingStatus: String,
+    onboardingTime: LocalDateTime,
     groupId: Option[Int]
 )
 

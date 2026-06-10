@@ -37,37 +37,6 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       p.role
     )
 
-  // private def detail(
-  //     participantId: Int,
-  //     name: String,
-  //     pronouns: Option[String],
-  //     age: Option[String],
-  //     initials: String,
-  //     fact: String,
-  //     hobbies: List[String],
-  //     culturalBackground: Option[String],
-  //     griefRecency: Option[String],
-  //     whoLost: Option[String],
-  //     role: Role,
-  //     onboardingStatus: String,
-  //     groupId: Option[Int]
-  // ): ReturnFacilitatorParticipant =
-  //   ReturnFacilitatorParticipant(
-  //     participantId,
-  //     name,
-  //     pronouns,
-  //     age,
-  //     initials,
-  //     fact,
-  //     hobbies,
-  //     culturalBackground,
-  //     griefRecency,
-  //     whoLost,
-  //     role,
-  //     onboardingStatus,
-  //     groupId
-  //   )
-
   /* Every group, each with its member summaries. Scheduling is left as the raw
      day/time so the frontend can format "live tonight" / "next …" itself. */
   def groups(): Future[Seq[ReturnFacilitatorGroup]] =
@@ -88,6 +57,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
           g.day.name(),
           g.time.toString,
           g.duration,
+          g.creationTime,
           g.description,
           members
         )
@@ -114,13 +84,29 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       g.griefRecency,
       g.whoLost,
       p.role,
-      g.onboardingStatus
+      g.onboardingStatus,
+      g.onboardingTime
     )
 
     db.run(query.result)
       .map(
         _.map(
-          ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, _, None)
+          ReturnFacilitatorParticipant(
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            None
+          )
         )
       )
   }
@@ -144,7 +130,8 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       g.griefRecency,
       g.whoLost,
       p.role,
-      g.onboardingStatus
+      g.onboardingStatus,
+      g.onboardingTime
     )
 
     for {
@@ -159,6 +146,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
     } yield maybe
       .map(
         ReturnFacilitatorParticipant(
+          _,
           _,
           _,
           _,
@@ -200,6 +188,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       DayOfWeek.valueOf(create.dayOfWeek),
       LocalTime.parse(create.scheduledTime),
       create.scheduledDurationMinutes,
+      LocalDateTime.now(),
       create.description,
       false
     )
@@ -212,6 +201,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
         create.dayOfWeek,
         create.scheduledTime,
         create.scheduledDurationMinutes,
+        create.creationTime,
         create.description,
         Seq.empty
       )

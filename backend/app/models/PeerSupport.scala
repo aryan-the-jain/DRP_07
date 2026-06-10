@@ -15,6 +15,7 @@ case class SupportGroup(
     day: DayOfWeek,
     time: LocalTime,
     duration: Int, // TODO: Irontype
+    creationTime: LocalDateTime,
     description: Option[String],
     hasSessionNow: Boolean
 )
@@ -35,7 +36,8 @@ case class Griever(
     culturalBackground: Option[String],
     griefRecency: Option[String], // TODO: ENUM!
     whoLost: Option[String],
-    onboardingStatus: String // TODO: Enum!!!!!!!!
+    onboardingStatus: String, // TODO: Enum!!!!!!!!
+    onboardingTime: LocalDateTime
 )
 
 case class Facilitator(
@@ -165,6 +167,7 @@ case class CreateGroup(
     dayOfWeek: String,
     scheduledTime: String,
     scheduledDurationMinutes: Int,
+    creationTime: LocalDateTime,
     description: Option[String]
 )
 
