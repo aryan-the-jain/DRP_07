@@ -102,6 +102,7 @@ function GroupCard({
         <span className="row" style={{ gap: 8, fontSize: 14.5, color: "var(--muted)" }}>
           <Icon name="clock" size={16} c="var(--warm)" /> {c.when}
           {c.durationMinutes != null && <span>· {c.durationMinutes} min</span>}
+          ·<Icon name="people" size={14} c="var(--muted)" /> {c.members.length}
         </span>
       </div>
 
@@ -115,10 +116,6 @@ function GroupCard({
         ) : (
           <span style={{ fontSize: 14, color: "var(--faint)" }}>no one placed yet</span>
         )}
-        <div style={{ flex: 1 }} />
-        <span className="chip" style={{ fontSize: 13 }}>
-          <Icon name="people" size={13} c="var(--muted)" /> {c.members.length}
-        </span>
       </div>
 
       <div style={{ flex: 1, minHeight: 6 }} />
@@ -136,17 +133,12 @@ function GroupCard({
 
       {/* direct actions */}
       <div className="row" style={{ gap: 7 }}>
-        <button className="btn ghost sm" style={{ flex: 1, justifyContent: "center", padding: "7px 6px" }} onClick={onInvite} title="Invite someone in">
-          <Icon name="mail" size={15} c="var(--muted)" /> Invite
+        <button className="btn warm sm" style={{ flex: 1, justifyContent: "center", padding: "7px 6px" }} onClick={onGroupDetails} title="Group details, edit, and more">
+          <Icon name="eye" size={15} c="var(--paper)" /> Group details
         </button>
-        <button className="btn ghost sm" style={{ flex: 1, justifyContent: "center", padding: "7px 6px" }} onClick={onGroupDetails} title="Group details, edit, and more">
-          <Icon name="eye" size={15} c="var(--muted)" /> Group details
+        <button className="btn calm sm icon" style={{ flex: 1, justifyContent: "center", padding: "7px 6px" }} onClick={onNotes} title="Your notes about this group">
+          <Icon name="note" size={15} c="var(--paper)" /> Notes
         </button>
-        {!liveish && (
-          <button className="btn ghost sm icon" onClick={onNotes} title="Your notes about this group">
-            <Icon name="note" size={15} c="var(--muted)" />
-          </button>
-        )}
       </div>
     </div>
   );

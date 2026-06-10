@@ -5,8 +5,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Avatar, DashRule, Icon, Logo, SoftLabel } from "./Primitives";
-import { CircleBadge, CloseBtn, ConfirmPopup, LostChip, Overlay } from "./Overlays";
+import { Avatar, DashRule, Field, Icon, Logo, SoftLabel } from "./Primitives";
+import { CircleBadge, CloseBtn, ConfirmPopup, HobbyChips, LostCategory, LostChip, Overlay, PopBlock } from "./Overlays";
 import { Hub } from "./Hub";
 import { InvitePanel } from "./Invite";
 import {
@@ -117,10 +117,10 @@ function NotesEditor({
       <div className="stack" style={{ gap: 12 }}>
         <textarea
           ref={textareaRef}
-          className="field"
+          className="field calm"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="What do you want to remember about this circle? Who to gently check in with, what landed, what to try next time…"
+          placeholder="What do you want to remember about this group? Who to check in with, what landed, what to try next time…"
           style={{
             width: "100%",
             minHeight,
@@ -133,7 +133,7 @@ function NotesEditor({
           }}
         />
         <div className="row" style={{ gap: 10 }}>
-          <button className="btn warm sm" onClick={commit} disabled={saving}>
+          <button className="btn calm sm" onClick={commit} disabled={saving}>
             <Icon name="check" size={15} c="#fff" /> Save notes
           </button>
           {has && (
@@ -209,7 +209,7 @@ export function GroupNotesPopup({
             Your notes · {groupName}
           </span>
           <span className="row" style={{ gap: 6, fontSize: 13, color: "var(--muted)" }}>
-            <Icon name="lock" size={13} c="var(--calm)" /> private to you · never shared with the circle
+            <Icon name="lock" size={13} c="var(--calm)" /> private to you · never shared with the group
           </span>
         </div>
         <CloseBtn onClick={onClose} />
@@ -230,29 +230,98 @@ type DetailModal =
   | { type: "delete" }
   | null;
 
-function DetailMemberRow({ p, onOpen }: { p: Person; onOpen: () => void }) {
+function DetailMemberRow({
+  p,
+  expanded,
+  onOpenProfile,
+  onToggle,
+}: {
+  p: Person;
+  expanded: boolean;
+  onOpenProfile: () => void;
+  onToggle: () => void;
+}) {
   return (
-    <div
-      className="sk thin soft fac-tap"
-      onClick={onOpen}
-      style={{ padding: "13px 16px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}
-    >
-      <Avatar name={p.name} size={42} tone={p.tone} />
-      <div className="stack" style={{ gap: 2, flex: 1, minWidth: 0 }}>
-        <span className="h-title" style={{ fontSize: 19, color: "var(--ink)" }}>{p.name}</span>
-        <span style={{ fontSize: 13.5, color: "var(--muted)" }}>
-          {[p.pronouns, p.age].filter(Boolean).join(" · ") || "—"}
-        </span>
-      </div>
-      <div className="row" style={{ gap: 8, flexShrink: 0 }}>
-        <LostChip m={p} size={12.5} />
-        {p.recency && (
-          <span className="chip" style={{ fontSize: 12.5 }}>
-            <Icon name="clock" size={12} c="var(--muted)" /> {p.recency.toLowerCase()}
+    <div className="sk thin soft" style={{ padding: "13px 16px" }}>
+      {/* band */}
+      <div className="row" style={{ alignItems: "center", gap: 14 }}>
+        {/* avatar + name → opens the profile popup (messages, reflections) */}
+        <div
+          className="row fac-tap"
+          onClick={onOpenProfile}
+          title={`Open ${p.name}'s profile`}
+          style={{ gap: 14, flex: 1, minWidth: 0, cursor: "pointer" }}
+        >
+          <Avatar name={p.name} size={42} tone={p.tone} />
+          <span className="h-title" style={{ fontSize: 19, color: "var(--ink)" }}>{p.name}</span>
+        </div>
+
+        {/* redundant meta — slides + fades away once the profile is expanded below */}
+        <div
+          className="row"
+          style={{
+            gap: 8,
+            flexShrink: 0,
+            overflow: "hidden",
+            opacity: expanded ? 0 : 1,
+            maxWidth: expanded ? 0 : 360,
+            transition: "opacity 0.22s ease, max-width 0.22s ease",
+          }}
+        >
+          <span style={{ fontSize: 13.5, color: "var(--muted)", whiteSpace: "nowrap" }}>
+            {[p.pronouns, p.age].filter(Boolean).join(" · ") || "—"}
           </span>
-        )}
+          <LostChip m={p} size={12.5} />
+          {p.recency && (
+            <span className="chip" style={{ fontSize: 12.5, whiteSpace: "nowrap" }}>
+              <Icon name="clock" size={12} c="var(--muted)" /> {p.recency.toLowerCase()}
+            </span>
+          )}
+        </div>
+
+        {/* its own button — toggles the inline profile */}
+        <button
+          className="btn ghost icon fac-tap"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-label={expanded ? `Hide ${p.name}'s profile` : `Show ${p.name}'s profile`}
+          style={{ flexShrink: 0 }}
+        >
+          <span style={{ display: "inline-flex", transform: expanded ? "rotate(90deg)" : "none", transition: "transform 0.2s ease" }}>
+            <Icon name="chev" size={16} c="var(--muted)" />
+          </span>
+        </button>
       </div>
-      <Icon name="chev" size={16} c="var(--faint)" />
+
+      {/* inline profile — the placing-logic "About" view, smooth height */}
+      <div style={{ display: "grid", gridTemplateRows: expanded ? "1fr" : "0fr", transition: "grid-template-rows 0.25s ease" }}>
+        <div style={{ overflow: "hidden" }}>
+          <div className="stack" style={{ gap: 16, paddingTop: 16 }}>
+            {p.fact && (
+              <PopBlock icon="spark" label="A fact about them" accent="var(--warm-ink)" skin="v3" tint="var(--warm-soft)">
+                {p.fact}
+              </PopBlock>
+            )}
+            <div className="sk v2" style={{ padding: "20px 22px" }}>
+              <SoftLabel style={{ marginBottom: 16 }}>What they’re carrying & a little about them</SoftLabel>
+              <div className="stack" style={{ gap: 16 }}>
+                <div className="stack" style={{ gap: 8 }}>
+                  <SoftLabel c="var(--warm-ink)">Who they lost · for your eyes</SoftLabel>
+                  <LostCategory m={p} />
+                </div>
+                <DashRule />
+                <div className="stack" style={{ gap: 9 }}>
+                  <SoftLabel>Hobbies</SoftLabel>
+                  <HobbyChips items={p.hobbies} />
+                </div>
+                <Field label="Cultural background">
+                  {p.culture && p.culture !== "—" ? p.culture : "they’d rather not say"}
+                </Field>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -267,8 +336,16 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
   const [modal, setModal] = useState<DetailModal>(null);
   const [deleting, setDeleting] = useState(false);
   const [tick, setTick] = useState(0);
+  const [open, setOpen] = useState<Set<number>>(new Set());
   const close = () => setModal(null);
   const reload = () => setTick((t) => t + 1);
+  const toggle = (id: number) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   useEffect(() => {
     let active = true;
@@ -337,16 +414,6 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
           <Icon name="back" size={16} c="var(--muted)" /> Your groups
         </button>
         <div style={{ flex: 1 }} />
-        {status === "ready" && (
-          <>
-            <button className="btn ghost sm" onClick={() => router.push(`/facilitator/groups/${groupId}/edit`)}>
-              <Icon name="pen" size={15} c="var(--muted)" /> Edit details
-            </button>
-            <button className="btn warm sm" onClick={() => setModal({ type: "invite" })}>
-              <Icon name="mail" size={15} c="#fff" /> Invite someone
-            </button>
-          </>
-        )}
         <Logo size={24} />
       </div>
       <DashRule />
@@ -354,12 +421,12 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
       <div className="scroll" style={{ flex: 1, padding: "26px 32px 32px" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           {status === "loading" && <Centered>Loading…</Centered>}
-          {status === "error" && <Centered>We couldn't find that group.</Centered>}
+          {status === "error" && <Centered>We couldn’t find that group.</Centered>}
 
           {status === "ready" && group && (
             <>
               {/* title block */}
-              <div className="row" style={{ gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <div className="row" style={{ gap: 30, alignItems: "center", flexWrap: "wrap" }}>
                 <div
                   className="av"
                   style={{ width: 48, height: 48, background: "var(--warm-soft)", borderColor: "var(--warm)", alignSelf: "center" }}
@@ -368,6 +435,22 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
                 </div>
                 <h2 className="h-title" style={{ fontSize: 33, color: "var(--ink)" }}>{group.name}</h2>
                 <CircleBadge c={group} />
+
+                <div className="row" style={{ gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <button className="btn warm sm" onClick={() => setModal({ type: "invite" })}>
+                    <Icon name="mail" size={15} c="#fff" /> Invite someone
+                  </button>
+                  <button className="btn ghost sm" onClick={() => router.push(`/facilitator/groups/${groupId}/edit`)}>
+                    <Icon name="pen" size={15} c="var(--muted)" /> Edit details
+                  </button>
+                  <button
+                    className="btn red-ghost sm"
+                    onClick={() => setModal({ type: "delete" })}
+                  >
+                    <Icon name="x" size={15} />
+                    Close group
+                  </button>
+                </div>
               </div>
 
               {/* info chips */}
@@ -385,28 +468,34 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
                 </span>
               </div>
 
-              {/* description */}
+              {/* description
               {group.description && (
                 <p style={{ fontSize: 16.5, color: "var(--ink)", lineHeight: 1.55, margin: "16px 0 0", maxWidth: 720 }}>
                   {group.description}
                 </p>
-              )}
+              )} */}
 
-              {/* two-column: members left, notes right */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.55fr 1fr",
-                  gap: 24,
-                  marginTop: 26,
-                  alignItems: "start",
-                }}
-              >
-                {/* members column */}
+              {/* notes then members, stacked */}
+              <div className="stack" style={{ gap: 20, marginTop: 24 }}>
+
+                <div className="sk v2 soft" style={{ padding: "18px 20px", background: "var(--card)" }}>
+                  <div className="row" style={{ gap: 9, marginBottom: 4 }}>
+                    <Icon name="note" size={17} c="var(--calm)" />
+                    <span className="h-title" style={{ fontSize: 21, color: "var(--ink)", flex: 1 }}>
+                      Your private notes
+                    </span>
+                  </div>
+                  <span className="row" style={{ gap: 6, fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>
+                    <Icon name="lock" size={13} c="var(--calm)" /> kept to you · written after sessions
+                  </span>
+                  <NotesEditor groupId={groupId} minHeight={240} />
+                </div>
+
+                {/* members */}
                 <div className="stack" style={{ gap: 12 }}>
                   <SoftLabel>
                     {people && people.length > 0
-                      ? "Everyone in this circle · tap a name to read their profile"
+                      ? "Everyone in this group · open a name to message them, or expand for their profile"
                       : "Members"}
                   </SoftLabel>
                   {people === null ? (
@@ -421,54 +510,20 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
                   ) : (
                     <div className="stack" style={{ gap: 10 }}>
                       {people.map((p) => (
-                        <DetailMemberRow key={p.id} p={p} onOpen={() => openMember(p.id)} />
+                        <DetailMemberRow
+                          key={p.id}
+                          p={p}
+                          expanded={open.has(p.id)}
+                          onOpenProfile={() => openMember(p.id)}
+                          onToggle={() => toggle(p.id)}
+                        />
                       ))}
                     </div>
                   )}
                 </div>
 
-                {/* notes column */}
-                <div className="sk v2 soft" style={{ padding: "18px 20px", background: "var(--card)" }}>
-                  <div className="row" style={{ gap: 9, marginBottom: 4 }}>
-                    <Icon name="note" size={17} c="var(--calm)" />
-                    <span className="h-title" style={{ fontSize: 21, color: "var(--ink)", flex: 1 }}>
-                      Your private notes
-                    </span>
-                  </div>
-                  <span className="row" style={{ gap: 6, fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>
-                    <Icon name="lock" size={13} c="var(--calm)" /> kept to you · written after sessions
-                  </span>
-                  <NotesEditor groupId={groupId} minHeight={240} />
-                </div>
               </div>
 
-              {/* close circle section */}
-              <div
-                className="sk dash soft"
-                style={{
-                  marginTop: 30,
-                  padding: "18px 20px",
-                  background: "transparent",
-                  display: "flex",
-                  gap: 16,
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                <div className="stack" style={{ gap: 3, flex: 1, minWidth: 240 }}>
-                  <span className="h-title" style={{ fontSize: 20, color: "var(--ink)" }}>Close this circle</span>
-                  <span style={{ fontSize: 14.5, color: "var(--muted)", lineHeight: 1.45 }}>
-                    Everyone is gently let know and returned home. Nothing they've shared is deleted — the circle simply stops meeting.
-                  </span>
-                </div>
-                <button
-                  className="btn ghost sm"
-                  onClick={() => setModal({ type: "delete" })}
-                  style={{ borderColor: "color-mix(in oklch, var(--warm) 45%, var(--line))", color: "var(--warm-ink)" }}
-                >
-                  <Icon name="leaf" size={15} c="var(--warm)" /> Close circle
-                </button>
-              </div>
             </>
           )}
         </div>
@@ -489,11 +544,11 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
           )}
           {modal.type === "delete" && group && (
             <ConfirmPopup
-              icon="leaf"
-              accent="var(--warm)"
+              icon="x"
+              accent="var(--red)"
               title={`Close ${group.name}?`}
-              body="The circle closes and everyone in it is gently let know and returned home. Nothing they've shared is deleted — only the circle stops meeting."
-              confirm={deleting ? "Closing…" : "Close circle"}
+              body="The group closes and everyone in it is gently let know and returned home. Nothing they've shared is deleted — only the group stops meeting."
+              confirm={deleting ? "Closing…" : "Close group"}
               cancel="Keep it"
               caption="this can't be undone — members see a soft goodbye, never a sudden cut-off"
               onClose={close}

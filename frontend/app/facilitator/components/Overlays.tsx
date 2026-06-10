@@ -6,7 +6,7 @@
 // the complete read. Message & reflections live one tap behind the summary. Same sketchy
 // style as every screen.
 
-import { ReactNode, useEffect, useState } from "react";
+import { CSSProperties, ReactNode, useEffect, useState } from "react";
 import { Avatar, Cap, DashRule, Field, Icon, IconName, SoftLabel } from "./Primitives";
 import {
   LOST_ICON,
@@ -422,7 +422,7 @@ export function ConfirmPopup({
           {cancel}
         </button>
         <div style={{ flex: 1 }} />
-        <button className="btn" style={{ background: accent, borderColor: "transparent", color: "#fff" }} onClick={onConfirm}>
+        <button className="btn accent-fill" style={{ "--accent": accent } as CSSProperties} onClick={onConfirm}>
           {confirm}
         </button>
       </div>
