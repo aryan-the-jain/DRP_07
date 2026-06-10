@@ -275,9 +275,8 @@ export function DoodlePanel({
           onPointerUp={stopDrawing}
           onPointerLeave={stopDrawing}
           onPointerCancel={stopDrawing}
-          className="sk thin mt-4 block w-full"
+          className="sk thin mt-4 block h-[360px] w-full lg:h-[460px]"
           style={{
-            height: "230px",
             background: CANVAS_FILL,
             borderColor: TAN_BORDER,
             touchAction: "none",
