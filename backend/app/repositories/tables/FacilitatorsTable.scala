@@ -15,4 +15,3 @@ class FacilitatorsTable(tag: Tag)
   )
     .mapTo[Facilitator]
 }
-

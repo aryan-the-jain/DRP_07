@@ -26,7 +26,7 @@ case class Participant(
     age: Option[String], // TODO: Convert to enum!!
     hobbies: List[String],
     fact: String,
-    role: Role,
+    role: Role
 )
 
 case class Griever(

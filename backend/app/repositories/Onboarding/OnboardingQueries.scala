@@ -65,36 +65,44 @@ class OnboardingQueries(
     val participantUpdate =
       participantsTable
         .filter(_.participantId === participantId)
-        .map(p => (
-          p.name,
-          p.pronouns,
-          p.age,
-          p.fact,
-          p.hobbies
-        ))
-        .update((
-          update.callName,
-          update.pronouns,
-          update.age,
-          update.fact,
-          update.hobbies
-        ))
+        .map(p =>
+          (
+            p.name,
+            p.pronouns,
+            p.age,
+            p.fact,
+            p.hobbies
+          )
+        )
+        .update(
+          (
+            update.callName,
+            update.pronouns,
+            update.age,
+            update.fact,
+            update.hobbies
+          )
+        )
 
     val grieverUpdate =
       grieversTable
         .filter(_.grieverId === participantId)
-        .map(g => (
-          g.culturalBackground,
-          g.griefRecency,
-          g.whoLost,
-          g.onboardingStatus
-        ))
-        .update((
-          update.culturalBackground,
-          update.griefRecency,
-          update.whoLost,
-          update.status
-        ))
+        .map(g =>
+          (
+            g.culturalBackground,
+            g.griefRecency,
+            g.whoLost,
+            g.onboardingStatus
+          )
+        )
+        .update(
+          (
+            update.culturalBackground,
+            update.griefRecency,
+            update.whoLost,
+            update.status
+          )
+        )
 
     (for {
       p <- participantUpdate

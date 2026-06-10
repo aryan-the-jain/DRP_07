@@ -99,23 +99,54 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
     // TODO: Remove magic string!
     val placed = groupParticipants.map(_.participantId)
     val query = for
-      g <- grievers if g.onboardingStatus === "complete" && !g.grieverId.in(placed)
+      g <- grievers
+      if g.onboardingStatus === "complete" && !g.grieverId.in(placed)
       p <- participants if p.participantId === g.grieverId
-    yield (g.grieverId, p.name, p.pronouns, p.age, p.initials, p.fact, p.hobbies, g.culturalBackground, g.griefRecency, g.whoLost, p.role, g.onboardingStatus)
-    
-    db.run(query.result).map(_.map(ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, _, None)))
+    yield (
+      g.grieverId,
+      p.name,
+      p.pronouns,
+      p.age,
+      p.initials,
+      p.fact,
+      p.hobbies,
+      g.culturalBackground,
+      g.griefRecency,
+      g.whoLost,
+      p.role,
+      g.onboardingStatus
+    )
+
+    db.run(query.result)
+      .map(
+        _.map(
+          ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, _, None)
+        )
+      )
   }
 
   /* The full facilitator read of one person, with their group if placed. */
   def participant(
       participantId: Int
-
   ): Future[Option[ReturnFacilitatorParticipant]] = {
     val query = for
       g <- grievers if g.grieverId === participantId
       p <- participants if p.participantId === g.grieverId
-    yield (g.grieverId, p.name, p.pronouns, p.age, p.initials, p.fact, p.hobbies, g.culturalBackground, g.griefRecency, g.whoLost, p.role, g.onboardingStatus)
-    
+    yield (
+      g.grieverId,
+      p.name,
+      p.pronouns,
+      p.age,
+      p.initials,
+      p.fact,
+      p.hobbies,
+      g.culturalBackground,
+      g.griefRecency,
+      g.whoLost,
+      p.role,
+      g.onboardingStatus
+    )
+
     for {
       maybe <- db.run(query.result)
       groupId <- db.run(
@@ -125,7 +156,25 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
           .result
           .headOption
       )
-    } yield maybe.map(ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, _, groupId)).headOption
+    } yield maybe
+      .map(
+        ReturnFacilitatorParticipant(
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          groupId
+        )
+      )
+      .headOption
   }
 
   /* Place a person into a group — idempotent (no-op if already a member). */
