@@ -59,7 +59,7 @@ export const METRIC_TASKS: MetricTask[] = [
       "Something has come up that you would rather not share with the whole " +
       "group. You would like a private way to reach someone who can support " +
       "you. Show me what you would do.",
-    target: { metricIds: ["message-facilitator"] },
+    target: { metricIds: ["message-facilitator"], routes: ["/facilitator"] },
   },
   {
     id: "free-writing",
@@ -69,7 +69,7 @@ export const METRIC_TASKS: MetricTask[] = [
       "questions, or suggestions right now. You just want somewhere to put " +
       "things down in your own way in your own order. Show me what you would " +
       "do.",
-    target: { metricIds: ["reflect-free"] },
+    target: { metricIds: ["reflect-free"], routes: ["/write/free"] },
   },
   {
     id: "calming-exercise",
@@ -78,7 +78,7 @@ export const METRIC_TASKS: MetricTask[] = [
       "You feel a bit overwhelmed and want something simple that helps you " +
       "focus on what you can notice around you, without needing to write, " +
       "draw or speak. Show me what you would do.",
-    target: { metricIds: ["calm-steady"] },
+    target: { metricIds: ["calm-steady"], routes: ["/calm/steady"] },
   },
   {
     id: "doodling",
@@ -88,7 +88,7 @@ export const METRIC_TASKS: MetricTask[] = [
       "you usually enjoy art and creative things, you want a simple, " +
       "low-pressure way to express something without having to explain it. " +
       "Show me what you would do.",
-    target: { metricIds: ["calm-doodle"] },
+    target: { metricIds: ["calm-doodle"], routes: ["/draw"] },
   },
 ];
 

@@ -46,6 +46,7 @@ export default function DoodlePage() {
         heading="Doodle"
         description="No words needed — just move your hand. There's nothing to get right."
         action={shareButton}
+        wide
       >
         <DoodlePanel apiUrl={apiUrl} shareRef={doodleShareRef} />
       </QuietSpaceFrame>

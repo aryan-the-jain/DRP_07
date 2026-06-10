@@ -14,6 +14,8 @@ type QuietSpaceFrameProps = {
   error?: string;
   /** Optional action block rendered top-right (e.g. Share with facilitator). */
   action?: ReactNode;
+  /** Let the content fill the wider panel — used by roomy tools like Doodle. */
+  wide?: boolean;
   children: ReactNode;
 };
 
@@ -22,19 +24,26 @@ export function QuietSpaceFrame({
   description = "Take a calm moment for yourself. You can write your thoughts down freely.",
   error,
   action,
+  wide = false,
   children,
 }: QuietSpaceFrameProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--calm-soft)] p-4 sm:p-5">
-      <div className="panel flex min-h-full shrink-0 [border-color:var(--calm)] bg-card px-5 py-5 shadow-[0_18px_50px_rgba(58,52,45,0.10)] sm:px-7 sm:py-6">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-          {action && (
-            <div className="flex items-center justify-end border-b-2 border-dashed border-line pb-3">
-              {action}
-            </div>
-          )}
+      <div className="panel relative flex min-h-full shrink-0 [border-color:var(--calm)] bg-card px-5 py-5 shadow-[0_18px_50px_rgba(58,52,45,0.10)] sm:px-7 sm:py-6">
+        {/* The share action overlays the top-right corner so it doesn't reserve
+            a row of height — keeping the heading aligned with tools that have
+            no button (e.g. Breathe). */}
+        {action && (
+          <div className="absolute right-5 top-5 z-10 sm:right-7 sm:top-6">
+            {action}
+          </div>
+        )}
 
-          <div className="pt-1 text-center">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+          {/* On phones the overlaid button shares the top band, so drop the
+              heading below it there; from sm up there's room beside it and the
+              heading aligns with the no-button tools. */}
+          <div className={`pt-1 text-center ${action ? "max-sm:pt-14" : ""}`}>
             <p className="leader [color:var(--calm)]">A space just for you</p>
             <h2 className="h-title uline mt-1 inline-block text-3xl text-[var(--calm-ink)]">
               {heading}
@@ -53,7 +62,11 @@ export function QuietSpaceFrame({
             </div>
           )}
 
-          <div className="mx-auto w-full max-w-3xl space-y-5">{children}</div>
+          <div
+            className={`mx-auto w-full space-y-5 ${wide ? "max-w-5xl" : "max-w-3xl"}`}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>

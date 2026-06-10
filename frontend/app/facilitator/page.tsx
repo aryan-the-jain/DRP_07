@@ -124,12 +124,29 @@ export default function FacilitatorMessagePage() {
     }
   }
 
+  // Where "back" goes and what it says, based on a ?return= path. Read on the
+  // client so the label matches where the visitor came from (Home vs the quiet
+  // space). Defaults to the quiet space.
+  const [back, setBack] = useState<{ href: string; label: string }>({
+    href: "/calm/breathe",
+    label: "Back to the quiet space",
+  });
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const returnTo = new URLSearchParams(window.location.search).get("return");
+      const href =
+        returnTo && returnTo.startsWith("/") ? returnTo : "/calm/breathe";
+      const label = href.startsWith("/dashboard")
+        ? "Back to home"
+        : "Back to the quiet space";
+      setBack({ href, label });
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   function handleBack() {
-    // Return where the visitor came from (defaults to the quiet space).
-    const returnTo = new URLSearchParams(window.location.search).get("return");
-    const destination =
-      returnTo && returnTo.startsWith("/") ? returnTo : "/quiet";
-    router.push(destination);
+    router.push(back.href);
   }
 
   return (
@@ -143,7 +160,7 @@ export default function FacilitatorMessagePage() {
             className="btn sm inline-flex items-center gap-2"
           >
             <LineIcon name="arrowLeft" size={16} />
-            Back to the quiet space
+            {back.label}
           </button>
         </header>
 

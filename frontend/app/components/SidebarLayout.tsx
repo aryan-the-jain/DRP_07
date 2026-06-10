@@ -4,72 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
-import { BrandMark, IconName, LineIcon } from "./DesignPrimitives";
+import { BrandMark, LineIcon } from "./DesignPrimitives";
+import { SIDEBAR_GROUPS } from "../lib/nav";
 
 // A reusable shell: the collapsible "alongside" sidebar plus a content area.
-// Both the dashboard and the quiet space render their screens as children, so
-// the sidebar lives in one place rather than being duplicated per page.
-
-// --- Nav items ---------------------------------------------------
-
-type NavItem = {
-  href: string;
-  label: string;
-  icon: IconName;
-  tone?: "calm";
-  metricId?: string;
-};
-
-const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Home", icon: "home" },
-  { href: "/quiet/breathe", label: "Breathe", icon: "wind", tone: "calm" },
-  {
-    href: "/quiet/steady",
-    label: "Reset Focus",
-    icon: "quiet",
-    tone: "calm",
-    metricId: "calm-steady",
-  },
-  {
-    href: "/quiet/meditation",
-    label: "Meditation",
-    icon: "spotify",
-    tone: "calm",
-  },
-  {
-    href: "/quiet/doodle",
-    label: "Doodle",
-    icon: "brush",
-    tone: "calm",
-    metricId: "calm-doodle",
-  },
-  {
-    href: "/quiet/resources",
-    label: "Resources",
-    icon: "externalLink",
-    tone: "calm",
-  },
-  {
-    href: "/quiet/guided",
-    label: "Guided questions",
-    icon: "heart",
-    tone: "calm",
-  },
-  {
-    href: "/quiet/free",
-    label: "Free writing",
-    icon: "pen",
-    tone: "calm",
-    metricId: "reflect-free",
-  },
-  {
-    href: "/quiet/facilitator",
-    label: "Message facilitator",
-    icon: "mail",
-    tone: "calm",
-    metricId: "message-facilitator",
-  },
-];
+// Both the dashboard and the quiet groups render their screens as children, so
+// the sidebar lives in one place rather than being duplicated per page. The nav
+// entries are centralised in app/lib/nav.ts.
 
 // --- Persistence keys & breakpoint -----------------------------------------
 
@@ -147,8 +88,10 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
           aria-label="Primary"
           className="flex flex-1 flex-col gap-1.5 overflow-y-auto py-2 px-3"
         >
-          {NAV_ITEMS.map((item) => {
-            const active = pathname === item.href;
+          {SIDEBAR_GROUPS.map((item) => {
+            const base = item.match ?? item.href;
+            const active =
+              pathname === base || pathname.startsWith(`${base}/`);
             return (
               <Link
                 key={item.href}
@@ -161,7 +104,16 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
                 } ${collapsed ? "justify-center" : ""}`}
               >
                 <LineIcon name={item.icon} size={22} className="shrink-0" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                {!collapsed && (
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate leading-tight">{item.label}</span>
+                    {item.subtitle && (
+                      <span className="mt-0.5 truncate text-[11px] font-normal leading-tight opacity-70">
+                        {item.subtitle}
+                      </span>
+                    )}
+                  </span>
+                )}
               </Link>
             );
           })}

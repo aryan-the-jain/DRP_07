@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 
-import { LineIcon } from "../../components/DesignPrimitives";
-import { QuietSpaceFrame } from "../../components/quiet/QuietSpaceFrame";
-import { GuidedReflectionFields } from "../../components/quiet/ReflectionFields";
-import { ShareReflectionDialog } from "../../components/quiet/ShareReflectionDialog";
-import { useQuietSpaceContext } from "../../lib/QuietSpaceContext";
+import { LineIcon } from "../../../components/DesignPrimitives";
+import { GroupTabs } from "../../../components/quiet/GroupTabs";
+import { QuietSpaceFrame } from "../../../components/quiet/QuietSpaceFrame";
+import { GuidedReflectionFields } from "../../../components/quiet/ReflectionFields";
+import { ShareReflectionDialog } from "../../../components/quiet/ShareReflectionDialog";
+import { WRITE_TABS } from "../../../lib/nav";
+import { useQuietSpaceContext } from "../../../lib/QuietSpaceContext";
 
 export default function GuidedPage() {
   const {
@@ -35,9 +37,7 @@ export default function GuidedPage() {
       <button
         type="button"
         onClick={() => setIsShareDialogOpen(true)}
-        disabled={
-          isSharingReflection || !hasGuidedText || isReflectionShared
-        }
+        disabled={isSharingReflection || !hasGuidedText || isReflectionShared}
         className="btn calm sm inline-flex items-center gap-2"
       >
         {isReflectionShared && !isSharingReflection && (
@@ -63,6 +63,8 @@ export default function GuidedPage() {
         error={quietSpaceError}
         action={shareButton}
       >
+        <GroupTabs tabs={WRITE_TABS} ariaLabel="Write" />
+
         <GuidedReflectionFields
           privateNote={privateNote}
           facilitatorNote={facilitatorNote}

@@ -5,10 +5,15 @@ import { ReactNode } from "react";
 import { SidebarLayout } from "../components/SidebarLayout";
 import { QuietSpaceProvider } from "../lib/QuietSpaceContext";
 
-// Wraps every /quiet/* sub-page with the sidebar and the shared quiet-space
-// context so reflection state is preserved as the visitor moves between the
-// individual quiet features.
-export default function QuietLayout({ children }: { children: ReactNode }) {
+// Shared shell for every quiet-space group (/write, /calm, /draw, /resources).
+// It mounts the sidebar once and wraps the groups in the shared quiet-space
+// context, so reflection state is preserved as the visitor moves between
+// groups and sub-tabs.
+export default function QuietGroupsLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return (
     <SidebarLayout>
       <QuietSpaceProvider>

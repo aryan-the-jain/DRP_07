@@ -7,6 +7,7 @@ import { ParticipantProfileModal } from "../components/ParticipantProfileModal";
 import { SidebarLayout } from "../components/SidebarLayout";
 import { fallbackApiUrl, fetchGroup, fetchParticipants, participantId } from "../lib/api";
 import { Participant, SupportGroup } from "../lib/types";
+import { FacilitatorCard } from "./FacilitatorCard";
 import { ThisWeekCard } from "./ThisWeekCard";
 import { WeatherCheckIn } from "./WeatherCheckIn";
 
@@ -109,6 +110,8 @@ export default function DashboardPage() {
                   onOpenProfile={setSelectedParticipant}
                   onEnterRoom={() => router.push("/")}
                 />
+
+                <FacilitatorCard group={group} participants={participants} />
               </>
             )}
         </div>

@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 
-import { LineIcon } from "../../components/DesignPrimitives";
-import { QuietSpaceFrame } from "../../components/quiet/QuietSpaceFrame";
-import { FreeWritingField } from "../../components/quiet/ReflectionFields";
-import { ShareReflectionDialog } from "../../components/quiet/ShareReflectionDialog";
-import { useQuietSpaceContext } from "../../lib/QuietSpaceContext";
+import { LineIcon } from "../../../components/DesignPrimitives";
+import { GroupTabs } from "../../../components/quiet/GroupTabs";
+import { QuietSpaceFrame } from "../../../components/quiet/QuietSpaceFrame";
+import { FreeWritingField } from "../../../components/quiet/ReflectionFields";
+import { ShareReflectionDialog } from "../../../components/quiet/ShareReflectionDialog";
+import { WRITE_TABS } from "../../../lib/nav";
+import { useQuietSpaceContext } from "../../../lib/QuietSpaceContext";
 
 export default function FreeWritingPage() {
   const {
@@ -61,6 +63,8 @@ export default function FreeWritingPage() {
         error={quietSpaceError}
         action={shareButton}
       >
+        <GroupTabs tabs={WRITE_TABS} ariaLabel="Write" />
+
         <FreeWritingField
           value={freeWritingNote}
           disabled={isSharingReflection}
