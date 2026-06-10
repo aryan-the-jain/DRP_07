@@ -24,5 +24,5 @@ INSERT INTO facilitators (facilitator_id, name, initials, fact, pronouns, age, h
 
 SELECT setval(pg_get_serial_sequence('facilitators', 'facilitator_id'), 1, true);
 
-INSERT INTO participants (participant_id, name, initials, fun_fact, pronouns, age, hobbies, cultural_background, grief_recency, who_lost, onboarding_status)
+INSERT INTO participants (participant_id, name, initials, fact, pronouns, age, hobbies, cultural_background, grief_recency, who_lost, onboarding_status)
   VALUES (8, 'Henry', 'H', 'I like rocks!', 'They / them', '21-24', 'Rock-climbing', 'Gaming', 'Longer ago', 'partner', 'complete');
