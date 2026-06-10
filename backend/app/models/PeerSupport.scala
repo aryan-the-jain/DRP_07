@@ -15,7 +15,8 @@ case class SupportGroup(
     day: DayOfWeek,
     time: LocalTime,
     duration: Int, // TODO: Irontype
-    description: Option[String]
+    description: Option[String],
+    hasSessionNow: Boolean
 )
 
 case class Participant(

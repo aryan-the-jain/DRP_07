@@ -200,7 +200,8 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       DayOfWeek.valueOf(create.dayOfWeek),
       LocalTime.parse(create.scheduledTime),
       create.scheduledDurationMinutes,
-      create.description
+      create.description,
+      false
     )
     val insert =
       (supportGroups returning supportGroups.map(_.groupId)) += newGroup

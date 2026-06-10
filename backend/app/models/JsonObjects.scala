@@ -132,3 +132,7 @@ case class ReturnInboxEntry(
     sharedFacilitatorNote: Option[String],
     sharedFreeWriting: Option[String]
 )
+
+case class ReturnIsSessionNow(
+    isSessionNow: Boolean
+)

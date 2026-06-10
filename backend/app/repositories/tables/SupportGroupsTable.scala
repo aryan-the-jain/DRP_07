@@ -14,6 +14,7 @@ class SupportGroupsTable(tag: Tag)
   def time = column[LocalTime]("time")
   def duration = column[Int]("duration")
   def description = column[Option[String]]("description")
+  def hasSessionNow = column[Boolean]("has_session_now")
 
-  def * = (groupId, name, day, time, duration, description).mapTo[SupportGroup]
+  def * = (groupId, name, day, time, duration, description, hasSessionNow).mapTo[SupportGroup]
 }

@@ -1,6 +1,7 @@
 package repositories.PeerSupport
 
 import slick.jdbc.PostgresProfile.api.*
+import slick.sql.FixedSqlAction
 import models.*
 import Instances.given
 
@@ -120,4 +121,17 @@ class GroupQueries(
       p.role
     )
   }
+
+  def isSessionValid(groupId: Int): Query[Rep[Boolean], Boolean, Seq] =
+    for g <- groups if g.groupId === groupId
+    yield g.hasSessionNow
+
+  private def updateSession(groupId: Int, flag: Boolean): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
+    groups.filter(_.groupId === groupId).map(_.hasSessionNow).update(flag)
+
+  def startSession(groupId: Int): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
+    updateSession(groupId, true)
+
+  def endSession(groupId: Int): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
+    updateSession(groupId, false)
 }
