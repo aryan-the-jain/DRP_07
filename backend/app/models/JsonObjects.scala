@@ -129,9 +129,10 @@ case class ReturnInboxEntry(
     lastMessageFromId: Option[Int],
     lastMessageAt: Option[LocalDateTime],
     hasUnread: Boolean,
+    sharedPrivateNote: Option[String],
     sharedFacilitatorNote: Option[String],
     sharedFreeWriting: Option[String],
-    lastShareAt: Option[LocalDateTime]
+    lastReflectionShareAt: Option[LocalDateTime]
 )
 
 case class ReturnIsSessionNow(

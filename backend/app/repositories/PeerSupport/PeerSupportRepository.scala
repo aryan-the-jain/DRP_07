@@ -64,7 +64,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext)
         message.participantId,
         groupId,
         message.body,
-        LocalDateTime.now()
+        getCurrentTime()
       )
     )
     db.run(query)

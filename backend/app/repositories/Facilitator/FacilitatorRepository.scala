@@ -4,7 +4,7 @@ import models.*
 import slick.jdbc.PostgresProfile.api.*
 import repositories.PeerSupport.Instances.given
 
-import java.time.{DayOfWeek, LocalDateTime, LocalTime}
+import java.time.{DayOfWeek, LocalDateTime, LocalTime, ZoneId}
 import javax.inject.*
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -182,7 +182,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       DayOfWeek.valueOf(create.dayOfWeek),
       LocalTime.parse(create.scheduledTime),
       create.scheduledDurationMinutes,
-      LocalDateTime.now(),
+      getCurrentTime(),
       create.description,
       false
     )
@@ -226,7 +226,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       facilitatorGroupNotes.filter(_.groupId === groupId).result.headOption
     ).map {
       case Some((_, notes, updatedAt)) => ReturnGroupNotes(notes, updatedAt)
-      case None => ReturnGroupNotes("", java.time.LocalDateTime.now())
+      case None                        => ReturnGroupNotes("", getCurrentTime())
     }
 
   /* Upsert the facilitator's notes for a group, stamping the current time. */
@@ -234,7 +234,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       groupId: Int,
       update: UpdateGroupNotes
   ): Future[ReturnGroupNotes] = {
-    val now = java.time.LocalDateTime.now()
+    val now = getCurrentTime()
     val row = (groupId, update.notes, now)
     db.run(facilitatorGroupNotes.insertOrUpdate(row))
       .map(_ => ReturnGroupNotes(update.notes, now))
@@ -282,6 +282,8 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
             last.map(_.fromId),
             last.map(_.createdAt),
             last.exists(_.fromId == id),
+            // TODO: Worst naming scheme in the history of ever.
+            ref.filter(_.sharedGuided).flatMap(_.privateNote),
             ref.filter(_.sharedGuided).flatMap(_.facilitatorNote),
             ref.filter(_.sharedFreeWriting).flatMap(_.freeWriting),
             ref.filter(_.sharedGuided) match {
