@@ -37,37 +37,6 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       p.role
     )
 
-  // private def detail(
-  //     participantId: Int,
-  //     name: String,
-  //     pronouns: Option[String],
-  //     age: Option[String],
-  //     initials: String,
-  //     fact: String,
-  //     hobbies: List[String],
-  //     culturalBackground: Option[String],
-  //     griefRecency: Option[String],
-  //     whoLost: Option[String],
-  //     role: Role,
-  //     onboardingStatus: String,
-  //     groupId: Option[Int]
-  // ): ReturnFacilitatorParticipant =
-  //   ReturnFacilitatorParticipant(
-  //     participantId,
-  //     name,
-  //     pronouns,
-  //     age,
-  //     initials,
-  //     fact,
-  //     hobbies,
-  //     culturalBackground,
-  //     griefRecency,
-  //     whoLost,
-  //     role,
-  //     onboardingStatus,
-  //     groupId
-  //   )
-
   /* Every group, each with its member summaries. Scheduling is left as the raw
      day/time so the frontend can format "live tonight" / "next …" itself. */
   def groups(): Future[Seq[ReturnFacilitatorGroup]] =
@@ -88,6 +57,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
           g.day.name(),
           g.time.toString,
           g.duration,
+          g.creationTime,
           g.description,
           members
         )
@@ -111,11 +81,30 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       g.culturalBackground,
       g.griefRecency,
       g.whoLost,
-      p.role
+      p.role,
+      g.onboardingTime
     )
 
     db.run(query.result)
-      .map(_.map(ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, None)))
+      .map(
+        _.map(
+          ReturnFacilitatorParticipant(
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            None
+          )
+        )
+      )
   }
 
   /* The full facilitator read of one person, with their group if placed. */
@@ -136,7 +125,8 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       g.culturalBackground,
       g.griefRecency,
       g.whoLost,
-      p.role
+      p.role,
+      g.onboardingTime
     )
 
     for {
@@ -149,7 +139,23 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
           .headOption
       )
     } yield maybe
-      .map(ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, groupId))
+      .map(
+        ReturnFacilitatorParticipant(
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          groupId
+        )
+      )
       .headOption
   }
 
@@ -176,7 +182,9 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       DayOfWeek.valueOf(create.dayOfWeek),
       LocalTime.parse(create.scheduledTime),
       create.scheduledDurationMinutes,
-      create.description
+      LocalDateTime.now(),
+      create.description,
+      false
     )
     val insert =
       (supportGroups returning supportGroups.map(_.groupId)) += newGroup
@@ -187,6 +195,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
         create.dayOfWeek,
         create.scheduledTime,
         create.scheduledDurationMinutes,
+        create.creationTime,
         create.description,
         Seq.empty
       )

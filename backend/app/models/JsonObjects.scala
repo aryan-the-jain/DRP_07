@@ -95,6 +95,7 @@ case class ReturnFacilitatorGroup(
     dayOfWeek: String,
     scheduledTime: String,
     scheduledDurationMinutes: Int,
+    creationTime: LocalDateTime,
     description: Option[String],
     members: Seq[ReturnFacilitatorMember]
 )
@@ -113,6 +114,7 @@ case class ReturnFacilitatorParticipant(
     griefRecency: Option[String],
     whoLost: Option[String],
     role: Role,
+    onboardingTime: LocalDateTime,
     groupId: Option[Int]
 )
 
@@ -129,4 +131,8 @@ case class ReturnInboxEntry(
     hasUnread: Boolean,
     sharedFacilitatorNote: Option[String],
     sharedFreeWriting: Option[String]
+)
+
+case class ReturnIsSessionNow(
+    isSessionNow: Boolean
 )
