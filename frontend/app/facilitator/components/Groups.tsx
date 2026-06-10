@@ -204,7 +204,7 @@ export function FacHome() {
         person: {
           ...personFromParticipant(p),
           dm: dmsFrom(thread, facilitatorId),
-          reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting) : [],
+          reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
           unread: entry?.hasUnread ? 1 : 0,
         },
       });

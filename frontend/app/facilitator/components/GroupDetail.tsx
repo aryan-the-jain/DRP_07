@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatTimeSince } from "../../lib/format";
 import { Avatar, DashRule, Field, Icon, Logo, SoftLabel } from "./Primitives";
 import { CircleBadge, CloseBtn, ConfirmPopup, HobbyChips, LostCategory, LostChip, Overlay, PopBlock } from "./Overlays";
 import { Hub } from "./Hub";
@@ -414,6 +415,11 @@ export function GroupDetailPopup({
             <span className="chip">
               <Icon name="people" size={14} c="var(--muted)" /> {memberCount} {memberCount === 1 ? "person" : "people"}
             </span>
+            {group.createdAt && (
+              <span className="chip">
+                <Icon name="spark" size={14} c="var(--muted)" /> created {formatTimeSince(group.createdAt)}
+              </span>
+            )}
           </div>
         </div>
         <CloseBtn onClick={onClose} />
@@ -535,7 +541,7 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
         person: {
           ...personFromParticipant(p),
           dm: dmsFrom(thread, facilitatorId),
-          reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting) : [],
+          reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
           unread: entry?.hasUnread ? 1 : 0,
         },
       });
@@ -618,6 +624,11 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
                 <span className="chip">
                   <Icon name="people" size={14} c="var(--muted)" /> {memberCount} {memberCount === 1 ? "person" : "people"}
                 </span>
+                {group.createdAt && (
+                  <span className="chip">
+                    <Icon name="spark" size={14} c="var(--muted)" /> created {formatTimeSince(group.createdAt)}
+                  </span>
+                )}
               </div>
 
               {/* description

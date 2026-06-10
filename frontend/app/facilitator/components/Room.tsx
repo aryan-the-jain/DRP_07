@@ -210,7 +210,7 @@ function buildPrivateFeed(inbox: InboxEntryResponse[]): FeedItem[] {
       kind: "reflection",
       name: e.participant.displayName,
       tone: toneFor(e.participant.id),
-      at: "",
+      at: e.lastReflectionShareAt ? formatMessageTime(e.lastReflectionShareAt) : "",
       q: e.sharedFacilitatorNote ? "Something they wanted you to see" : "From their free writing",
       text: `“${e.sharedFacilitatorNote ?? e.sharedFreeWriting ?? ""}”`,
     }));
@@ -334,7 +334,7 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
     return {
       ...personFromParticipant(p),
       dm: dmsFrom(thread, facilitatorId),
-      reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting) : [],
+      reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
       unread: entry?.hasUnread ? 1 : 0,
     };
   };
