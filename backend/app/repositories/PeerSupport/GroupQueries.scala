@@ -20,8 +20,15 @@ class GroupQueries(
   /* Returns the group name, facilitator name, conversation duration, day and
    * time given groupId. */
   def selectGroup(groupId: Int): Query[
-    (Rep[String], Rep[String], Rep[Int], Rep[DayOfWeek], Rep[LocalTime]),
-    (String, String, Int, DayOfWeek, LocalTime),
+    (
+        Rep[String],
+        Rep[String],
+        Rep[Int],
+        Rep[DayOfWeek],
+        Rep[LocalTime],
+        Rep[Option[String]]
+    ),
+    (String, String, Int, DayOfWeek, LocalTime, Option[String]),
     Seq
   ] = {
     for
@@ -29,7 +36,7 @@ class GroupQueries(
       gp <- groupParticipants if gp.groupId === g.groupId
       p <- participants
       if gp.participantId === p.participantId && p.role === Role.FACILITATOR
-    yield (g.name, p.name, g.duration, g.day, g.time)
+    yield (g.name, p.name, g.duration, g.day, g.time, g.description)
   }
 
   /* Selects the participant ID of the group facilitator. */

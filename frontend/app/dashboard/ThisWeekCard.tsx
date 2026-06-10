@@ -125,8 +125,9 @@ export function ThisWeekCard({
       </div>
 
       <p className="mt-3 text-[15.5px] leading-relaxed text-ink">
-        A small, settled group meeting at a gentle pace — there&apos;s no pressure
-        to speak before you&apos;re ready.
+        {group?.description?.trim()
+          ? group.description
+          : ""}
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 border-t-2 border-dashed border-line pt-4">

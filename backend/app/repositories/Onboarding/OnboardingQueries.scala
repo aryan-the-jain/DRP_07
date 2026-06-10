@@ -5,12 +5,14 @@ import slick.jdbc.PostgresProfile.api.*
 import models.*
 import repositories.PeerSupport.Instances.given
 
-import repositories.tables.ParticipantsTable
+import repositories.tables.{GrieversTable, ParticipantsTable}
+import scala.concurrent.ExecutionContext
 
 // TODO: What is the difference between fun fact and hobbies?
 class OnboardingQueries(
+    private val grieversTable: TableQuery[GrieversTable],
     private val participantsTable: TableQuery[ParticipantsTable]
-) {
+)(using ExecutionContext) {
   def selectAllOnboardingInformation(participantId: Int): Query[
     (
         Rep[Int],
@@ -38,52 +40,73 @@ class OnboardingQueries(
     ),
     Seq
   ] = {
-    for p <- participantsTable if p.participantId === participantId
+    for
+      g <- grieversTable if g.grieverId === participantId
+      p <- participantsTable if p.participantId === g.grieverId
     yield (
-      p.participantId,
+      g.grieverId,
       p.name,
       p.pronouns,
       p.age,
       p.fact,
       p.hobbies,
-      p.culturalBackground,
-      p.griefRecency,
-      p.whoLost,
-      p.onboardingStatus
+      g.culturalBackground,
+      g.griefRecency,
+      g.whoLost,
+      g.onboardingStatus
     )
   }
 
   def insertNewOnboardingInformation(
       participantId: Int,
       update: UpdateOnboarding
-  ): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] = {
-    participantsTable
-      .filter(_.participantId === participantId)
-      .map(p =>
-        (
-          p.name,
-          p.pronouns,
-          p.age,
-          p.fact,
-          p.hobbies,
-          p.culturalBackground,
-          p.griefRecency,
-          p.whoLost,
-          p.onboardingStatus
+  ) = {
+
+    val participantUpdate =
+      participantsTable
+        .filter(_.participantId === participantId)
+        .map(p =>
+          (
+            p.name,
+            p.pronouns,
+            p.age,
+            p.fact,
+            p.hobbies
+          )
         )
-      )
-      .update(
-        (
-          update.callName,
-          update.pronouns,
-          update.age,
-          update.fact,
-          update.hobbies,
-          update.culturalBackground,
-          update.griefRecency,
-          update.whoLost,
-          update.status
+        .update(
+          (
+            update.callName,
+            update.pronouns,
+            update.age,
+            update.fact,
+            update.hobbies
+          )
         )
-      )
+
+    val grieverUpdate =
+      grieversTable
+        .filter(_.grieverId === participantId)
+        .map(g =>
+          (
+            g.culturalBackground,
+            g.griefRecency,
+            g.whoLost,
+            g.onboardingStatus
+          )
+        )
+        .update(
+          (
+            update.culturalBackground,
+            update.griefRecency,
+            update.whoLost,
+            update.status
+          )
+        )
+
+    (for {
+      p <- participantUpdate
+      g <- grieverUpdate
+    } yield p + g).transactionally
   }
 }

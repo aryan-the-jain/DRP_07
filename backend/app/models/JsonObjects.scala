@@ -7,7 +7,8 @@ case class ReturnSupportGroup(
     facilitatorName: String,
     scheduledDurationMinutes: Int,
     dayOfWeek: String,
-    scheduledTime: String
+    scheduledTime: String,
+    description: Option[String]
 )
 
 case class ReturnParticipant(
@@ -75,4 +76,59 @@ case class ReturnOnboarding(
     griefRecency: Option[String],
     whoLost: Option[String],
     status: String
+)
+
+// ---- facilitator-side views -------------------------------------------------
+
+// A member as it appears on a group card / placement list (no carried-loss here).
+case class ReturnFacilitatorMember(
+    id: Int,
+    displayName: String,
+    initials: String,
+    pronouns: Option[String],
+    role: Role
+)
+
+// A group the facilitator holds, with its members.
+case class ReturnFacilitatorGroup(
+    groupId: Int,
+    name: String,
+    dayOfWeek: String,
+    scheduledTime: String,
+    scheduledDurationMinutes: Int,
+    description: Option[String],
+    members: Seq[ReturnFacilitatorMember]
+)
+
+// The full facilitator read of a person — includes the carried loss (for their
+// eyes only). groupId is set when the person is already placed.
+case class ReturnFacilitatorParticipant(
+    id: Int,
+    displayName: String,
+    pronouns: Option[String],
+    age: Option[String],
+    initials: String,
+    fact: String,
+    hobbies: List[String],
+    culturalBackground: Option[String],
+    griefRecency: Option[String],
+    whoLost: Option[String],
+    role: Role,
+    onboardingStatus: String,
+    groupId: Option[Int]
+)
+
+// Facilitator's free-form notes about a group (only visible to the facilitator).
+case class ReturnGroupNotes(notes: String, updatedAt: LocalDateTime)
+
+// One row of the room's "privately with you" rail: the member, the last private
+// message, and the sections of their reflection they chose to share.
+case class ReturnInboxEntry(
+    participant: ReturnFacilitatorMember,
+    lastMessageBody: Option[String],
+    lastMessageFromId: Option[Int],
+    lastMessageAt: Option[LocalDateTime],
+    hasUnread: Boolean,
+    sharedFacilitatorNote: Option[String],
+    sharedFreeWriting: Option[String]
 )

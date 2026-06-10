@@ -87,8 +87,19 @@ export function formatSessionSchedule(
     };
   }
 
-  const daysAway = daysUntilWeekday(weekdayIndex);
+  let daysAway = daysUntilWeekday(weekdayIndex);
+
+  // If the session day is today but the scheduled time has already passed, show next week.
+  if (daysAway === 0 && scheduledTime) {
+    const [hourPart, minutePart] = scheduledTime.split(":");
+    const now = new Date();
+    const sessionMins = Number(hourPart) * 60 + Number(minutePart ?? "0");
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    if (nowMins >= sessionMins) daysAway = 7;
+  }
+
   const date = nextDateForWeekday(weekdayIndex);
+  if (daysAway === 7) date.setDate(date.getDate() + 7);
   const dateLabel = new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "long",

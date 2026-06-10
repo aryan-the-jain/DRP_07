@@ -13,6 +13,7 @@ class SupportGroupsTable(tag: Tag)
   def day = column[DayOfWeek]("day_of_week")
   def time = column[LocalTime]("time")
   def duration = column[Int]("duration")
+  def description = column[Option[String]]("description")
 
-  def * = (groupId, name, day, time, duration).mapTo[SupportGroup]
+  def * = (groupId, name, day, time, duration, description).mapTo[SupportGroup]
 }

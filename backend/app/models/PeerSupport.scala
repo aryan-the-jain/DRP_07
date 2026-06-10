@@ -14,7 +14,8 @@ case class SupportGroup(
     name: String,
     day: DayOfWeek,
     time: LocalTime,
-    duration: Int // TODO: Irontype
+    duration: Int, // TODO: Irontype
+    description: Option[String]
 )
 
 case class Participant(
@@ -23,13 +24,22 @@ case class Participant(
     pronouns: Option[String],
     initials: String,
     age: Option[String], // TODO: Convert to enum!!
-    culturalBackground: Option[String],
     hobbies: List[String],
     fact: String,
+    role: Role
+)
+
+case class Griever(
+    grieverId: Int,
+    culturalBackground: Option[String],
     griefRecency: Option[String], // TODO: ENUM!
     whoLost: Option[String],
-    role: Role,
     onboardingStatus: String // TODO: Enum!!!!!!!!
+)
+
+case class Facilitator(
+    facilitatorId: Int,
+    logistics: String
 )
 
 case class GroupParticipants(
@@ -146,3 +156,29 @@ case class UpdateOnboarding(
     whoLost: Option[String],
     status: String
 )
+
+// Facilitator creates / edits a group. dayOfWeek is a full upper-case name
+// ("FRIDAY"); scheduledTime is an ISO local time ("20:00").
+case class CreateGroup(
+    name: String,
+    dayOfWeek: String,
+    scheduledTime: String,
+    scheduledDurationMinutes: Int,
+    description: Option[String]
+)
+
+case class UpdateGroup(
+    name: String,
+    dayOfWeek: String,
+    scheduledTime: String,
+    scheduledDurationMinutes: Int,
+    description: Option[String]
+)
+
+// Facilitator places a person into a group (a gentle invite, here applied directly).
+case class PlaceParticipant(
+    participantId: Int
+)
+
+// Facilitator saves free-form notes about a group (per-group, only they see these).
+case class UpdateGroupNotes(notes: String)
