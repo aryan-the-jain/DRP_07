@@ -40,7 +40,7 @@ class FacilitatorSupportRepository @Inject() (
         message.toId,
         groupId,
         message.body,
-        LocalDateTime.now()
+        getCurrentTime()
       )
     )
     db.run(query)

@@ -4,7 +4,7 @@ import models.*
 import slick.jdbc.PostgresProfile.api.*
 import repositories.PeerSupport.Instances.given
 
-import java.time.{LocalDateTime, LocalTime, DayOfWeek}
+import java.time.{LocalDateTime, DayOfWeek}
 
 class SupportGroupsTable(tag: Tag)
     extends Table[SupportGroup](tag, "support_groups") {
