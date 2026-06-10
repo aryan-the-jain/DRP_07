@@ -74,7 +74,7 @@ case class ReturnOnboarding(
     hobbies: List[String],
     culturalBackground: Option[String],
     griefRecency: Option[String],
-    whoLost: Option[String],
+    whoLost: Option[String]
 )
 
 // ---- facilitator-side views -------------------------------------------------
