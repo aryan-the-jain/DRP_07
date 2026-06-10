@@ -245,7 +245,7 @@ function DetailMemberRow({
     <div className="sk thin soft" style={{ padding: "13px 16px" }}>
       {/* band */}
       <div className="row" style={{ alignItems: "center", gap: 14 }}>
-        {/* avatar + name → opens the profile popup (messages, reflections) */}
+        {/* avatar + name + meta → opens the profile popup (messages, reflections) */}
         <div
           className="row fac-tap"
           onClick={onOpenProfile}
@@ -253,14 +253,20 @@ function DetailMemberRow({
           style={{ gap: 14, flex: 1, minWidth: 0, cursor: "pointer" }}
         >
           <Avatar name={p.name} size={42} tone={p.tone} />
-          <span className="h-title" style={{ fontSize: 19, color: "var(--ink)" }}>{p.name}</span>
+          <div className="stack" style={{ gap: 2, flex: 1, minWidth: 0 }}>
+            <span className="h-title" style={{ fontSize: 19, color: "var(--ink)" }}>{p.name}</span>
+            <span style={{ fontSize: 13.5, color: "var(--muted)" }}>
+              {[p.pronouns, p.age].filter(Boolean).join(" · ") || "—"}
+            </span>
+          </div>
         </div>
 
-        {/* redundant meta — slides + fades away once the profile is expanded below */}
+        {/* grief + duration, centred — slides + fades away once the profile is expanded below */}
         <div
-          className="row"
+          className="stack"
           style={{
-            gap: 8,
+            gap: 4,
+            alignItems: "center",
             flexShrink: 0,
             overflow: "hidden",
             opacity: expanded ? 0 : 1,
@@ -268,29 +274,31 @@ function DetailMemberRow({
             transition: "opacity 0.22s ease, max-width 0.22s ease",
           }}
         >
-          <span style={{ fontSize: 13.5, color: "var(--muted)", whiteSpace: "nowrap" }}>
-            {[p.pronouns, p.age].filter(Boolean).join(" · ") || "—"}
-          </span>
-          <LostChip m={p} size={12.5} />
-          {p.recency && (
-            <span className="chip" style={{ fontSize: 12.5, whiteSpace: "nowrap" }}>
-              <Icon name="clock" size={12} c="var(--muted)" /> {p.recency.toLowerCase()}
-            </span>
-          )}
+          <SoftLabel c="var(--warm-ink)">Who they lost</SoftLabel>
+          <div className="row" style={{ gap: 8 }}>
+            <LostChip m={p} size={12.5} />
+            {p.recency && (
+              <span className="chip" style={{ fontSize: 12.5, whiteSpace: "nowrap" }}>
+                <Icon name="clock" size={12} c="var(--muted)" /> {p.recency.toLowerCase()}
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* its own button — toggles the inline profile */}
-        <button
-          className="btn ghost icon fac-tap"
-          onClick={onToggle}
-          aria-expanded={expanded}
-          aria-label={expanded ? `Hide ${p.name}'s profile` : `Show ${p.name}'s profile`}
-          style={{ flexShrink: 0 }}
-        >
-          <span style={{ display: "inline-flex", transform: expanded ? "rotate(90deg)" : "none", transition: "transform 0.2s ease" }}>
-            <Icon name="chev" size={16} c="var(--muted)" />
-          </span>
-        </button>
+        {/* its own button — toggles the inline profile, pinned to the far right */}
+        <div className="row" style={{ flex: 1, justifyContent: "flex-end" }}>
+          <button
+            className="btn ghost icon fac-tap"
+            onClick={onToggle}
+            aria-expanded={expanded}
+            aria-label={expanded ? `Hide ${p.name}'s profile` : `Show ${p.name}'s profile`}
+            style={{ flexShrink: 0 }}
+          >
+            <span style={{ display: "inline-flex", transform: expanded ? "rotate(90deg)" : "none", transition: "transform 0.2s ease" }}>
+              <Icon name="chev" size={16} c="var(--muted)" />
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* inline profile — the placing-logic "About" view, smooth height */}
@@ -306,7 +314,7 @@ function DetailMemberRow({
               <SoftLabel style={{ marginBottom: 16 }}>What they’re carrying & a little about them</SoftLabel>
               <div className="stack" style={{ gap: 16 }}>
                 <div className="stack" style={{ gap: 8 }}>
-                  <SoftLabel c="var(--warm-ink)">Who they lost · for your eyes</SoftLabel>
+                  <SoftLabel c="var(--warm-ink)">Who they lost</SoftLabel>
                   <LostCategory m={p} />
                 </div>
                 <DashRule />
@@ -321,6 +329,150 @@ function DetailMemberRow({
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ====================================================================== GROUP DETAIL POPUP
+// A wide pop-up that mirrors the full group detail page (title, info chips, private notes,
+// expandable member rows) but without the edit/close-group controls — opened from the
+// arrival placing page's "Group details". Its one action invites this arrival in.
+// Members expand inline rather than opening a nested overlay.
+
+export function GroupDetailPopup({
+  group,
+  personName,
+  onInvite,
+  onClose,
+}: {
+  group: GroupCard;
+  personName: string;
+  onInvite: () => void;
+  onClose: () => void;
+}) {
+  const apiUrl = apiBase();
+  const [people, setPeople] = useState<Person[] | null>(null);
+  const [open, setOpen] = useState<Set<number>>(new Set());
+  const toggle = (id: number) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  useEffect(() => {
+    let active = true;
+    Promise.all(group.members.map((m) => fetchParticipant(apiUrl, m.id)))
+      .then((ps) => {
+        if (active) setPeople(ps.map(personFromParticipant));
+      })
+      .catch(() => {
+        if (active) setPeople([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [apiUrl, group.groupId, group.members]);
+
+  const memberCount = people?.length ?? group.members.length;
+
+  return (
+    <div
+      className="sk"
+      style={{
+        width: 820,
+        maxWidth: "100%",
+        maxHeight: "100%",
+        background: "var(--paper)",
+        display: "flex",
+        flexDirection: "column",
+        boxShadow: "0 18px 50px rgba(58,45,30,.20)",
+        overflow: "hidden",
+      }}
+    >
+      {/* header */}
+      <div className="row" style={{ padding: "20px 24px 16px", gap: 14, alignItems: "flex-start" }}>
+        <div className="av" style={{ width: 48, height: 48, background: "var(--warm-soft)", borderColor: "var(--warm)" }}>
+          <Icon name="people" size={24} c="var(--warm)" />
+        </div>
+        <div className="stack" style={{ gap: 6, flex: 1, paddingTop: 1 }}>
+          <div className="row" style={{ gap: 9, flexWrap: "wrap" }}>
+            <h2 className="h-title" style={{ fontSize: 28, color: "var(--ink)" }}>{group.name}</h2>
+            <CircleBadge c={group} />
+          </div>
+          <div className="row" style={{ gap: 9, flexWrap: "wrap" }}>
+            <span className="chip">
+              <Icon name="cal" size={14} c="var(--muted)" /> {group.when}
+            </span>
+            {group.durationMinutes != null && (
+              <span className="chip">
+                <Icon name="clock" size={14} c="var(--muted)" /> {group.durationMinutes} min
+              </span>
+            )}
+            <span className="chip">
+              <Icon name="people" size={14} c="var(--muted)" /> {memberCount} {memberCount === 1 ? "person" : "people"}
+            </span>
+          </div>
+        </div>
+        <CloseBtn onClick={onClose} />
+      </div>
+      <DashRule />
+
+      {/* body — notes then members, stacked, mirroring the full page */}
+      <div className="scroll" style={{ flex: 1, padding: "20px 24px 22px" }}>
+        <div className="stack" style={{ gap: 20 }}>
+          <div className="sk v2 soft" style={{ padding: "18px 20px", background: "var(--card)" }}>
+            <div className="row" style={{ gap: 9, marginBottom: 4 }}>
+              <Icon name="note" size={17} c="var(--calm)" />
+              <span className="h-title" style={{ fontSize: 21, color: "var(--ink)", flex: 1 }}>
+                Your private notes
+              </span>
+            </div>
+            <span className="row" style={{ gap: 6, fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>
+              <Icon name="lock" size={13} c="var(--calm)" /> kept to you · written after sessions
+            </span>
+            <NotesEditor groupId={group.groupId} minHeight={200} />
+          </div>
+
+          <div className="stack" style={{ gap: 12 }}>
+            <SoftLabel>
+              {people && people.length > 0 ? "Everyone in this group · expand a name for their profile" : "Members"}
+            </SoftLabel>
+            {people === null ? (
+              <span style={{ fontSize: 14, color: "var(--muted)" }}>Loading members…</span>
+            ) : people.length === 0 ? (
+              <div
+                className="sk thin soft"
+                style={{ padding: "22px 18px", textAlign: "center", color: "var(--muted)", fontSize: 15.5, borderStyle: "dashed" }}
+              >
+                No one has been placed in this group yet.
+              </div>
+            ) : (
+              <div className="stack" style={{ gap: 10 }}>
+                {people.map((p) => (
+                  <DetailMemberRow
+                    key={p.id}
+                    p={p}
+                    expanded={open.has(p.id)}
+                    onOpenProfile={() => toggle(p.id)}
+                    onToggle={() => toggle(p.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* footer — the one action: invite this arrival in */}
+      <DashRule />
+      <div className="row" style={{ padding: "13px 24px" }}>
+        <div style={{ flex: 1 }} />
+        <button className="btn warm" onClick={onInvite}>
+          <Icon name="mail" size={16} c="#fff" /> Invite {personName}
+        </button>
       </div>
     </div>
   );

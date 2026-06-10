@@ -149,9 +149,6 @@ export function InvitePanel({
           style={{ marginTop: 18, padding: "13px 15px", display: "flex", gap: 10, alignItems: "flex-start", background: "transparent" }}
         >
           <Icon name="heart" size={16} c="var(--calm)" style={{ marginTop: 2 }} />
-          <span style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.45 }}>
-            An invite is a gentle nudge, never an assignment. People choose whether a group feels right.
-          </span>
         </div>
       </div>
 

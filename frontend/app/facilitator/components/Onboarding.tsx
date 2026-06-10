@@ -6,20 +6,20 @@
 //                    bring them into (right).
 // Wired to the backend; inviting a person into a group persists.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, DashRule, Field, Icon, Logo, SoftLabel } from "./Primitives";
 import {
   ConfirmPopup,
   FullProfilePopup,
-  GroupDetailsPopup,
-  GroupInviteCard,
+  GroupPlaceCard,
   HobbyChips,
   LostCategory,
   LostChip,
   Overlay,
   PopBlock,
 } from "./Overlays";
+import { GroupDetailPopup } from "./GroupDetail";
 import { groupCardFrom, HOBBY_ICON, personFromParticipant, type GroupCard, type Person } from "../lib/data";
 import { apiBase, fetchArrivals, fetchGroups, fetchParticipant, placeParticipant } from "../lib/api";
 
@@ -96,14 +96,39 @@ type ArrivalDetailModal =
   | { type: "sent"; group: GroupCard }
   | null;
 
-export function OnboardingCard({ participantId }: { participantId: number }) {
+export function OnboardingCard({ participantId, from }: { participantId: number; from?: string }) {
   const router = useRouter();
   const apiUrl = apiBase();
+  // Reached from the dashboard's "waiting to be placed" list or from the full arrivals
+  // page — either way, send the facilitator back where they came from.
+  const cameFromDashboard = from === "dashboard";
+  const backTo = cameFromDashboard ? "/facilitator" : "/facilitator/arrivals";
+  const backLabel = cameFromDashboard ? "Home" : "New arrivals";
   const [person, setPerson] = useState<Person | null>(null);
   const [groups, setGroups] = useState<GroupCard[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [modal, setModal] = useState<ArrivalDetailModal>(null);
+  const [panelWidth, setPanelWidth] = useState(460);
+  const [splitterHover, setSplitterHover] = useState(false);
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const close = () => setModal(null);
+
+  const onSplitterMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    dragRef.current = { startX: e.clientX, startWidth: panelWidth };
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      const delta = dragRef.current.startX - ev.clientX;
+      setPanelWidth(Math.max(320, Math.min(560, dragRef.current.startWidth + delta)));
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
 
   useEffect(() => {
     Promise.all([fetchParticipant(apiUrl, participantId), fetchGroups(apiUrl)])
@@ -125,6 +150,16 @@ export function OnboardingCard({ participantId }: { participantId: number }) {
     }
   };
 
+  // Tapping a member's face on a group card opens that member's full profile.
+  const openMember = async (id: number, groupName: string) => {
+    try {
+      const p = await fetchParticipant(apiUrl, id);
+      setModal({ type: "full", person: personFromParticipant(p), group: groupName });
+    } catch {
+      /* ignore a transient profile fetch */
+    }
+  };
+
   if (status === "loading") return <Centered>Loading…</Centered>;
   if (status === "error" || !person) return <Centered>We couldn’t find that person.</Centered>;
   const m = person;
@@ -132,8 +167,8 @@ export function OnboardingCard({ participantId }: { participantId: number }) {
   return (
     <div className="stack" style={{ minHeight: "100%", height: "100vh", background: "var(--paper)", position: "relative" }}>
       <div className="row" style={{ padding: "15px 26px", gap: 14 }}>
-        <button className="btn ghost sm" onClick={() => router.push("/facilitator/arrivals")}>
-          <Icon name="back" size={16} c="var(--muted)" /> New arrivals
+        <button className="btn ghost sm" onClick={() => router.push(backTo)}>
+          <Icon name="back" size={16} c="var(--muted)" /> {backLabel}
         </button>
         <div style={{ flex: 1 }} />
         <Logo size={26} />
@@ -179,7 +214,7 @@ export function OnboardingCard({ participantId }: { participantId: number }) {
               <SoftLabel style={{ marginBottom: 16 }}>What they’re carrying & a little about them</SoftLabel>
               <div className="stack" style={{ gap: 16 }}>
                 <div className="stack" style={{ gap: 8 }}>
-                  <SoftLabel c="var(--warm-ink)">Who they lost · for your eyes</SoftLabel>
+                  <SoftLabel c="var(--warm-ink)">Who they lost</SoftLabel>
                   <LostCategory m={m} />
                 </div>
                 <DashRule />
@@ -194,15 +229,48 @@ export function OnboardingCard({ participantId }: { participantId: number }) {
             </div>
 
             <div className="row" style={{ marginTop: 20 }}>
-              <button className="btn ghost" onClick={() => router.push("/facilitator/arrivals")}>
+              <button className="btn ghost" onClick={() => router.push(backTo)}>
                 <Icon name="clock" size={16} c="var(--muted)" /> Set aside for now
               </button>
             </div>
           </div>
         </div>
 
+        {/* ---------------- splitter ---------------- */}
+        <div
+          onMouseDown={onSplitterMouseDown}
+          onMouseEnter={() => setSplitterHover(true)}
+          onMouseLeave={() => setSplitterHover(false)}
+          title="Drag to resize"
+          style={{
+            width: 16,
+            flex: "0 0 16px",
+            cursor: "col-resize",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            userSelect: "none",
+            transition: "background .15s",
+          }}
+        >
+          <div style={{
+            position: "absolute",
+            top: 0, bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            borderLeft: `1.5px solid ${splitterHover ? "var(--warm)" : "var(--line)"}`,
+            transition: "border-color .15s",
+          }} />
+          <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 3, opacity: splitterHover ? 1 : 0.35, transition: "opacity .15s" }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ width: 10, height: 2.5, borderRadius: 2, background: splitterHover ? "var(--warm)" : "var(--faint)", transition: "background .15s" }} />
+            ))}
+          </div>
+        </div>
+
         {/* ---------------- RIGHT · bring them into a group ---------------- */}
-        <div className="stack" style={{ width: 388, flex: "0 0 auto", borderLeft: "2px dashed var(--line)", background: "var(--card)" }}>
+        <div className="stack" style={{ width: panelWidth, flex: "0 0 auto", background: "var(--paper)" }}>
           <div className="stack" style={{ padding: "20px 22px 12px", gap: 4 }}>
             <span className="h-title" style={{ fontSize: 21, color: "var(--ink)" }}>
               Bring {m.name} into a group
@@ -222,12 +290,13 @@ export function OnboardingCard({ participantId }: { participantId: number }) {
             ) : (
               <div className="stack" style={{ gap: 12 }}>
                 {groups.map((c) => (
-                  <GroupInviteCard
+                  <GroupPlaceCard
                     key={c.groupId}
                     c={c}
                     personName={m.name}
                     onInvite={() => invite(c)}
                     onDetails={() => setModal({ type: "group", group: c })}
+                    onAvatar={(id) => openMember(id, c.name)}
                   />
                 ))}
               </div>
@@ -239,11 +308,11 @@ export function OnboardingCard({ participantId }: { participantId: number }) {
       {modal && (
         <Overlay onClose={close}>
           {modal.type === "group" && (
-            <GroupDetailsPopup
+            <GroupDetailPopup
               group={modal.group}
-              onClose={close}
+              personName={m.name}
               onInvite={() => invite(modal.group)}
-              onParticipant={(p) => setModal({ type: "full", person: p, group: modal.group.name })}
+              onClose={close}
             />
           )}
           {modal.type === "full" && <FullProfilePopup person={modal.person} group={modal.group} onClose={close} />}
@@ -253,11 +322,11 @@ export function OnboardingCard({ participantId }: { participantId: number }) {
               accent="var(--calm)"
               title="Invitation sent"
               body={`${m.name} will see a gentle invitation to ${modal.group.name}. They can read more, accept, or say “maybe later”.`}
-              confirm="Lovely"
-              cancel="Close"
+              confirm="Close"
+              cancel={null}
               caption="you’ll see if they accept — no pressure on them either way"
-              onClose={() => router.push("/facilitator/arrivals")}
-              onConfirm={() => router.push("/facilitator/arrivals")}
+              onClose={() => router.push(backTo)}
+              onConfirm={() => router.push(backTo)}
             />
           )}
         </Overlay>

@@ -100,7 +100,7 @@ function GroupCard({
           <CircleBadge c={c} />
         </div>
         <span className="row" style={{ gap: 8, fontSize: 14.5, color: "var(--muted)" }}>
-          <Icon name="clock" size={16} c="var(--warm)" /> {c.when}
+          <Icon name="clock" size={16} c="var(--muted)" /> {c.when}
           {c.durationMinutes != null && <span>· {c.durationMinutes} min</span>}
           ·<Icon name="people" size={14} c="var(--muted)" /> {c.members.length}
         </span>
@@ -133,11 +133,11 @@ function GroupCard({
 
       {/* direct actions */}
       <div className="row" style={{ gap: 7 }}>
-        <button className="btn warm sm" style={{ flex: 1, justifyContent: "center", padding: "7px 6px" }} onClick={onGroupDetails} title="Group details, edit, and more">
-          <Icon name="eye" size={15} c="var(--paper)" /> Group details
+        <button className="btn ghost sm icon" style={{ flex: 1, justifyContent: "center", padding: "7px 6px", borderColor: "var(--warm)", color: "var(--warm-ink)" }} onClick={onGroupDetails} title="Group details, edit, and more">
+          <Icon name="eye" size={15} c="var(--warm)" /> Group details
         </button>
-        <button className="btn calm sm icon" style={{ flex: 1, justifyContent: "center", padding: "7px 6px" }} onClick={onNotes} title="Your notes about this group">
-          <Icon name="note" size={15} c="var(--paper)" /> Notes
+        <button className="btn ghost sm icon" style={{ flex: 1, justifyContent: "center", padding: "7px 6px", borderColor: "var(--calm)", color: "var(--calm-ink)" }} onClick={onNotes} title="Your notes about this group">
+          <Icon name="note" size={15} c="var(--calm)" /> Notes
         </button>
       </div>
     </div>
@@ -330,7 +330,7 @@ export function FacHome() {
               ) : (
                 <div className="stack" style={{ gap: 12 }}>
                   {arrivals.map((m) => (
-                    <ArrivalRow key={m.id} m={m} onPlace={() => router.push(`/facilitator/arrivals/${m.id}`)} />
+                    <ArrivalRow key={m.id} m={m} onPlace={() => router.push(`/facilitator/arrivals/${m.id}?from=dashboard`)} />
                   ))}
                 </div>
               )}
@@ -596,22 +596,30 @@ export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edi
       </div>
 
       {saved && (
-        <Overlay onClose={() => router.push("/facilitator")}>
-          <ConfirmPopup
-            icon="check"
-            accent="var(--calm)"
-            title={editing ? "Changes saved" : "Group created"}
-            body={
-              editing
-                ? "Your edits are live. Members will see anything that affects them next time they open the app."
-                : "Lovely. Your new group is ready — you can invite people in from its card."
-            }
-            confirm="Back to your groups"
-            cancel="Done"
-            onClose={() => router.push("/facilitator")}
-            onConfirm={() => router.push("/facilitator")}
-          />
-        </Overlay>
+        // After creating, head back to the dashboard; after editing, return to the group's
+        // own details page — that's where the edit was reached from.
+        (() => {
+          const dest = editing && initial ? `/facilitator/groups/${initial.groupId}` : "/facilitator";
+          const go = () => router.push(dest);
+          return (
+            <Overlay onClose={go}>
+              <ConfirmPopup
+                icon="check"
+                accent="var(--calm)"
+                title={editing ? "Changes saved" : "Group created"}
+                body={
+                  editing
+                    ? "Your edits are live. Members will see anything that affects them next time they open the app."
+                    : "Lovely. Your new group is ready — you can invite people in from its card."
+                }
+                confirm={editing ? "Back to group details" : "Back to your groups"}
+                cancel={null}
+                onClose={go}
+                onConfirm={go}
+              />
+            </Overlay>
+          );
+        })()
       )}
     </div>
   );

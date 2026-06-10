@@ -315,7 +315,7 @@ export function FullProfilePopup({
         <div className="stack" style={{ gap: 16 }}>
           <div className="stack" style={{ gap: 9 }}>
             <span className="leader" style={{ color: "var(--warm-ink)" }}>
-              What they’re carrying · for your eyes
+              What they’re carrying
             </span>
             <LostCategory m={m} />
           </div>
@@ -398,11 +398,14 @@ export function ConfirmPopup({
   title: string;
   body: string;
   confirm?: string;
-  cancel?: string;
+  cancel?: string | null;
   caption?: string;
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  // A single-action popup (cancel === null) shows just one centred button — used when
+  // there's nothing to cancel, only an acknowledgement that moves you onward.
+  const single = cancel === null;
   return (
     <div
       className="sk"
@@ -418,11 +421,19 @@ export function ConfirmPopup({
       </div>
       <p style={{ fontSize: 16.5, color: "var(--ink)", lineHeight: 1.45, marginBottom: 18 }}>{body}</p>
       <div className="row" style={{ gap: 11 }}>
-        <button className="btn ghost" onClick={onClose}>
-          {cancel}
-        </button>
-        <div style={{ flex: 1 }} />
-        <button className="btn accent-fill" style={{ "--accent": accent } as CSSProperties} onClick={onConfirm}>
+        {!single && (
+          <>
+            <button className="btn ghost" onClick={onClose}>
+              {cancel}
+            </button>
+            <div style={{ flex: 1 }} />
+          </>
+        )}
+        <button
+          className="btn accent-fill"
+          style={{ "--accent": accent, ...(single ? { flex: 1, justifyContent: "center" } : {}) } as CSSProperties}
+          onClick={onConfirm}
+        >
           {confirm}
         </button>
       </div>
@@ -555,6 +566,95 @@ export function GroupDetailsPopup({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// An overlapping face that lifts and reveals its name on hover, then opens the member's
+// profile — mirrors the dashboard card's HoverFace (kept local to avoid an import cycle
+// with Groups.tsx, which already imports ArrivalRow from Onboarding).
+function HoverFace({ name, tone, onClick }: { name: string; tone: Person["tone"]; onClick: () => void }) {
+  return (
+    <div className="relative w-fit" style={{ marginLeft: -9 }}>
+      <button
+        type="button"
+        onClick={onClick}
+        className="peer fac-tap rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warm"
+        aria-label={`Open ${name}'s profile`}
+      >
+        <Avatar name={name} size={36} tone={tone} />
+      </button>
+      <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 scale-95 peer-hover:opacity-100 peer-hover:scale-100 transition-all duration-200 ease-out z-50 px-3 py-2 sk thin soft bg-card shadow-[0_8px_24px_rgba(68,52,35,0.12)] whitespace-nowrap text-xs leading-normal text-ink text-center block">
+        {name}
+      </span>
+    </div>
+  );
+}
+
+// A group as a placing target (used in the arrival full page's right rail). Mirrors the
+// dashboard's GroupCard format — name + badge, schedule/people, overlapping member faces —
+// but its primary action invites this person in, with "Group details" opening the full
+// popup. No "open the room / next session" slot and no notes button.
+export function GroupPlaceCard({
+  c,
+  personName,
+  onInvite,
+  onDetails,
+  onAvatar,
+}: {
+  c: GroupCard;
+  personName: string;
+  onInvite: () => void;
+  onDetails: () => void;
+  onAvatar: (id: number) => void;
+}) {
+  const liveish = c.live || c.liveSoon;
+  return (
+    <div
+      className="sk"
+      style={{
+        padding: "18px 20px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        borderColor: liveish ? "var(--warm)" : "var(--ink)",
+        boxShadow: liveish ? "0 5px 0 -1px var(--warm-soft)" : "none",
+      }}
+    >
+      <div className="stack" style={{ gap: 5 }}>
+        <div className="row" style={{ gap: 9, flexWrap: "wrap" }}>
+          <h3 className="h-title" style={{ fontSize: 21, color: "var(--ink)" }}>
+            {c.name}
+          </h3>
+          <CircleBadge c={c} />
+        </div>
+        <span className="row" style={{ gap: 8, fontSize: 14, color: "var(--muted)" }}>
+          <Icon name="clock" size={15} c="var(--muted)" /> {c.when}
+          {c.durationMinutes != null && <span>· {c.durationMinutes} min</span>}
+          ·<Icon name="people" size={14} c="var(--muted)" /> {c.members.length}
+        </span>
+      </div>
+
+      <div className="row" style={{ gap: 12 }}>
+        {c.members.length > 0 ? (
+          <div className="flex items-center" style={{ paddingLeft: 9 }}>
+            {c.members.map((mem) => (
+              <HoverFace key={mem.id} name={mem.name} tone={mem.tone} onClick={() => onAvatar(mem.id)} />
+            ))}
+          </div>
+        ) : (
+          <span style={{ fontSize: 14, color: "var(--faint)" }}>no one placed yet</span>
+        )}
+      </div>
+
+      <div className="row" style={{ gap: 10 }}>
+        <button className="btn warm sm" style={{ flex: 1, justifyContent: "center" }} onClick={onInvite}>
+          <Icon name="mail" size={14} c="#fff" /> Invite {personName}
+        </button>
+        <button className="btn ghost sm" style={{ flex: 1, justifyContent: "center" }} onClick={onDetails} title="See who's inside">
+          <Icon name="eye" size={15} c="var(--muted)" /> Group details
+        </button>
+      </div>
     </div>
   );
 }

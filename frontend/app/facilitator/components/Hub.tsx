@@ -61,7 +61,7 @@ function HubTabs({ tab, setTab, m }: { tab: HubTab; setTab: (t: HubTab) => void;
   );
 }
 
-function ProfileHeader({ m, onClose, backLabel }: { m: Person; onClose?: () => void; backLabel?: string }) {
+function ProfileHeader({ m, onClose, backLabel, backChev }: { m: Person; onClose?: () => void; backLabel?: string; backChev?: boolean }) {
   return (
     <div className="row" style={{ padding: "18px 20px 14px", gap: 14, alignItems: "flex-start" }}>
       <Avatar name={m.name} size={56} tone={m.tone} />
@@ -79,7 +79,9 @@ function ProfileHeader({ m, onClose, backLabel }: { m: Person; onClose?: () => v
         backLabel
           ? (
             <button className="btn ghost sm" onClick={onClose} style={{ gap: 6 }}>
-              <Icon name="back" size={15} c="var(--muted)" /> {backLabel}
+              {backChev
+                ? <Icon name="chev" size={15} c="var(--muted)" style={{ transform: "rotate(180deg)" }} />
+                : <Icon name="back" size={15} c="var(--muted)" />} {backLabel}
             </button>
           )
           : <CloseBtn onClick={onClose} />
@@ -104,7 +106,7 @@ function ProfileAbout({ m }: { m: Person }) {
         <Field label="Cultural background">{m.culture && m.culture !== "—" ? m.culture : "they’d rather not say"}</Field>
         <DashRule />
         <div className="stack" style={{ gap: 9 }}>
-          <SoftLabel c="var(--warm-ink)">What they’re carrying · for your eyes</SoftLabel>
+          <SoftLabel c="var(--warm-ink)">What they’re carrying</SoftLabel>
           <LostCategory m={m} />
         </div>
       </div>
@@ -211,6 +213,7 @@ export function Hub({
   onClose,
   onSend,
   backLabel,
+  backChev,
 }: {
   person: Person;
   tab?: HubTab;
@@ -218,11 +221,12 @@ export function Hub({
   onClose?: () => void;
   onSend?: (body: string) => void;
   backLabel?: string;
+  backChev?: boolean;
 }) {
   const [tab, setTab] = useState<HubTab>(initial);
   const body = (
     <>
-      <ProfileHeader m={person} onClose={onClose} backLabel={backLabel} />
+      <ProfileHeader m={person} onClose={onClose} backLabel={backLabel} backChev={backChev} />
       <HubTabs tab={tab} setTab={setTab} m={person} />
       {tab === "about" && <ProfileAbout m={person} />}
       {tab === "message" && <DMThread m={person} onSend={onSend} />}
@@ -252,7 +256,7 @@ export function Hub({
   }
 
   return (
-    <div className="stack" style={{ height: "100%", background: "var(--paper)", borderLeft: "2px solid var(--ink)" }}>
+    <div className="stack" style={{ height: "100%", background: "var(--paper)" }}>
       {body}
     </div>
   );

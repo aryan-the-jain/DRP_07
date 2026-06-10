@@ -245,8 +245,9 @@ export function ChatDrawer() {
   const [modal, setModal] = useState<RoomModal>(null);
   const [draft, setDraft] = useState("");
   const [panelOpen, setPanelOpen] = useState(true);
-  const [panelWidth, setPanelWidth] = useState(360);
+  const [panelWidth, setPanelWidth] = useState(440);
   const [splitterHover, setSplitterHover] = useState(false);
+  const [panelCard, setPanelCard] = useState<{ person: Person; tab: HubTab } | null>(null);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
   const onSplitterMouseDown = (e: React.MouseEvent) => {
@@ -319,25 +320,37 @@ export function ChatDrawer() {
     return () => clearInterval(id);
   }, [loadMessages]);
 
-  // Open the 3-tab profile card for a member, loading their profile + private thread +
-  // shared reflections, on whichever tab the click implies.
+  // Load a member's profile + private thread + shared reflections into one enriched Person.
+  const buildPerson = async (id: number): Promise<Person> => {
+    const [p, thread] = await Promise.all([
+      fetchParticipant(apiUrl, id),
+      fetchPrivateThread(apiUrl, liveGroupId, id),
+    ]);
+    const entry = inbox.find((e) => e.participant.id === id);
+    return {
+      ...personFromParticipant(p),
+      dm: dmsFrom(thread, facilitatorId),
+      reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting) : [],
+      unread: entry?.hasUnread ? 1 : 0,
+    };
+  };
+
+  // Open the 3-tab profile card as a floating pop-up (from a chat avatar), on whichever
+  // tab the click implies.
   const openCard = async (id: number, tab: HubTab) => {
     try {
-      const [p, thread] = await Promise.all([
-        fetchParticipant(apiUrl, id),
-        fetchPrivateThread(apiUrl, liveGroupId, id),
-      ]);
-      const entry = inbox.find((e) => e.participant.id === id);
-      setModal({
-        type: "card",
-        tab,
-        person: {
-          ...personFromParticipant(p),
-          dm: dmsFrom(thread, facilitatorId),
-          reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting) : [],
-          unread: entry?.hasUnread ? 1 : 0,
-        },
-      });
+      setModal({ type: "card", tab, person: await buildPerson(id) });
+    } catch {
+      /* ignore transient fetch */
+    }
+  };
+
+  // Open the same profile card in place inside the private panel (from a feed item),
+  // replacing the feed until the facilitator steps back.
+  const openItemInPanel = async (item: FeedItem) => {
+    try {
+      setPanelOpen(true);
+      setPanelCard({ person: await buildPerson(item.id), tab: item.kind === "message" ? "message" : "reflections" });
     } catch {
       /* ignore transient fetch */
     }
@@ -346,10 +359,14 @@ export function ChatDrawer() {
   const replyTo = async (toId: number, body: string) => {
     await sendPrivateMessage(apiUrl, liveGroupId, facilitatorId, toId, body);
     const thread = await fetchPrivateThread(apiUrl, liveGroupId, toId);
+    const dm = dmsFrom(thread, facilitatorId);
     setModal((prev) =>
-      prev && prev.type === "card"
-        ? { ...prev, person: { ...prev.person, dm: dmsFrom(thread, facilitatorId) } }
+      prev && prev.type === "card" && prev.person.id === toId
+        ? { ...prev, person: { ...prev.person, dm } }
         : prev,
+    );
+    setPanelCard((prev) =>
+      prev && prev.person.id === toId ? { ...prev, person: { ...prev.person, dm } } : prev,
     );
     loadInbox();
   };
@@ -367,7 +384,6 @@ export function ChatDrawer() {
 
   const feed = buildPrivateFeed(inbox);
   const byId = new Map(members.map((m) => [m.id, m] as const));
-  const openItem = (item: FeedItem) => openCard(item.id, item.kind === "message" ? "message" : "reflections");
 
   return (
     <div className="stack" style={{ height: "100vh", background: "var(--paper)", position: "relative" }}>
@@ -435,47 +451,62 @@ export function ChatDrawer() {
           </div>
         )}
         {panelOpen ? (
-          <div className="stack" style={{ width: panelWidth, flex: "0 0 auto", background: "var(--paper)" }}>
-            {/* header */}
-            <div className="row" style={{ padding: "16px 18px 12px", gap: 9 }}>
-              <Icon name="lock" size={17} c="var(--warm)" />
-              <span className="h-title" style={{ fontSize: 20, color: "var(--ink)", whiteSpace: "nowrap" }}>
-                Privately with you
-              </span>
-              <div style={{ flex: 1 }} />
-              <button
-                className="btn ghost icon sm"
-                title="Hide this panel"
-                onClick={() => setPanelOpen(false)}
-                style={{ borderColor: "var(--line)" }}
-              >
-                <Icon name="chev" size={15} c="var(--muted)" />
-              </button>
-            </div>
-
-            {/* legend */}
-            <div className="row" style={{ padding: "0 18px 10px", gap: 16 }}>
-              <span className="row" style={{ gap: 6, fontSize: 12, color: "var(--warm-ink)" }}>
-                <span className="dot warm" /> message
-              </span>
-              <span className="row" style={{ gap: 6, fontSize: 12, color: "var(--sky-ink)" }}>
-                <span className="dot sky" /> reflection
-              </span>
-            </div>
-            <DashRule />
-
-            {/* one feed */}
-            <div className="scroll" style={{ flex: 1, padding: "14px 16px 16px" }}>
-              {feed.length === 0 ? (
-                <span style={{ fontSize: 13.5, color: "var(--faint)" }}>Nothing private yet.</span>
-              ) : (
-                <div className="stack" style={{ gap: 9 }}>
-                  {feed.map((item, i) => (
-                    <PrivateFeedItem key={`${item.kind}-${item.id}-${i}`} item={item} onOpen={() => openItem(item)} />
-                  ))}
+          <div className="stack" style={{ width: panelWidth, flex: "0 0 auto", background: "var(--paper)", paddingRight: 18 }}>
+            {panelCard ? (
+              /* a tapped message/reflection, opened in place — step back to return to the feed */
+              <Hub
+                variant="docked"
+                person={panelCard.person}
+                tab={panelCard.tab}
+                backLabel="Back"
+                backChev
+                onClose={() => setPanelCard(null)}
+                onSend={(body) => replyTo(panelCard.person.id, body)}
+              />
+            ) : (
+              <>
+                {/* header */}
+                <div className="row" style={{ padding: "16px 18px 12px", gap: 9 }}>
+                  <Icon name="lock" size={17} c="var(--warm)" />
+                  <span className="h-title" style={{ fontSize: 20, color: "var(--ink)", whiteSpace: "nowrap" }}>
+                    Privately with you
+                  </span>
+                  <div style={{ flex: 1 }} />
+                  <button
+                    className="btn ghost icon sm"
+                    title="Hide this panel"
+                    onClick={() => setPanelOpen(false)}
+                    style={{ borderColor: "var(--line)" }}
+                  >
+                    <Icon name="chev" size={15} c="var(--muted)" />
+                  </button>
                 </div>
-              )}
-            </div>
+
+                {/* legend */}
+                <div className="row" style={{ padding: "0 18px 10px", gap: 16 }}>
+                  <span className="row" style={{ gap: 6, fontSize: 12, color: "var(--warm-ink)" }}>
+                    <span className="dot warm" /> message
+                  </span>
+                  <span className="row" style={{ gap: 6, fontSize: 12, color: "var(--sky-ink)" }}>
+                    <span className="dot sky" /> reflection
+                  </span>
+                </div>
+                <DashRule />
+
+                {/* one feed */}
+                <div className="scroll" style={{ flex: 1, padding: "14px 16px 16px" }}>
+                  {feed.length === 0 ? (
+                    <span style={{ fontSize: 13.5, color: "var(--faint)" }}>Nothing private yet.</span>
+                  ) : (
+                    <div className="stack" style={{ gap: 9 }}>
+                      {feed.map((item, i) => (
+                        <PrivateFeedItem key={`${item.kind}-${item.id}-${i}`} item={item} onOpen={() => openItemInPanel(item)} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div
