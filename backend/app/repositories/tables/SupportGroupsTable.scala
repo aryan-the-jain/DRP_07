@@ -4,7 +4,7 @@ import models.*
 import slick.jdbc.PostgresProfile.api.*
 import repositories.PeerSupport.Instances.given
 
-import java.time.{LocalTime, DayOfWeek}
+import java.time.{LocalTime, LocalDateTime, DayOfWeek}
 
 class SupportGroupsTable(tag: Tag)
     extends Table[SupportGroup](tag, "support_groups") {
@@ -13,7 +13,7 @@ class SupportGroupsTable(tag: Tag)
   def day = column[DayOfWeek]("day_of_week")
   def time = column[LocalTime]("time")
   def duration = column[Int]("duration")
-  def creationTime = column[LocalTime]("time_of_creation")
+  def creationTime = column[LocalDateTime]("time_of_creation")
   def description = column[Option[String]]("description")
   def hasSessionNow = column[Boolean]("has_session_now")
 
