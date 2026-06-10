@@ -283,7 +283,12 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
             last.map(_.createdAt),
             last.exists(_.fromId == id),
             ref.filter(_.sharedGuided).flatMap(_.facilitatorNote),
-            ref.filter(_.sharedFreeWriting).flatMap(_.freeWriting)
+            ref.filter(_.sharedFreeWriting).flatMap(_.freeWriting),
+            ref.filter(_.sharedGuided) match {
+              case Some(r) => r.sharedGuidedAt
+              case None    =>
+                ref.filter(_.sharedFreeWriting).flatMap(_.sharedFreeWritingAt)
+            }
           )
         }
     }

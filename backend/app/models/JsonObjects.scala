@@ -130,7 +130,8 @@ case class ReturnInboxEntry(
     lastMessageAt: Option[LocalDateTime],
     hasUnread: Boolean,
     sharedFacilitatorNote: Option[String],
-    sharedFreeWriting: Option[String]
+    sharedFreeWriting: Option[String],
+    lastShareAt: Option[LocalDateTime]
 )
 
 case class ReturnIsSessionNow(
