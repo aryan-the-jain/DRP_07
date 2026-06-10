@@ -2,12 +2,14 @@ import { CSSProperties, ReactNode } from "react";
 
 export type IconName =
   | "arrowLeft"
+  | "brush"
   | "check"
   | "clock"
   | "close"
   | "eraser"
   | "externalLink"
   | "heart"
+  | "home"
   | "mail"
   | "people"
   | "pen"
@@ -39,6 +41,12 @@ export function LineIcon({
 
   const paths: Record<IconName, ReactNode> = {
     arrowLeft: <path {...pathProps} d="M13 5 7 11l6 6M7 11h11" />,
+    brush: (
+      <>
+        <path {...pathProps} d="M17 3.5c1 1 .8 3.6-2 6.4L9.9 15l-3-3 5.1-5.1c2.8-2.8 5.4-3 6.4-2Z" />
+        <path {...pathProps} d="M9.9 15c-.5 1.8-2.3 3-4.2 2.6-1.2-.3-2.1-1.5-1.5-2.8.4-.9 1.2-1.5 2.2-1.7L9.9 15Z" />
+      </>
+    ),
     check: <path {...pathProps} d="M4 11l5 5 9-11" />,
     clock: (
       <>
@@ -70,6 +78,15 @@ export function LineIcon({
         {...pathProps}
         d="M11 18S3.5 13 3.5 8.2A3.7 3.7 0 0 1 11 6a3.7 3.7 0 0 1 7.5 2.2C18.5 13 11 18 11 18Z"
       />
+    ),
+    home: (
+      <>
+        <path {...pathProps} d="M3.5 10.5 11 4l7.5 6.5" />
+        <path
+          {...pathProps}
+          d="M5.5 9.7V17a1 1 0 0 0 1 1H9v-4.6h4V18h2.5a1 1 0 0 0 1-1V9.7"
+        />
+      </>
     ),
     mail: (
       <>
@@ -124,7 +141,15 @@ export function LineIcon({
   );
 }
 
-export function BrandMark({ small = false }: { small?: boolean }) {
+export function BrandMark({
+  small = false,
+  markOnly = false,
+}: {
+  small?: boolean;
+  // Render just the concentric-circle mark, no wordmark — used by the
+  // collapsed sidebar rail.
+  markOnly?: boolean;
+}) {
   const ring = small ? "h-6 w-6" : "h-8 w-8";
 
   return (
@@ -133,9 +158,11 @@ export function BrandMark({ small = false }: { small?: boolean }) {
         <span className="absolute inset-1 rounded-full border border-[var(--warm)]" />
         <span className="absolute inset-[9px] rounded-full bg-[var(--warm)]" />
       </span>
-      <span className={`h-title text-[var(--ink)] ${small ? "text-xl" : "text-2xl"}`}>
-        alongside
-      </span>
+      {!markOnly && (
+        <span className={`h-title text-[var(--ink)] ${small ? "text-xl" : "text-2xl"}`}>
+          alongside
+        </span>
+      )}
     </div>
   );
 }

@@ -35,9 +35,9 @@ export function SteadyMePanel() {
   const isFinal = stepIndex >= groundingSteps.length;
 
   return (
-    <div className="sk soft bg-card p-6">
+    <div className="sk soft bg-card p-6 sm:p-10">
       <div
-        className="flex items-center justify-center gap-2"
+        className="flex items-center justify-center gap-2.5"
         aria-hidden="true"
       >
         {groundingSteps.map((_, index) => {
@@ -49,37 +49,37 @@ export function SteadyMePanel() {
                 : "bg-[var(--line)]";
 
           return (
-            <span key={index} className={`h-2.5 w-2.5 rounded-full ${tone}`} />
+            <span key={index} className={`h-3 w-3 rounded-full ${tone}`} />
           );
         })}
       </div>
 
       {isFinal ? (
-        <div className="mt-7 text-center">
-          <h3 className="h-title text-2xl text-calm-ink">
+        <div className="mt-12 text-center">
+          <h3 className="h-title text-3xl text-calm-ink sm:text-4xl">
             You&apos;re here. Well done for taking this moment.
           </h3>
           <button
             type="button"
             onClick={() => setStepIndex(0)}
-            className="btn sm mt-5"
+            className="btn mt-8"
           >
             Start again
           </button>
         </div>
       ) : (
-        <div className="mt-7 text-center">
-          <p className="scrawl text-5xl text-calm-ink">
+        <div className="mt-12 text-center">
+          <p className="scrawl text-7xl text-calm-ink sm:text-8xl">
             {groundingSteps[stepIndex].count}
           </p>
-          <p className="mt-2 text-lg font-semibold text-ink">
+          <p className="mt-3 text-xl font-semibold text-ink sm:text-2xl">
             {groundingSteps[stepIndex].prompt}
           </p>
-          <p className="mt-2 text-[15px] leading-relaxed text-muted">
+          <p className="mt-3 text-base leading-relaxed text-muted sm:text-lg">
             {groundingSteps[stepIndex].hint}
           </p>
 
-          <div className="mt-6 flex items-center justify-center gap-2">
+          <div className="mt-9 flex items-center justify-center gap-2">
             <button
               type="button"
               onClick={() => setStepIndex((index) => Math.max(0, index - 1))}
