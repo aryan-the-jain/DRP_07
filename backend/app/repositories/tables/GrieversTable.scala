@@ -14,8 +14,7 @@ class GrieversTable(tag: Tag) extends Table[Griever](tag, "grievers") {
     grieverId,
     culturalBackground,
     griefRecency,
-    whoLost,
-    onboardingStatus
+    whoLost
   )
     .mapTo[Griever]
 }

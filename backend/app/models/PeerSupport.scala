@@ -32,9 +32,8 @@ case class Participant(
 case class Griever(
     grieverId: Int,
     culturalBackground: Option[String],
-    griefRecency: Option[String], // TODO: ENUM!
-    whoLost: Option[String],
-    onboardingStatus: String // TODO: Enum!!!!!!!!
+    griefRecency: Option[String],
+    whoLost: Option[String]
 )
 
 case class Facilitator(
@@ -153,8 +152,7 @@ case class UpdateOnboarding(
     hobbies: List[String],
     culturalBackground: Option[String],
     griefRecency: Option[String],
-    whoLost: Option[String],
-    status: String
+    whoLost: Option[String]
 )
 
 // Facilitator creates / edits a group. dayOfWeek is a full upper-case name

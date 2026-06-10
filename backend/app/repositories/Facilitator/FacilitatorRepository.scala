@@ -94,13 +94,11 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       }
     }
 
-  /* People who finished onboarding and are not yet in any group. */
+  /* People who have not yet been placed in any group. */
   def arrivals(): Future[Seq[ReturnFacilitatorParticipant]] = {
-    // TODO: Remove magic string!
     val placed = groupParticipants.map(_.participantId)
     val query = for
-      g <- grievers
-      if g.onboardingStatus === "complete" && !g.grieverId.in(placed)
+      g <- grievers if !g.grieverId.in(placed)
       p <- participants if p.participantId === g.grieverId
     yield (
       g.grieverId,
@@ -113,16 +111,11 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       g.culturalBackground,
       g.griefRecency,
       g.whoLost,
-      p.role,
-      g.onboardingStatus
+      p.role
     )
 
     db.run(query.result)
-      .map(
-        _.map(
-          ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, _, None)
-        )
-      )
+      .map(_.map(ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, None)))
   }
 
   /* The full facilitator read of one person, with their group if placed. */
@@ -143,8 +136,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       g.culturalBackground,
       g.griefRecency,
       g.whoLost,
-      p.role,
-      g.onboardingStatus
+      p.role
     )
 
     for {
@@ -157,23 +149,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
           .headOption
       )
     } yield maybe
-      .map(
-        ReturnFacilitatorParticipant(
-          _,
-          _,
-          _,
-          _,
-          _,
-          _,
-          _,
-          _,
-          _,
-          _,
-          _,
-          _,
-          groupId
-        )
-      )
+      .map(ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, groupId))
       .headOption
   }
 

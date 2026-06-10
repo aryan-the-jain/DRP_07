@@ -75,7 +75,6 @@ case class ReturnOnboarding(
     culturalBackground: Option[String],
     griefRecency: Option[String],
     whoLost: Option[String],
-    status: String
 )
 
 // ---- facilitator-side views -------------------------------------------------
@@ -114,7 +113,6 @@ case class ReturnFacilitatorParticipant(
     griefRecency: Option[String],
     whoLost: Option[String],
     role: Role,
-    onboardingStatus: String,
     groupId: Option[Int]
 )
 

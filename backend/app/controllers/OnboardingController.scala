@@ -23,19 +23,8 @@ class OnboardingController @Inject() (
       .map(result => Ok(Json.toJson(result)))
   }
 
-  /* Saves the onboarding survey (a "draft" on "save & come back later", or
-     "complete" on finish).  Drafts are lenient; a complete submission must carry
-     a call name and an age. */
   def saveOnboarding(participantId: Int): Action[JsValue] = createNew(
     onboardingRepository.saveOnboarding(participantId, _),
-    (onboarding: UpdateOnboarding) => isValidOnboarding(onboarding)
+    (onboarding: UpdateOnboarding) => onboarding.callName.trim.nonEmpty
   )
-
-  private def isValidOnboarding(onboarding: UpdateOnboarding): Boolean =
-    onboarding.status match {
-      case "draft"    => true
-      case "complete" =>
-        onboarding.callName.trim.nonEmpty && onboarding.age.isDefined
-      case _ => false
-    }
 }

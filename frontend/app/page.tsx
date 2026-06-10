@@ -212,9 +212,7 @@ export default function Home() {
   }
 
   async function handleExitQuietSpace() {
-    // Save any draft, then return to the group — the chat-room exit behaviour
-    // is unchanged; only the persistence moved into the shared hook.
-    await quiet.persistDraftReflection();
+    await quiet.persistReflection();
     setActiveTab("group");
   }
 
