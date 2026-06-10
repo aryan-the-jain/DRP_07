@@ -135,6 +135,7 @@ type FeedItem = {
 };
 
 function PrivateFeedItem({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
+  const [hovered, setHovered] = useState(false);
   const isMsg = item.kind === "message";
   const accent = isMsg ? "var(--warm)" : "var(--sky)";
   const accentInk = isMsg ? "var(--warm-ink)" : "var(--sky-ink)";
@@ -143,6 +144,8 @@ function PrivateFeedItem({ item, onOpen }: { item: FeedItem; onOpen: () => void 
     <div
       className="sk thin"
       onClick={onOpen}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         padding: "12px 14px 12px 15px",
         display: "flex",
@@ -151,6 +154,8 @@ function PrivateFeedItem({ item, onOpen }: { item: FeedItem; onOpen: () => void 
         cursor: "pointer",
         borderColor: accent,
         borderLeftWidth: 5,
+        background: hovered ? "var(--paper)" : undefined,
+        transition: "background .15s",
       }}
     >
       <Avatar name={item.name} size={36} tone={item.tone} />
@@ -381,11 +386,6 @@ export function ChatDrawer() {
         <div className="scroll" style={{ flex: 1, padding: "26px 40px" }}>
           <div style={{ maxWidth: 760, margin: "0 auto" }}>
             <div className="row" style={{ gap: 11, justifyContent: "center", marginBottom: 22, color: "var(--faint)", fontSize: 14 }}>
-              <span style={{ width: 32, borderTop: "2px dashed var(--line)" }} />
-              <span className="scrawl" style={{ fontSize: 19 }}>
-                the {groupName} · tonight
-              </span>
-              <span style={{ width: 32, borderTop: "2px dashed var(--line)" }} />
             </div>
             {messages.length === 0 ? (
               <div className="row" style={{ justifyContent: "center", color: "var(--muted)", fontSize: 15.5 }}>

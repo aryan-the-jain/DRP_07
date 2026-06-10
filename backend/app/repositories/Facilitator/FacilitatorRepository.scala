@@ -22,7 +22,9 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
   private val participants = TableQuery[ParticipantsTable]
   private val groupParticipants = TableQuery[GroupParticipantsTable]
   private val facilitatorMessages = TableQuery[FacilitatorMessagesTable]
+  private val groupMessages = TableQuery[GroupMessagesTable]
   private val reflections = TableQuery[ReflectionsTable]
+  private val facilitatorGroupNotes = TableQuery[FacilitatorGroupNotesTable]
 
   private def member(p: Participant): ReturnFacilitatorMember =
     ReturnFacilitatorMember(
@@ -163,6 +165,36 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
           )
         )
     )
+
+  /* Facilitator's free-form notes for a group. Returns an empty string if no notes
+     have been saved yet. */
+  def groupNotes(groupId: Int): Future[ReturnGroupNotes] =
+    db.run(
+      facilitatorGroupNotes.filter(_.groupId === groupId).result.headOption
+    ).map {
+      case Some((_, notes, updatedAt)) => ReturnGroupNotes(notes, updatedAt)
+      case None                        => ReturnGroupNotes("", java.time.LocalDateTime.now())
+    }
+
+  /* Upsert the facilitator's notes for a group, stamping the current time. */
+  def upsertGroupNotes(groupId: Int, update: UpdateGroupNotes): Future[ReturnGroupNotes] = {
+    val now = java.time.LocalDateTime.now()
+    val row = (groupId, update.notes, now)
+    db.run(facilitatorGroupNotes.insertOrUpdate(row)).map(_ => ReturnGroupNotes(update.notes, now))
+  }
+
+  /* Delete a group and all data that depends on it, in a single transaction. */
+  def deleteGroup(groupId: Int): Future[Unit] = {
+    val action = DBIO.seq(
+      facilitatorGroupNotes.filter(_.groupId === groupId).delete,
+      groupParticipants.filter(_.groupId === groupId).delete,
+      facilitatorMessages.filter(_.groupId === groupId).delete,
+      groupMessages.filter(_.groupId === groupId).delete,
+      reflections.filter(_.groupId === groupId).delete,
+      supportGroups.filter(_.groupId === groupId).delete
+    ).transactionally
+    db.run(action)
+  }
 
   /* The room rail: for each member, their last private message and the parts of
      their reflection they chose to share. No read-state exists in the DB, so

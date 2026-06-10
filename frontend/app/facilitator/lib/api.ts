@@ -153,3 +153,38 @@ export function sendPrivateMessage(
     "Could not send the message.",
   );
 }
+
+export type GroupNotesResponse = { notes: string; updatedAt: string };
+
+export function fetchGroupNotes(
+  apiUrl: string,
+  groupId: number,
+): Promise<GroupNotesResponse> {
+  return getJson(
+    `${apiUrl}/facilitator/groups/${groupId}/notes`,
+    "Could not load group notes.",
+  );
+}
+
+export function updateGroupNotes(
+  apiUrl: string,
+  groupId: number,
+  notes: string,
+): Promise<GroupNotesResponse> {
+  return send(
+    `${apiUrl}/facilitator/groups/${groupId}/notes`,
+    "PATCH",
+    { notes },
+    "Could not save group notes.",
+  );
+}
+
+export async function deleteGroup(
+  apiUrl: string,
+  groupId: number,
+): Promise<void> {
+  const response = await fetch(`${apiUrl}/facilitator/groups/${groupId}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) throw new Error("Could not delete the group.");
+}

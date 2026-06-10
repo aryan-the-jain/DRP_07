@@ -156,6 +156,8 @@ export type Person = {
   reflections: Reflection[];
 };
 
+export type GroupNotes = { notes: string; updatedAt: string | null };
+
 export type GroupCard = {
   groupId: number;
   name: string;

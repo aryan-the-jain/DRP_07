@@ -118,6 +118,9 @@ case class ReturnFacilitatorParticipant(
     groupId: Option[Int]
 )
 
+// Facilitator's free-form notes about a group (only visible to the facilitator).
+case class ReturnGroupNotes(notes: String, updatedAt: LocalDateTime)
+
 // One row of the room's "privately with you" rail: the member, the last private
 // message, and the sections of their reflection they chose to share.
 case class ReturnInboxEntry(

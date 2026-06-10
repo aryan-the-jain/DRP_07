@@ -61,7 +61,7 @@ function HubTabs({ tab, setTab, m }: { tab: HubTab; setTab: (t: HubTab) => void;
   );
 }
 
-function ProfileHeader({ m, onClose }: { m: Person; onClose?: () => void }) {
+function ProfileHeader({ m, onClose, backLabel }: { m: Person; onClose?: () => void; backLabel?: string }) {
   return (
     <div className="row" style={{ padding: "18px 20px 14px", gap: 14, alignItems: "flex-start" }}>
       <Avatar name={m.name} size={56} tone={m.tone} />
@@ -75,7 +75,15 @@ function ProfileHeader({ m, onClose }: { m: Person; onClose?: () => void }) {
           {m.age && <span>{m.age}</span>}
         </div>
       </div>
-      {onClose && <CloseBtn onClick={onClose} />}
+      {onClose && (
+        backLabel
+          ? (
+            <button className="btn ghost sm" onClick={onClose} style={{ gap: 6 }}>
+              <Icon name="back" size={15} c="var(--muted)" /> {backLabel}
+            </button>
+          )
+          : <CloseBtn onClick={onClose} />
+      )}
     </div>
   );
 }
@@ -202,17 +210,19 @@ export function Hub({
   variant = "docked",
   onClose,
   onSend,
+  backLabel,
 }: {
   person: Person;
   tab?: HubTab;
   variant?: "docked" | "card";
   onClose?: () => void;
   onSend?: (body: string) => void;
+  backLabel?: string;
 }) {
   const [tab, setTab] = useState<HubTab>(initial);
   const body = (
     <>
-      <ProfileHeader m={person} onClose={onClose} />
+      <ProfileHeader m={person} onClose={onClose} backLabel={backLabel} />
       <HubTabs tab={tab} setTab={setTab} m={person} />
       {tab === "about" && <ProfileAbout m={person} />}
       {tab === "message" && <DMThread m={person} onSend={onSend} />}

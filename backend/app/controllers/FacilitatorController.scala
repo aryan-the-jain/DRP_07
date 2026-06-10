@@ -51,6 +51,19 @@ class FacilitatorController @Inject() (
     (_: PlaceParticipant) => true
   )
 
+  def groupNotes(groupId: Int): Action[AnyContent] =
+    facilitatorRepository.groupNotes(groupId).returnOk()
+
+  def updateGroupNotes(groupId: Int): Action[JsValue] = createNew(
+    facilitatorRepository.upsertGroupNotes(groupId, _),
+    (_: UpdateGroupNotes) => true
+  )
+
+  def deleteGroup(groupId: Int): Action[AnyContent] =
+    Action.async {
+      facilitatorRepository.deleteGroup(groupId).map(_ => Ok)
+    }
+
   private def validSchedule(dayOfWeek: String, time: String): Boolean =
     scala.util.Try {
       java.time.DayOfWeek.valueOf(dayOfWeek)

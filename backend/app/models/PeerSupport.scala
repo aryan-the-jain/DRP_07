@@ -170,3 +170,6 @@ case class UpdateGroup(
 case class PlaceParticipant(
     participantId: Int
 )
+
+// Facilitator saves free-form notes about a group (per-group, only they see these).
+case class UpdateGroupNotes(notes: String)

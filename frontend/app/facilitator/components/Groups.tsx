@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, DashRule, Icon, Logo, SoftLabel } from "./Primitives";
-import { CircleBadge, ConfirmPopup, FullProfilePopup, GroupDetailsPopup, Overlay } from "./Overlays";
+import { CircleBadge, ConfirmPopup, Overlay } from "./Overlays";
 import { Hub } from "./Hub";
 import { InvitePanel } from "./Invite";
 import { ArrivalRow } from "./Onboarding";
@@ -32,6 +32,8 @@ import {
   updateGroup,
   type GroupInput,
 } from "../lib/api";
+import { GroupNotesPopup } from "./GroupDetail";
+
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_NAMES = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
@@ -58,25 +60,22 @@ function HoverFace({ name, tone, onClick }: { name: string; tone: GroupCard["mem
 
 // ---- group card -------------------------------------------------------------
 // Every card is the same height (the spacer pushes the primary slot to the bottom), so
-// live and quiet groups line up. The actions sit directly on the card — Details, Invite,
-// Edit, Delete — rather than buried under a ⋯ menu.
+// live and quiet groups line up. Two actions sit directly on the card: Invite (quick
+// access) and Group details (opens the full-window group page with edit/delete/members).
+// The notes icon button is hidden during live sessions.
 function GroupCard({
   c,
-  onDetails,
   onInvite,
-  onEdit,
-  onDelete,
   onAvatar,
-  onRoster,
+  onGroupDetails,
+  onNotes,
   onOpenRoom,
 }: {
   c: GroupCard;
-  onDetails: () => void;
   onInvite: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
   onAvatar: (id: number) => void;
-  onRoster: () => void;
+  onGroupDetails: () => void;
+  onNotes: () => void;
   onOpenRoom: () => void;
 }) {
   const liveish = c.live || c.liveSoon;
@@ -117,9 +116,9 @@ function GroupCard({
           <span style={{ fontSize: 14, color: "var(--faint)" }}>no one placed yet</span>
         )}
         <div style={{ flex: 1 }} />
-        <button className="chip fac-tap" style={{ fontSize: 13, cursor: "pointer" }} onClick={onRoster} title="See everyone in this group">
+        <span className="chip" style={{ fontSize: 13 }}>
           <Icon name="people" size={13} c="var(--muted)" /> {c.members.length}
-        </button>
+        </span>
       </div>
 
       <div style={{ flex: 1, minHeight: 6 }} />
@@ -137,23 +136,17 @@ function GroupCard({
 
       {/* direct actions */}
       <div className="row" style={{ gap: 7 }}>
-        <button className="btn ghost sm" style={{ flex: 1, justifyContent: "center", padding: "7px 6px" }} onClick={onDetails} title="See who’s inside">
-          <Icon name="eye" size={15} c="var(--muted)" /> Details
-        </button>
         <button className="btn ghost sm" style={{ flex: 1, justifyContent: "center", padding: "7px 6px" }} onClick={onInvite} title="Invite someone in">
           <Icon name="mail" size={15} c="var(--muted)" /> Invite
         </button>
-        <button className="btn ghost sm" style={{ flex: 1, justifyContent: "center", padding: "7px 6px" }} onClick={onEdit} title="Edit details">
-          <Icon name="pen" size={15} c="var(--muted)" /> Edit
+        <button className="btn ghost sm" style={{ flex: 1, justifyContent: "center", padding: "7px 6px" }} onClick={onGroupDetails} title="Group details, edit, and more">
+          <Icon name="eye" size={15} c="var(--muted)" /> Group details
         </button>
-        <button
-          className="btn ghost sm icon"
-          onClick={onDelete}
-          title="Delete group"
-          style={{ borderColor: "color-mix(in oklch, var(--warm) 45%, var(--line))" }}
-        >
-          <Icon name="x" size={15} c="var(--warm)" />
-        </button>
+        {!liveish && (
+          <button className="btn ghost sm icon" onClick={onNotes} title="Your notes about this group">
+            <Icon name="note" size={15} c="var(--muted)" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -171,8 +164,8 @@ function Centered({ children }: { children: React.ReactNode }) {
 // ============================================================ HOME
 type HomeModal =
   | { type: "card"; person: Person }
-  | { type: "invite" | "details" | "delete"; group: GroupCard }
-  | { type: "full"; person: Person; group: string }
+  | { type: "invite"; group: GroupCard }
+  | { type: "notes"; group: GroupCard }
   | null;
 
 export function FacHome() {
@@ -299,12 +292,10 @@ export function FacHome() {
                   <GroupCard
                     key={c.groupId}
                     c={c}
-                    onDetails={() => setModal({ type: "details", group: c })}
                     onInvite={() => setModal({ type: "invite", group: c })}
-                    onEdit={() => router.push(`/facilitator/groups/${c.groupId}/edit`)}
-                    onDelete={() => setModal({ type: "delete", group: c })}
                     onAvatar={(id) => openMember(id, c.groupId)}
-                    onRoster={() => router.push(`/facilitator/groups/${c.groupId}/members`)}
+                    onGroupDetails={() => router.push(`/facilitator/groups/${c.groupId}`)}
+                    onNotes={() => setModal({ type: "notes", group: c })}
                     onOpenRoom={() => router.push("/facilitator/room")}
                   />
                 ))}
@@ -360,28 +351,8 @@ export function FacHome() {
         <Overlay onClose={close}>
           {modal.type === "card" && <Hub variant="card" person={modal.person} onClose={close} />}
           {modal.type === "invite" && <InvitePanel group={modal.group} onClose={close} onPlaced={reload} />}
-          {modal.type === "details" && (
-            <GroupDetailsPopup
-              group={modal.group}
-              onClose={close}
-              onInvite={() => setModal({ type: "invite", group: modal.group })}
-              onParticipant={(p) => setModal({ type: "full", person: p, group: modal.group.name })}
-              onSeeEveryone={() => router.push(`/facilitator/groups/${modal.group.groupId}/members`)}
-            />
-          )}
-          {modal.type === "full" && <FullProfilePopup person={modal.person} group={modal.group} onClose={close} />}
-          {modal.type === "delete" && (
-            <ConfirmPopup
-              icon="leaf"
-              accent="var(--warm)"
-              title={`Delete ${modal.group.name}?`}
-              body="The group closes and everyone in it is gently let know and returned home. Nothing they’ve shared is deleted — only the group stops meeting."
-              confirm="Delete group"
-              cancel="Keep it"
-              caption="this can’t be undone — members see a soft goodbye, never a sudden cut-off"
-              onClose={close}
-              onConfirm={close}
-            />
+          {modal.type === "notes" && (
+            <GroupNotesPopup groupId={modal.group.groupId} groupName={modal.group.name} onClose={close} />
           )}
         </Overlay>
       )}

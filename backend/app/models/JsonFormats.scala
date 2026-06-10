@@ -94,4 +94,10 @@ object JsonFormats {
 
   given placeParticipantReads: Reads[PlaceParticipant] =
     Json.reads[PlaceParticipant]
+
+  given updateGroupNotesReads: Reads[UpdateGroupNotes] =
+    Json.reads[UpdateGroupNotes]
+
+  given returnGroupNotesWrites: Writes[ReturnGroupNotes] =
+    Json.writes[ReturnGroupNotes]
 }
