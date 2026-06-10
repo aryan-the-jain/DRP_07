@@ -299,6 +299,7 @@ export function sharedReflections(
 export function groupCardFrom(g: FacGroupResponse): GroupCard {
   const schedule = formatSessionSchedule(g.dayOfWeek, g.scheduledTime);
   const { live, liveSoon } = liveStatus(g.dayOfWeek, g.scheduledTime, g.scheduledDurationMinutes ?? null);
+
   return {
     groupId: g.groupId,
     name: g.name,
@@ -309,7 +310,6 @@ export function groupCardFrom(g: FacGroupResponse): GroupCard {
     durationMinutes: g.scheduledDurationMinutes ?? null,
     description: g.description,
     members: g.members
-      .filter((m) => !isFacilitator(m.role))
       .map((m) => ({ id: m.id, name: m.displayName, tone: toneFor(m.id) })),
   };
 }

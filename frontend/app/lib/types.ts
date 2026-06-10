@@ -15,6 +15,7 @@ export type SupportGroup = {
   scheduledTime?: string;
   // Optional "a few words members will see", set by the facilitator.
   description?: string | null;
+  facilitatorId: number;
 };
 
 export type Participant = {
@@ -24,7 +25,6 @@ export type Participant = {
   initials: string;
   hobbies: string[];
   fact: string;
-  role: string;
 };
 
 export type GroupMessage = {

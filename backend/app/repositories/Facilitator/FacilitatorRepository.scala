@@ -11,8 +11,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import repositories.tables.*
 import repositories.Repository
 
-// Chore: Comment to force railway to redeploy.
-
 /* The facilitator's read/write surface: every group they hold (with members), the
    people who finished onboarding and are waiting to be placed, the full read of a
    person (including the carried loss), placing a person into a group, creating /
