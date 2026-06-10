@@ -1,16 +1,55 @@
 "use client";
 
 import { AvatarCircle, LineIcon } from "../components/DesignPrimitives";
-import { formatSessionSchedule } from "../lib/format";
+import { formatSessionSchedule, liveStatus } from "../lib/format";
 import { participantId } from "../lib/api";
 import { Participant, SupportGroup } from "../lib/types";
 
 type ThisWeekCardProps = {
   group: SupportGroup | null;
   participants: Participant[];
+  // Whether the facilitator has opened the room right now (backend session flag). null
+  // while we're still checking. This — not the clock — gates stepping in.
+  isSessionValid: boolean | null;
   onOpenProfile: (participant: Participant) => void;
   onEnterRoom: () => void;
 };
+
+// A group's "live" / "live soon" badge, mirroring the facilitator's CircleBadge. "live"
+// means the facilitator has opened the room; "live soon" means it's around the scheduled
+// time but they haven't opened it yet.
+function SessionBadge({
+  isSessionValid,
+  live,
+  liveSoon,
+}: {
+  isSessionValid: boolean | null;
+  live: boolean;
+  liveSoon: boolean;
+}) {
+  if (isSessionValid) {
+    return (
+      <span className="chip warm text-[12.5px]">
+        <span
+          className="dot warm"
+          style={{ width: 7, height: 7, animation: "pulse 1.6s infinite" }}
+        />{" "}
+        live
+      </span>
+    );
+  }
+  if (live || liveSoon) {
+    return (
+      <span
+        className="chip text-[12.5px]"
+        style={{ borderColor: "var(--warm)", color: "var(--warm-ink)" }}
+      >
+        <span className="dot warm" style={{ width: 7, height: 7 }} /> live soon
+      </span>
+    );
+  }
+  return null;
+}
 
 // A single avatar that lifts and reveals its name on hover, and opens the full
 // profile on click — shared by the facilitator face and the member row.
@@ -60,6 +99,7 @@ function HoverAvatar({
 export function ThisWeekCard({
   group,
   participants,
+  isSessionValid,
   onOpenProfile,
   onEnterRoom,
 }: ThisWeekCardProps) {
@@ -68,60 +108,99 @@ export function ThisWeekCard({
   const members = participants.filter((p) => p.role !== "facilitator");
   // "Others" who'll be there — the members excluding the current participant.
   const others = members.filter((p) => p.id !== participantId);
+  // Schedule-derived status drives only the badge/label; joinability is isSessionValid.
+  const { live, liveSoon } = liveStatus(
+    group?.dayOfWeek,
+    group?.scheduledTime,
+    group?.scheduledDurationMinutes,
+  );
+  const facilitatorFirstName =
+    facilitator?.displayName?.split(" ")[0] ?? "the facilitator";
 
   return (
     <section className="sk v2 bg-card p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-2.5">
             <p className="leader [color:var(--warm)]">
               This week
               {schedule?.dateLabel ? ` · ${schedule.dayLabel} ${schedule.dateLabel}` : ""}
             </p>
-            {schedule?.relative && (
-              <span className="chip warm px-2.5 py-0.5 text-[12.5px]">
-                {schedule.relative}
-              </span>
-            )}
           </div>
-          <h2 className="h-title mt-1 text-2xl text-ink">
-            {group?.name ?? "Your group"}
-          </h2>
+          <div className="mt-1 flex flex-wrap items-center gap-2.5">
+            <h2 className="h-title text-2xl text-ink">
+              {group?.name ?? "Your group"}
+            </h2>
+            <SessionBadge
+              isSessionValid={isSessionValid}
+              live={live}
+              liveSoon={liveSoon}
+            />
+          </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[15px] text-muted">
+            <span className="flex items-center gap-2">
             {schedule?.timeLabel && (
-              <span className="flex items-center gap-2">
-                <LineIcon name="clock" size={16} className="[color:var(--warm)]" />
-                {schedule.timeLabel}
+              <>
+                <LineIcon name="clock" size={16} className="[color:var(--muted)]" />
+                {schedule.dayLabel}s · {schedule.timeLabel} · 
                 {group?.scheduledDurationMinutes != null && (
                   <span className="text-muted text-[15px]">
-                    · {group.scheduledDurationMinutes} min
+                     {group.scheduledDurationMinutes} min
                   </span>
                 )}
-              </span>
+                <span className="flex items-center gap-1.5 text-muted text-[15px]">
+                  · <LineIcon name="people" size={15} /> {members.length}
+                </span>
+                </>
             )}
             {facilitator && (
-              <span className="flex items-center gap-2">
-                held by{" "}
+              <>
+                · held by{" "}
                 <HoverAvatar
                   participant={facilitator}
                   onOpenProfile={onOpenProfile}
                   size="h-7 w-7 text-xs"
                 />
                 <span className="text-ink">{facilitator.displayName}</span>
-              </span>
+              </>
             )}
+            </span>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onEnterRoom}
-          className="btn warm inline-flex items-center gap-2"
-        >
-          <LineIcon name="people" size={16} />
-          Step into the room
-        </button>
+        {isSessionValid ? (
+          <button
+            type="button"
+            onClick={onEnterRoom}
+            className="btn warm inline-flex shrink-0 items-center gap-2"
+          >
+            <LineIcon name="people" size={16} />
+            Step into the room
+          </button>
+        ) : (
+          // The room isn't open yet — mirror the facilitator's dashed "next session" slot.
+          // A passed scheduled time without an open room means the facilitator hasn't
+          // started yet, so we say the room opens soon rather than letting anyone in. Kept
+          // compact and non-wrapping (shrink-0) so it stays pinned top-right like the
+          // active button.
+          <div
+            className="btn ghost inline-flex shrink-0 items-center gap-2 whitespace-nowrap"
+            style={{ borderStyle: "dashed", cursor: "default", opacity: 0.85 }}
+            title={
+              live || liveSoon
+                ? `${facilitatorFirstName} hasn't opened the room yet`
+                : undefined
+            }
+          >
+            <LineIcon name="clock" size={15} className="[color:var(--muted)]" />
+            {live || liveSoon
+              ? "The room opens soon"
+              : schedule?.relative
+                ? `Next session ${schedule.relative}`
+                : "Next session soon"}
+          </div>
+        )}
       </div>
 
       <p className="mt-3 text-[15.5px] leading-relaxed text-ink">

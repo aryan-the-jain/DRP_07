@@ -114,6 +114,29 @@ export function formatSessionSchedule(
   };
 }
 
+// Whether a group's session is happening now ("live") or hasn't started yet today
+// ("liveSoon"), derived from the schedule + duration against the current time. Mirrors the
+// facilitator's liveStatus — used here only for the dashboard card's badge/labels; actual
+// joinability is gated on the backend session flag, not the clock.
+export function liveStatus(
+  dayOfWeek?: string,
+  scheduledTime?: string,
+  durationMinutes?: number | null,
+  now: Date = new Date(),
+): { live: boolean; liveSoon: boolean } {
+  if (!dayOfWeek || !scheduledTime) return { live: false, liveSoon: false };
+  const idx = WEEKDAY_INDEX[dayOfWeek.toUpperCase()];
+  if (idx === undefined || now.getDay() !== idx) return { live: false, liveSoon: false };
+  const [hStr, mStr] = scheduledTime.split(":");
+  const start = new Date(now);
+  start.setHours(Number(hStr), Number(mStr ?? "0"), 0, 0);
+  const end = new Date(start);
+  end.setMinutes(end.getMinutes() + (durationMinutes ?? 60));
+  if (now >= start && now < end) return { live: true, liveSoon: false };
+  if (now < start) return { live: false, liveSoon: true };
+  return { live: false, liveSoon: false };
+}
+
 export function initialsFor(name: string) {
   return name
     .split(" ")

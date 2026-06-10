@@ -5,7 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 
 import { BrandMark, LineIcon } from "../components/DesignPrimitives";
 import { ParticipantProfileModal } from "../components/ParticipantProfileModal";
-import { fallbackApiUrl, fetchGroup, fetchParticipants, participantId } from "../lib/api";
+import {
+  fallbackApiUrl,
+  fetchGroup,
+  fetchParticipants,
+  fetchSessionValid,
+  participantId,
+} from "../lib/api";
 import { Participant, SupportGroup } from "../lib/types";
 import { ThisWeekCard } from "./ThisWeekCard";
 import { WeatherCheckIn } from "./WeatherCheckIn";
@@ -21,6 +27,7 @@ export default function DashboardPage() {
 
   const [group, setGroup] = useState<SupportGroup | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [isSessionValid, setIsSessionValid] = useState<boolean | null>(null);
   const [selectedParticipant, setSelectedParticipant] =
     useState<Participant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,12 +55,32 @@ export default function DashboardPage() {
         .finally(() => {
           if (active) setIsLoading(false);
         });
+
+      // Check (and keep checking) whether the facilitator has opened the room, so the
+      // "Step into the room" button activates the moment they do. Failures are swallowed:
+      // a dropped poll just keeps the last known state rather than disrupting the page.
+      fetchSessionValid(apiUrl)
+        .then((valid) => {
+          if (active) setIsSessionValid(valid);
+        })
+        .catch(() => {});
     }, 0);
 
     return () => {
       active = false;
       window.clearTimeout(timeoutId);
     };
+  }, [apiUrl]);
+
+  // Poll the session flag on a gentle cadence (matching the chat room's message polling).
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      fetchSessionValid(apiUrl)
+        .then(setIsSessionValid)
+        .catch(() => {});
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
   }, [apiUrl]);
 
   // Close the profile modal on Escape, matching the chat room.
@@ -109,6 +136,7 @@ export default function DashboardPage() {
                 <ThisWeekCard
                   group={group}
                   participants={participants}
+                  isSessionValid={isSessionValid}
                   onOpenProfile={setSelectedParticipant}
                   onEnterRoom={() => router.push("/")}
                 />
