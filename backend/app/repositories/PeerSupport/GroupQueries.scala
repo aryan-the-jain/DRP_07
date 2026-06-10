@@ -126,12 +126,19 @@ class GroupQueries(
     for g <- groups if g.groupId === groupId
     yield g.hasSessionNow
 
-  private def updateSession(groupId: Int, flag: Boolean): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
+  private def updateSession(
+      groupId: Int,
+      flag: Boolean
+  ): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
     groups.filter(_.groupId === groupId).map(_.hasSessionNow).update(flag)
 
-  def startSession(groupId: Int): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
+  def startSession(
+      groupId: Int
+  ): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
     updateSession(groupId, true)
 
-  def endSession(groupId: Int): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
+  def endSession(
+      groupId: Int
+  ): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
     updateSession(groupId, false)
 }
