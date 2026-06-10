@@ -173,26 +173,32 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       facilitatorGroupNotes.filter(_.groupId === groupId).result.headOption
     ).map {
       case Some((_, notes, updatedAt)) => ReturnGroupNotes(notes, updatedAt)
-      case None                        => ReturnGroupNotes("", java.time.LocalDateTime.now())
+      case None => ReturnGroupNotes("", java.time.LocalDateTime.now())
     }
 
   /* Upsert the facilitator's notes for a group, stamping the current time. */
-  def upsertGroupNotes(groupId: Int, update: UpdateGroupNotes): Future[ReturnGroupNotes] = {
+  def upsertGroupNotes(
+      groupId: Int,
+      update: UpdateGroupNotes
+  ): Future[ReturnGroupNotes] = {
     val now = java.time.LocalDateTime.now()
     val row = (groupId, update.notes, now)
-    db.run(facilitatorGroupNotes.insertOrUpdate(row)).map(_ => ReturnGroupNotes(update.notes, now))
+    db.run(facilitatorGroupNotes.insertOrUpdate(row))
+      .map(_ => ReturnGroupNotes(update.notes, now))
   }
 
   /* Delete a group and all data that depends on it, in a single transaction. */
   def deleteGroup(groupId: Int): Future[Unit] = {
-    val action = DBIO.seq(
-      facilitatorGroupNotes.filter(_.groupId === groupId).delete,
-      groupParticipants.filter(_.groupId === groupId).delete,
-      facilitatorMessages.filter(_.groupId === groupId).delete,
-      groupMessages.filter(_.groupId === groupId).delete,
-      reflections.filter(_.groupId === groupId).delete,
-      supportGroups.filter(_.groupId === groupId).delete
-    ).transactionally
+    val action = DBIO
+      .seq(
+        facilitatorGroupNotes.filter(_.groupId === groupId).delete,
+        groupParticipants.filter(_.groupId === groupId).delete,
+        facilitatorMessages.filter(_.groupId === groupId).delete,
+        groupMessages.filter(_.groupId === groupId).delete,
+        reflections.filter(_.groupId === groupId).delete,
+        supportGroups.filter(_.groupId === groupId).delete
+      )
+      .transactionally
     db.run(action)
   }
 
