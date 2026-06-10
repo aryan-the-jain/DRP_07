@@ -37,7 +37,7 @@ INSERT INTO grievers (griever_id, cultural_background, grief_recency, who_lost, 
     (12, NULL, 'Longer ago', 'partner', 'complete'),
     (13, 'British-Egyptian', 'A few months ago', 'rather_not_say', 'complete');
 
-INSERT INTO facilitators VALUES (facilitator_id, logistics)
+INSERT INTO facilitators (facilitator_id, logistics)
   VALUES (8, 'Office hours: 9am - 5:30pm every day');
 
 
