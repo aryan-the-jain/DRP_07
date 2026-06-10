@@ -64,6 +64,14 @@ class FacilitatorController @Inject() (
       facilitatorRepository.deleteGroup(groupId).map(_ => Ok)
     }
 
+  def getNotePrompts(groupId: Int): Action[AnyContent] =
+    facilitatorRepository.getNotePrompts(groupId).returnOk()
+
+  def setNotePrompts(groupId: Int): Action[JsValue] = createNew(
+    facilitatorRepository.setNotePrompts(groupId, _),
+    _ => true
+  )
+
   private def validSchedule(dayOfWeek: String, time: String): Boolean =
     scala.util.Try {
       java.time.DayOfWeek.valueOf(dayOfWeek)
