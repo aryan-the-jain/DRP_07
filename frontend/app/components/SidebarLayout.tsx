@@ -35,7 +35,7 @@ const MOBILE_BREAKPOINT = 768;
 const WORLD_KEY = "sidebar.world";
 type World = "home" | "group";
 
-// Home sits above the "Quiet room" header; the rest collapse under it.
+// Home sits above the "Quiet space" header; the rest collapse under it.
 const HOME_ITEM = SIDEBAR_GROUPS[0];
 const QUIET_GROUPS = SIDEBAR_GROUPS.slice(1);
 
@@ -310,7 +310,7 @@ export function SidebarLayout({
                     aria-expanded={quietRoomOpen}
                     className="leader mt-2 flex items-center justify-between gap-2 px-3.5 pb-1 pt-1 transition hover:text-ink"
                   >
-                    <span>Quiet room</span>
+                    <span>Quiet space</span>
                     <LineIcon
                       name="arrowLeft"
                       size={13}
