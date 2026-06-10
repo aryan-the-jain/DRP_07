@@ -138,3 +138,8 @@ case class ReturnInboxEntry(
 case class ReturnIsSessionNow(
     isSessionNow: Boolean
 )
+
+case class ReturnNotePrompts(
+    creationReason: String,
+    safeguardingConcerns: String
+)

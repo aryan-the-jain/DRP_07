@@ -225,8 +225,8 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
     db.run(
       facilitatorGroupNotes.filter(_.groupId === groupId).result.headOption
     ).map {
-      case Some((_, notes, updatedAt)) => ReturnGroupNotes(notes, updatedAt)
-      case None                        => ReturnGroupNotes("", getCurrentTime())
+      case Some(fn) => ReturnGroupNotes(fn.notes, fn.updatedAt)
+      case None     => ReturnGroupNotes("", getCurrentTime())
     }
 
   /* Upsert the facilitator's notes for a group, stamping the current time. */
@@ -235,9 +235,12 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       update: UpdateGroupNotes
   ): Future[ReturnGroupNotes] = {
     val now = getCurrentTime()
-    val row = (groupId, update.notes, now)
-    db.run(facilitatorGroupNotes.insertOrUpdate(row))
-      .map(_ => ReturnGroupNotes(update.notes, now))
+    db.run {
+      facilitatorGroupNotes
+        .filter(_.groupId === groupId)
+        .map(g => (g.notes, g.updatedAt))
+        .update((update.notes, now))
+    }.map(_ => ReturnGroupNotes(update.notes, now))
   }
 
   /* Delete a group and all data that depends on it, in a single transaction. */
@@ -294,4 +297,19 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
           )
         }
     }
+
+  def getNotePrompts(groupId: Int): Future[Seq[ReturnNotePrompts]] =
+    db.run(
+      facilitatorGroupNotes.filter(_.groupId === groupId).result
+    ).map(
+      _.map(n => ReturnNotePrompts(n.creationReason, n.safeguardingConcerns))
+    )
+
+  def setNotePrompts(groupId: Int, update: UpdateNotePrompts): Future[Int] =
+    db.run(
+      facilitatorGroupNotes
+        .filter(_.groupId === groupId)
+        .map(n => (n.creationReason, n.safeguardingConcerns))
+        .update(update.creationReason, update.safeguardingConcerns)
+    )
 }

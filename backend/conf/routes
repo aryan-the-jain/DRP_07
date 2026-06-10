@@ -41,3 +41,5 @@ PATCH   /facilitator/groups/:groupId/notes         controllers.FacilitatorContro
 POST    /facilitator/groups/:groupId/participants  controllers.FacilitatorController.placeParticipant(groupId: Int)
 GET     /facilitator/arrivals                      controllers.FacilitatorController.arrivals
 GET     /facilitator/participants/:participantId   controllers.FacilitatorController.participant(participantId: Int)
+GET     /facilitator/groups/:groupId/note-prompts  controllers.FacilitatorController.getNotePrompts(groupId: Int)
+PATCH   /facilitator/groups/:groupId/note-prompts  controllers.FacilitatorController.setNotePrompts(groupId: Int)

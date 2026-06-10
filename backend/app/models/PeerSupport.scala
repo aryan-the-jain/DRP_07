@@ -183,4 +183,19 @@ case class PlaceParticipant(
 )
 
 // Facilitator saves free-form notes about a group (per-group, only they see these).
-case class UpdateGroupNotes(notes: String)
+case class UpdateGroupNotes(
+    notes: String
+)
+
+case class UpdateNotePrompts(
+    creationReason: String,
+    safeguardingConcerns: String
+)
+
+case class FacilitatorNotes(
+    groupId: Int,
+    notes: String,
+    updatedAt: LocalDateTime,
+    creationReason: String,
+    safeguardingConcerns: String
+)
