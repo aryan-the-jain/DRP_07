@@ -17,8 +17,7 @@ case class ReturnParticipant(
     pronouns: Option[String],
     initials: String,
     hobbies: List[String],
-    fact: String,
-    role: Role
+    fact: String
 )
 
 case class ReturnGroupMessage(
@@ -85,8 +84,7 @@ case class ReturnFacilitatorMember(
     id: Int,
     displayName: String,
     initials: String,
-    pronouns: Option[String],
-    role: Role
+    pronouns: Option[String]
 )
 
 // A group the facilitator holds, with its members.
@@ -113,7 +111,6 @@ case class ReturnFacilitatorParticipant(
     culturalBackground: Option[String],
     griefRecency: Option[String],
     whoLost: Option[String],
-    role: Role,
     onboardingStatus: String,
     groupId: Option[Int]
 )

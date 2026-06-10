@@ -4,18 +4,24 @@ import java.time.LocalDateTime
 import java.time.DayOfWeek
 import java.time.LocalTime
 
-enum Role(val show: String) {
-  case PARTICIPANT extends Role("participant")
-  case FACILITATOR extends Role("facilitator")
-}
-
 case class SupportGroup(
     groupId: Int,
     name: String,
     day: DayOfWeek,
     time: LocalTime,
     duration: Int, // TODO: Irontype
-    description: Option[String]
+    description: Option[String],
+    facilitatorId: Int
+)
+
+case class Facilitator(
+    facilitatorId: Int,
+    name: String,
+    initials: String,
+    fact: String,
+    pronouns: String,
+    age: String,
+    hobbies: String
 )
 
 case class Participant(
@@ -29,7 +35,6 @@ case class Participant(
     fact: String,
     griefRecency: Option[String], // TODO: ENUM!
     whoLost: Option[String],
-    role: Role,
     onboardingStatus: String // TODO: Enum!!!!!!!!
 )
 
@@ -155,7 +160,8 @@ case class CreateGroup(
     dayOfWeek: String,
     scheduledTime: String,
     scheduledDurationMinutes: Int,
-    description: Option[String]
+    description: Option[String],
+    facilitatorId: Int
 )
 
 case class UpdateGroup(

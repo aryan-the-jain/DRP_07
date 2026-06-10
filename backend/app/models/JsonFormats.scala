@@ -9,8 +9,6 @@ object JsonFormats {
   given localDateTimeWrites: Writes[LocalDateTime] =
     Writes(time => JsString(time.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
 
-  given roleWrites: Writes[Role] = Writes(role => JsString(role.show))
-
   given createSupportRequestReads: Reads[CreateSupportRequest] =
     Json.reads[CreateSupportRequest]
 

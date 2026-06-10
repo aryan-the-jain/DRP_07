@@ -14,13 +14,14 @@ import repositories.Repository
 @Singleton
 class PeerSupportRepository @Inject() (executionContext: ExecutionContext)
     extends Repository(executionContext) {
+  private val facilitators = TableQuery[FacilitatorsTable]
   private val supportGroups = TableQuery[SupportGroupsTable]
   private val participants = TableQuery[ParticipantsTable]
   private val groupParticipants = TableQuery[GroupParticipantsTable]
   private val groupMessages = TableQuery[GroupMessagesTable]
 
   private val groupQuerier =
-    GroupQueries(supportGroups, groupParticipants, participants)
+    GroupQueries(facilitators, supportGroups, groupParticipants, participants)
   private val groupMessageQuerier = GroupMessageQueries(groupMessages)
 
   def findGroup(groupId: Int): Future[ReturnSupportGroup] =

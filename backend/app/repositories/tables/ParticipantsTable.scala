@@ -16,10 +16,9 @@ class ParticipantsTable(tag: Tag)
   def age = column[Option[String]]("age")
   def culturalBackground = column[Option[String]]("cultural_background")
   def hobbies = column[List[String]]("hobbies")
-  def fact = column[String]("fun_fact")
+  def fact = column[String]("fact")
   def griefRecency = column[Option[String]]("grief_recency")
   def whoLost = column[Option[String]]("who_lost")
-  def role = column[Role]("role")
   def onboardingStatus = column[String]("onboarding_status")
 
   def * = (
@@ -33,7 +32,6 @@ class ParticipantsTable(tag: Tag)
     fact,
     griefRecency,
     whoLost,
-    role,
     onboardingStatus
   )
     .mapTo[Participant]

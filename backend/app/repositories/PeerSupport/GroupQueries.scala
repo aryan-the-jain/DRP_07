@@ -7,12 +7,14 @@ import Instances.given
 import java.time.{DayOfWeek, LocalTime}
 import play.api.http.MediaRange.parse
 import repositories.tables.{
+  FacilitatorsTable,
   SupportGroupsTable,
   GroupParticipantsTable,
   ParticipantsTable
 }
 
 class GroupQueries(
+    private val facilitators: TableQuery[FacilitatorsTable],
     private val groups: TableQuery[SupportGroupsTable],
     private val groupParticipants: TableQuery[GroupParticipantsTable],
     private val participants: TableQuery[ParticipantsTable]
@@ -33,18 +35,14 @@ class GroupQueries(
   ] = {
     for
       g <- groups if g.groupId === groupId
-      gp <- groupParticipants if gp.groupId === g.groupId
-      p <- participants
-      if gp.participantId === p.participantId && p.role === Role.FACILITATOR
-    yield (g.name, p.name, g.duration, g.day, g.time, g.description)
+      f <- facilitators if f.facilitatorId === g.facilitatorId
+    yield (g.name, f.name, g.duration, g.day, g.time, g.description)
   }
 
   /* Selects the participant ID of the group facilitator. */
   def selectFacilitator(groupId: Int): Query[(Rep[Int]), Int, Seq] = {
-    for
-      gp <- groupParticipants if gp.groupId === groupId
-      p <- participants if p.role === Role.FACILITATOR
-    yield p.participantId
+    for g <- groups if g.groupId === groupId
+    yield g.facilitatorId
   }
 
   /* Returns all of the participants in a group and their (visible) information. */
@@ -55,10 +53,9 @@ class GroupQueries(
         Rep[Option[String]],
         Rep[String],
         Rep[List[String]],
-        Rep[String],
-        Rep[Role]
+        Rep[String]
     ),
-    (Int, String, Option[String], String, List[String], String, Role),
+    (Int, String, Option[String], String, List[String], String),
     Seq
   ] = {
     val ps = for
@@ -70,10 +67,9 @@ class GroupQueries(
       p.pronouns,
       p.initials,
       p.hobbies,
-      p.fact,
-      p.role
+      p.fact
     )
-    ps.sortBy(p => (p._7.desc, p._2.asc))
+    ps.sortBy(p => p._2.asc)
   }
 
   /* Returns the list of all groups that the given user is in. */
@@ -103,10 +99,9 @@ class GroupQueries(
         Rep[Option[String]],
         Rep[String],
         Rep[List[String]],
-        Rep[String],
-        Rep[Role]
+        Rep[String]
     ),
-    (Int, String, Option[String], String, List[String], String, Role),
+    (Int, String, Option[String], String, List[String], String),
     Seq
   ] = {
     for p <- participants if p.participantId === participantId
@@ -116,8 +111,7 @@ class GroupQueries(
       p.pronouns,
       p.initials,
       p.hobbies,
-      p.fact,
-      p.role
+      p.fact
     )
   }
 }

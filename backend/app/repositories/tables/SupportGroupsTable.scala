@@ -14,6 +14,8 @@ class SupportGroupsTable(tag: Tag)
   def time = column[LocalTime]("time")
   def duration = column[Int]("duration")
   def description = column[Option[String]]("description")
+  def facilitatorId = column[Int]("facilitator_id")
 
-  def * = (groupId, name, day, time, duration, description).mapTo[SupportGroup]
+  def * = (groupId, name, day, time, duration, description, facilitatorId)
+    .mapTo[SupportGroup]
 }
