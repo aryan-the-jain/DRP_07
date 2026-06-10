@@ -14,13 +14,9 @@ class ParticipantsTable(tag: Tag)
   def pronouns = column[Option[String]]("pronouns")
   def initials = column[String]("initials")
   def age = column[Option[String]]("age")
-  def culturalBackground = column[Option[String]]("cultural_background")
   def hobbies = column[List[String]]("hobbies")
   def fact = column[String]("fun_fact")
-  def griefRecency = column[Option[String]]("grief_recency")
-  def whoLost = column[Option[String]]("who_lost")
   def role = column[Role]("role")
-  def onboardingStatus = column[String]("onboarding_status")
 
   def * = (
     participantId,
@@ -28,13 +24,9 @@ class ParticipantsTable(tag: Tag)
     pronouns,
     initials,
     age,
-    culturalBackground,
     hobbies,
     fact,
-    griefRecency,
-    whoLost,
-    role,
-    onboardingStatus
+    role
   )
     .mapTo[Participant]
 }

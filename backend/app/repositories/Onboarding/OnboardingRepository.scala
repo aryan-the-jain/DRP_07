@@ -6,7 +6,7 @@ import slick.jdbc.PostgresProfile.api.*
 import javax.inject.*
 import scala.concurrent.{ExecutionContext, Future}
 
-import repositories.tables.ParticipantsTable
+import repositories.tables.{GrieversTable, ParticipantsTable}
 import repositories.Repository
 import models.*
 
@@ -14,7 +14,8 @@ import models.*
 class OnboardingRepository @Inject() (executionContext: ExecutionContext)
     extends Repository(executionContext) {
   private val participants = TableQuery[ParticipantsTable]
-  private val querier = OnboardingQueries(participants)
+  private val grievers = TableQuery[GrieversTable]
+  private val querier = OnboardingQueries(grievers, participants)
 
   def onboarding(participantId: Int): Future[Option[ReturnOnboarding]] = {
     val query = querier.selectAllOnboardingInformation(participantId)

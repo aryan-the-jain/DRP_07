@@ -20,6 +20,8 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
     extends Repository(executionContext) {
   private val supportGroups = TableQuery[SupportGroupsTable]
   private val participants = TableQuery[ParticipantsTable]
+  private val facilitators = TableQuery[FacilitatorsTable]
+  private val grievers = TableQuery[GrieversTable]
   private val groupParticipants = TableQuery[GroupParticipantsTable]
   private val facilitatorMessages = TableQuery[FacilitatorMessagesTable]
   private val groupMessages = TableQuery[GroupMessagesTable]
@@ -35,25 +37,36 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       p.role
     )
 
-  private def detail(
-      p: Participant,
-      groupId: Option[Int]
-  ): ReturnFacilitatorParticipant =
-    ReturnFacilitatorParticipant(
-      p.participantId,
-      p.name,
-      p.pronouns,
-      p.age,
-      p.initials,
-      p.fact,
-      p.hobbies,
-      p.culturalBackground,
-      p.griefRecency,
-      p.whoLost,
-      p.role,
-      p.onboardingStatus,
-      groupId
-    )
+  // private def detail(
+  //     participantId: Int,
+  //     name: String,
+  //     pronouns: Option[String],
+  //     age: Option[String],
+  //     initials: String,
+  //     fact: String,
+  //     hobbies: List[String],
+  //     culturalBackground: Option[String],
+  //     griefRecency: Option[String],
+  //     whoLost: Option[String],
+  //     role: Role,
+  //     onboardingStatus: String,
+  //     groupId: Option[Int]
+  // ): ReturnFacilitatorParticipant =
+  //   ReturnFacilitatorParticipant(
+  //     participantId,
+  //     name,
+  //     pronouns,
+  //     age,
+  //     initials,
+  //     fact,
+  //     hobbies,
+  //     culturalBackground,
+  //     griefRecency,
+  //     whoLost,
+  //     role,
+  //     onboardingStatus,
+  //     groupId
+  //   )
 
   /* Every group, each with its member summaries. Scheduling is left as the raw
      day/time so the frontend can format "live tonight" / "next …" itself. */
@@ -83,23 +96,28 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
 
   /* People who finished onboarding and are not yet in any group. */
   def arrivals(): Future[Seq[ReturnFacilitatorParticipant]] = {
+    // TODO: Remove magic string!
     val placed = groupParticipants.map(_.participantId)
-    val query = participants.filter(p =>
-      p.onboardingStatus === "complete" &&
-        p.role === (Role.PARTICIPANT: Role) &&
-        !p.participantId.in(placed)
-    )
-    db.run(query.result).map(_.map(p => detail(p, None)))
+    val query = for
+      g <- grievers if g.onboardingStatus === "complete" && !g.grieverId.in(placed)
+      p <- participants if p.participantId === g.grieverId
+    yield (g.grieverId, p.name, p.pronouns, p.age, p.initials, p.fact, p.hobbies, g.culturalBackground, g.griefRecency, g.whoLost, p.role, g.onboardingStatus)
+    
+    db.run(query.result).map(_.map(ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, _, None)))
   }
 
   /* The full facilitator read of one person, with their group if placed. */
   def participant(
       participantId: Int
-  ): Future[Option[ReturnFacilitatorParticipant]] =
+
+  ): Future[Option[ReturnFacilitatorParticipant]] = {
+    val query = for
+      g <- grievers if g.grieverId === participantId
+      p <- participants if p.participantId === g.grieverId
+    yield (g.grieverId, p.name, p.pronouns, p.age, p.initials, p.fact, p.hobbies, g.culturalBackground, g.griefRecency, g.whoLost, p.role, g.onboardingStatus)
+    
     for {
-      maybe <- db.run(
-        participants.filter(_.participantId === participantId).result.headOption
-      )
+      maybe <- db.run(query.result)
       groupId <- db.run(
         groupParticipants
           .filter(_.participantId === participantId)
@@ -107,7 +125,8 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
           .result
           .headOption
       )
-    } yield maybe.map(p => detail(p, groupId))
+    } yield maybe.map(ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, _, groupId)).headOption
+  }
 
   /* Place a person into a group — idempotent (no-op if already a member). */
   def place(groupId: Int, place: PlaceParticipant): Future[Int] = {

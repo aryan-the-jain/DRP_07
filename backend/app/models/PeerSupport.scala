@@ -24,13 +24,22 @@ case class Participant(
     pronouns: Option[String],
     initials: String,
     age: Option[String], // TODO: Convert to enum!!
-    culturalBackground: Option[String],
     hobbies: List[String],
     fact: String,
+    role: Role,
+)
+
+case class Griever(
+    grieverId: Int,
+    culturalBackground: Option[String],
     griefRecency: Option[String], // TODO: ENUM!
     whoLost: Option[String],
-    role: Role,
     onboardingStatus: String // TODO: Enum!!!!!!!!
+)
+
+case class Facilitator(
+    facilitatorId: Int,
+    logistics: String
 )
 
 case class GroupParticipants(
