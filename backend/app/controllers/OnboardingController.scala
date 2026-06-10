@@ -25,6 +25,7 @@ class OnboardingController @Inject() (
 
   def saveOnboarding(participantId: Int): Action[JsValue] = createNew(
     onboardingRepository.saveOnboarding(participantId, _),
-    (onboarding: UpdateOnboarding) => onboarding.callName.trim.nonEmpty
+    (onboarding: UpdateOnboarding) =>
+      onboarding.callName.trim.nonEmpty && onboarding.age.isDefined
   )
 }

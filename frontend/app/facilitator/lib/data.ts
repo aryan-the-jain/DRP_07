@@ -42,7 +42,6 @@ export type FacParticipantResponse = {
   griefRecency: string | null;
   whoLost: string | null;
   role: string;
-  onboardingStatus: string;
   groupId: number | null;
 };
 
