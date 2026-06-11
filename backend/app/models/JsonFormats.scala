@@ -100,4 +100,13 @@ object JsonFormats {
 
   given returnGroupNotesWrites: Writes[ReturnGroupNotes] =
     Json.writes[ReturnGroupNotes]
+
+  given returnIsSessionNow: Writes[ReturnIsSessionNow] =
+    Json.writes[ReturnIsSessionNow]
+
+  given returnNotePrompts: Writes[ReturnNotePrompts] =
+    Json.writes[ReturnNotePrompts]
+
+  given updateNotePrompts: Reads[UpdateNotePrompts] =
+    Json.reads[UpdateNotePrompts]
 }

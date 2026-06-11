@@ -6,7 +6,6 @@ import { LineIcon } from "../../../components/DesignPrimitives";
 import { GroupTabs } from "../../../components/quiet/GroupTabs";
 import { QuietSpaceFrame } from "../../../components/quiet/QuietSpaceFrame";
 import { FreeWritingField } from "../../../components/quiet/ReflectionFields";
-import { SaveDraftButton } from "../../../components/quiet/SaveDraftButton";
 import { ShareReflectionDialog } from "../../../components/quiet/ShareReflectionDialog";
 import { WRITE_TABS } from "../../../lib/nav";
 import { useQuietSpaceContext } from "../../../lib/QuietSpaceContext";
@@ -62,12 +61,7 @@ export default function FreeWritingPage() {
         heading="Free writing"
         description="Write freely and privately. Start wherever you are — there's no wrong way."
         error={quietSpaceError}
-        action={
-          <div className="flex items-center gap-2">
-            <SaveDraftButton />
-            {shareButton}
-          </div>
-        }
+        action={shareButton}
       >
         <GroupTabs tabs={WRITE_TABS} ariaLabel="Write" />
 

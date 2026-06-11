@@ -8,7 +8,6 @@ import { fallbackApiUrl, fetchOnboarding, saveOnboarding } from "../lib/api";
 import {
   OnboardingPayload,
   OnboardingResponse,
-  OnboardingStatus,
 } from "../lib/types";
 import { Icon, IconName } from "./Icon";
 import { QuietSpaceCard, Screen } from "./MomentScreen";
@@ -183,10 +182,7 @@ function expandChoice(
   return { value: otherText, other: stored };
 }
 
-function answersToPayload(
-  answers: Answers,
-  status: OnboardingStatus,
-): OnboardingPayload {
+function answersToPayload(answers: Answers): OnboardingPayload {
   const hobbies = [
     ...answers.hobbies.filter((h) => h !== OTHER),
     ...answers.hobbiesOther.map((h) => h.trim()).filter((h) => h.length > 0),
@@ -201,7 +197,6 @@ function answersToPayload(
     culturalBackground: flattenChoice(answers.cultural, answers.culturalOther),
     griefRecency: flattenSkip(answers.recency),
     whoLost: flattenChoice(answers.whoLost, answers.whoLostOther, WHO_OTHER),
-    status,
   };
 }
 
@@ -283,13 +278,11 @@ export function OnboardingSurvey() {
     };
   }, [apiUrl]);
 
-  // Persist the current answers (draft on "save later"/early exit, complete on
-  // finish). Returns whether the save succeeded so callers can advance the UI.
-  const persist = async (status: OnboardingStatus): Promise<boolean> => {
+  const persist = async (): Promise<boolean> => {
     setSaving(true);
     setSaveError(null);
     try {
-      await saveOnboarding(apiUrl, answersToPayload(answers, status));
+      await saveOnboarding(apiUrl, answersToPayload(answers));
       return true;
     } catch (error) {
       setSaveError(
@@ -369,9 +362,7 @@ export function OnboardingSurvey() {
       setSection((s) => s + 1);
       return;
     }
-    // Finish — persist the whole survey as a completed submission, then move
-    // straight into the dashboard (or the pending screen, if matching is on).
-    if (await persist(OnboardingStatus.Complete)) {
+    if (await persist()) {
       if (SHOW_PENDING_SCREEN_AFTER_FINISH) {
         setFinished(true);
       } else {
@@ -381,15 +372,12 @@ export function OnboardingSurvey() {
   };
 
   const onSaveAndFinishLater = async () => {
-    // Persist whatever has been entered so far as a draft, then reassure.
-    if (await persist(OnboardingStatus.Draft)) setSavedForLater(true);
+    if (await persist()) setSavedForLater(true);
   };
 
-  // Pause prompt actions.
   const onPauseEnter = async () => {
-    // Leaving early after the (only required) first section — keep it as a draft.
     setPendingSection(null);
-    if (await persist(OnboardingStatus.Draft)) setFinished(true);
+    if (await persist()) setFinished(true);
   };
   const onPauseContinue = () => {
     if (pendingSection !== null) setSection(pendingSection);

@@ -24,6 +24,7 @@ import {
 } from "../lib/data";
 import {
   apiBase,
+  endSession,
   facilitatorId,
   fetchGroupMessages,
   fetchGroups,
@@ -33,6 +34,7 @@ import {
   liveGroupId,
   sendGroupMessage,
   sendPrivateMessage,
+  startSession,
 } from "../lib/api";
 
 type Mini = { id: number; name: string; tone: Tone };
@@ -208,7 +210,7 @@ function buildPrivateFeed(inbox: InboxEntryResponse[]): FeedItem[] {
       kind: "reflection",
       name: e.participant.displayName,
       tone: toneFor(e.participant.id),
-      at: "",
+      at: e.lastReflectionShareAt ? formatMessageTime(e.lastReflectionShareAt) : "",
       q: e.sharedFacilitatorNote ? "Something they wanted you to see" : "From their free writing",
       text: `“${e.sharedFacilitatorNote ?? e.sharedFreeWriting ?? ""}”`,
     }));
@@ -233,7 +235,7 @@ type RoomModal =
   | { type: "end" }
   | null;
 
-export function ChatDrawer() {
+export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
   const router = useRouter();
   const apiUrl = apiBase();
   const [groupName, setGroupName] = useState("Friday Group");
@@ -269,19 +271,19 @@ export function ChatDrawer() {
 
   const loadMessages = useCallback(async () => {
     try {
-      setMessages(await fetchGroupMessages(apiUrl, liveGroupId));
+      setMessages(await fetchGroupMessages(apiUrl, groupId));
     } catch {
       /* keep the last good messages on a transient poll failure */
     }
-  }, [apiUrl]);
+  }, [apiUrl, groupId]);
 
   const loadInbox = useCallback(async () => {
     try {
-      setInbox(await fetchInbox(apiUrl, liveGroupId));
+      setInbox(await fetchInbox(apiUrl, groupId));
     } catch {
       /* leave the rail as-is on a transient failure */
     }
-  }, [apiUrl]);
+  }, [apiUrl, groupId]);
 
   useEffect(() => {
     let active = true;
@@ -289,11 +291,11 @@ export function ChatDrawer() {
       try {
         const [groups, msgs, box] = await Promise.all([
           fetchGroups(apiUrl),
-          fetchGroupMessages(apiUrl, liveGroupId),
-          fetchInbox(apiUrl, liveGroupId),
+          fetchGroupMessages(apiUrl, groupId),
+          fetchInbox(apiUrl, groupId),
         ]);
         if (!active) return;
-        const live = groups.find((g) => g.groupId === liveGroupId);
+        const live = groups.find((g) => g.groupId === groupId);
         if (live) {
           setGroupName(live.name);
           setDuration(live.scheduledDurationMinutes);
@@ -306,6 +308,8 @@ export function ChatDrawer() {
         setMessages(msgs);
         setInbox(box);
         setStatus("ready");
+        // Entering the room opens the session so participants can join.
+        startSession(apiUrl, groupId).catch(() => {});
       } catch {
         if (active) setStatus("error");
       }
@@ -313,7 +317,7 @@ export function ChatDrawer() {
     return () => {
       active = false;
     };
-  }, [apiUrl]);
+  }, [apiUrl, groupId]);
 
   useEffect(() => {
     const id = setInterval(loadMessages, 5000);
@@ -324,13 +328,13 @@ export function ChatDrawer() {
   const buildPerson = async (id: number): Promise<Person> => {
     const [p, thread] = await Promise.all([
       fetchParticipant(apiUrl, id),
-      fetchPrivateThread(apiUrl, liveGroupId, id),
+      fetchPrivateThread(apiUrl, groupId, id),
     ]);
     const entry = inbox.find((e) => e.participant.id === id);
     return {
       ...personFromParticipant(p),
       dm: dmsFrom(thread, facilitatorId),
-      reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting) : [],
+      reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
       unread: entry?.hasUnread ? 1 : 0,
     };
   };
@@ -357,8 +361,8 @@ export function ChatDrawer() {
   };
 
   const replyTo = async (toId: number, body: string) => {
-    await sendPrivateMessage(apiUrl, liveGroupId, facilitatorId, toId, body);
-    const thread = await fetchPrivateThread(apiUrl, liveGroupId, toId);
+    await sendPrivateMessage(apiUrl, groupId, facilitatorId, toId, body);
+    const thread = await fetchPrivateThread(apiUrl, groupId, toId);
     const dm = dmsFrom(thread, facilitatorId);
     setModal((prev) =>
       prev && prev.type === "card" && prev.person.id === toId
@@ -375,7 +379,7 @@ export function ChatDrawer() {
     const body = draft.trim();
     if (!body) return;
     setDraft("");
-    await sendGroupMessage(apiUrl, liveGroupId, facilitatorId, body);
+    await sendGroupMessage(apiUrl, groupId, facilitatorId, body);
     loadMessages();
   };
 
@@ -572,7 +576,11 @@ export function ChatDrawer() {
               confirm="End session"
               cancel="Stay a little longer"
               onClose={() => setModal(null)}
-              onConfirm={() => router.push("/facilitator")}
+              onConfirm={async () => {
+                // Closing the session removes everyone still in the room.
+                await endSession(apiUrl, groupId).catch(() => {});
+                router.push("/facilitator");
+              }}
             />
           )}
         </Overlay>

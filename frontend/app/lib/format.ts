@@ -5,6 +5,32 @@ export function formatMessageTime(value: string) {
   }).format(new Date(value));
 }
 
+// A gentle "time since" label for a past timestamp ("just now", "3 hours ago",
+// "2 days ago", "4 months ago"). Used for onboarding-completed and group-created.
+export function formatTimeSince(value: string | null | undefined): string {
+  if (!value) return "";
+  const then = new Date(value).getTime();
+  if (Number.isNaN(then)) return "";
+  const secs = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (secs < 60) return "just now";
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins} ${mins === 1 ? "minute" : "minutes"} ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} ${days === 1 ? "day" : "days"} ago`;
+  if (days < 30) {
+    const w = Math.floor(days / 7);
+    return `${w} ${w === 1 ? "week" : "weeks"} ago`;
+  }
+  if (days < 365) {
+    const mo = Math.floor(days / 30);
+    return `${mo} ${mo === 1 ? "month" : "months"} ago`;
+  }
+  const y = Math.floor(days / 365);
+  return `${y} ${y === 1 ? "year" : "years"} ago`;
+}
+
 // JS Date.getDay() index (Sunday = 0) for each backend DayOfWeek name.
 const WEEKDAY_INDEX: Record<string, number> = {
   SUNDAY: 0,
@@ -112,6 +138,29 @@ export function formatSessionSchedule(
     relative: relativeDayLabel(daysAway),
     full: `${dayLabel}, ${dateLabel} · ${timeLabel}`,
   };
+}
+
+// Whether a group's session is happening now ("live") or hasn't started yet today
+// ("liveSoon"), derived from the schedule + duration against the current time. Mirrors the
+// facilitator's liveStatus — used here only for the dashboard card's badge/labels; actual
+// joinability is gated on the backend session flag, not the clock.
+export function liveStatus(
+  dayOfWeek?: string,
+  scheduledTime?: string,
+  durationMinutes?: number | null,
+  now: Date = new Date(),
+): { live: boolean; liveSoon: boolean } {
+  if (!dayOfWeek || !scheduledTime) return { live: false, liveSoon: false };
+  const idx = WEEKDAY_INDEX[dayOfWeek.toUpperCase()];
+  if (idx === undefined || now.getDay() !== idx) return { live: false, liveSoon: false };
+  const [hStr, mStr] = scheduledTime.split(":");
+  const start = new Date(now);
+  start.setHours(Number(hStr), Number(mStr ?? "0"), 0, 0);
+  const end = new Date(start);
+  end.setMinutes(end.getMinutes() + (durationMinutes ?? 60));
+  if (now >= start && now < end) return { live: true, liveSoon: false };
+  if (now < start) return { live: false, liveSoon: true };
+  return { live: false, liveSoon: false };
 }
 
 export function initialsFor(name: string) {

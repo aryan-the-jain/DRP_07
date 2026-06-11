@@ -6,7 +6,7 @@
 // in particular the grief mapping, which keeps "who they lost" a single, mutually
 // exclusive value.
 
-import { formatMessageTime, formatSessionSchedule } from "../../lib/format";
+import { formatMessageTime, formatSessionSchedule, formatTimeSince } from "../../lib/format";
 import type { IconName } from "../components/Primitives";
 
 export type Tone = "warm" | "calm" | "sky";
@@ -26,6 +26,7 @@ export type FacGroupResponse = {
   dayOfWeek: string;
   scheduledTime: string;
   scheduledDurationMinutes: number;
+  creationTime: string;
   description: string | null;
   members: FacMemberResponse[];
 };
@@ -42,7 +43,7 @@ export type FacParticipantResponse = {
   griefRecency: string | null;
   whoLost: string | null;
   role: string;
-  onboardingStatus: string;
+  onboardingTime: string;
   groupId: number | null;
 };
 
@@ -54,6 +55,7 @@ export type InboxEntryResponse = {
   hasUnread: boolean;
   sharedFacilitatorNote: string | null;
   sharedFreeWriting: string | null;
+  lastReflectionShareAt: string | null;
 };
 
 export type FacMessageResponse = {
@@ -166,6 +168,7 @@ export type GroupCard = {
   live: boolean;
   liveSoon: boolean;
   durationMinutes: number | null;
+  createdAt: string | null;
   description: string | null;
   members: { id: number; name: string; tone: Tone }[];
 };
@@ -235,7 +238,7 @@ export function personFromParticipant(p: FacParticipantResponse): Person {
     role: p.role,
     groupId: p.groupId,
     joined: null,
-    finished: p.groupId == null ? "finished onboarding" : null,
+    finished: p.groupId == null ? `onboarded ${formatTimeSince(p.onboardingTime)}` : null,
     unread: 0,
     reflectionNew: false,
     dm: [],
@@ -287,10 +290,12 @@ export function dmsFrom(messages: FacMessageResponse[], facilitatorId: number): 
 export function sharedReflections(
   facilitatorNote: string | null,
   freeWriting: string | null,
+  sharedAt: string | null = null,
 ): Reflection[] {
+  const at = sharedAt ? formatMessageTime(sharedAt) : null;
   const out: Reflection[] = [];
-  if (facilitatorNote) out.push({ q: "Something they wanted you to see", a: facilitatorNote, at: null });
-  if (freeWriting) out.push({ q: "From their free writing", a: freeWriting, at: null });
+  if (facilitatorNote) out.push({ q: "Something they wanted you to see", a: facilitatorNote, at });
+  if (freeWriting) out.push({ q: "From their free writing", a: freeWriting, at });
   return out;
 }
 
@@ -307,6 +312,7 @@ export function groupCardFrom(g: FacGroupResponse): GroupCard {
     live,
     liveSoon,
     durationMinutes: g.scheduledDurationMinutes ?? null,
+    createdAt: g.creationTime,
     description: g.description,
     members: g.members
       .filter((m) => !isFacilitator(m.role))

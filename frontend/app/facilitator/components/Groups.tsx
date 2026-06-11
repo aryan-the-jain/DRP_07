@@ -204,7 +204,7 @@ export function FacHome() {
         person: {
           ...personFromParticipant(p),
           dm: dmsFrom(thread, facilitatorId),
-          reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting) : [],
+          reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
           unread: entry?.hasUnread ? 1 : 0,
         },
       });
@@ -269,7 +269,7 @@ export function FacHome() {
                       {liveGroup.members.length} in the group
                     </span>
                   </div>
-                  <button className="btn warm" onClick={() => router.push("/facilitator/room")}>
+                  <button className="btn warm" onClick={() => router.push(`/facilitator/room?groupId=${liveGroup.groupId}`)}>
                     Open the room <Icon name="chev" size={16} c="#fff" />
                   </button>
                 </div>
@@ -288,7 +288,7 @@ export function FacHome() {
                     onAvatar={(id) => openMember(id, c.groupId)}
                     onGroupDetails={() => router.push(`/facilitator/groups/${c.groupId}`)}
                     onNotes={() => setModal({ type: "notes", group: c })}
-                    onOpenRoom={() => router.push("/facilitator/room")}
+                    onOpenRoom={() => router.push(`/facilitator/room?groupId=${c.groupId}`)}
                   />
                 ))}
                 <div

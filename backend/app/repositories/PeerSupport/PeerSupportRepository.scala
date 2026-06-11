@@ -64,10 +64,21 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext)
         message.participantId,
         groupId,
         message.body,
-        LocalDateTime.now()
+        getCurrentTime()
       )
     )
     db.run(query)
     groupMessages(groupId) // TODO: Get rid
   }
+
+  def isValidSessionNow(groupId: Int): Future[ReturnIsSessionNow] = {
+    val query = groupQuerier.isSessionValid(groupId)
+    db.run(query.result.head).map(ReturnIsSessionNow.apply)
+  }
+
+  def startSession(groupId: Int): Future[Int] =
+    db.run(groupQuerier.startSession(groupId))
+
+  def endSession(groupId: Int): Future[Int] =
+    db.run(groupQuerier.endSession(groupId))
 }

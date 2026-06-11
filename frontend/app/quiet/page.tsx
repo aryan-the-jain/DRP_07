@@ -20,10 +20,9 @@ export default function QuietPage() {
   const quiet = useQuietSpace(apiUrl);
 
   async function handleExit() {
-    // Save any draft before leaving, then return where the visitor came from.
     // A `return` query param lets callers (e.g. onboarding) send the visitor
     // back to exactly where they left off; otherwise fall back to the dashboard.
-    await quiet.persistDraftReflection();
+    await quiet.persistReflection();
     const returnTo = new URLSearchParams(window.location.search).get("return");
     const destination =
       returnTo && returnTo.startsWith("/") ? returnTo : "/dashboard";

@@ -10,9 +10,34 @@ import {
   SupportLink,
 } from "./types";
 
+// Fallback group used only if we can't resolve the participant's real group below.
 export const groupId = 1;
 export const participantId = 1;
 export const fallbackApiUrl = "http://localhost:9000";
+
+// Resolve the participant's group from their (currently hardcoded) participantId, so the
+// group id isn't separately hardcoded. The facilitator participant endpoint is the only
+// one that exposes a person's placement; the lookup is cached for the session and falls
+// back to the seeded group if it isn't available.
+let groupIdPromise: Promise<number> | null = null;
+
+export function resolveGroupId(apiUrl: string): Promise<number> {
+  if (!groupIdPromise) {
+    groupIdPromise = (async () => {
+      try {
+        const response = await fetch(
+          `${apiUrl}/facilitator/participants/${participantId}`,
+        );
+        if (!response.ok) return groupId;
+        const data = (await response.json()) as { groupId: number | null };
+        return typeof data.groupId === "number" ? data.groupId : groupId;
+      } catch {
+        return groupId;
+      }
+    })();
+  }
+  return groupIdPromise;
+}
 
 function sortMessages(messages: GroupMessage[]) {
   return [...messages].sort(
@@ -23,7 +48,7 @@ function sortMessages(messages: GroupMessage[]) {
 }
 
 export async function fetchGroup(apiUrl: string): Promise<SupportGroup> {
-  const response = await fetch(`${apiUrl}/groups/${groupId}`);
+  const response = await fetch(`${apiUrl}/groups/${await resolveGroupId(apiUrl)}`);
 
   if (!response.ok) {
     throw new Error("Could not load Friday Group.");
@@ -33,7 +58,7 @@ export async function fetchGroup(apiUrl: string): Promise<SupportGroup> {
 }
 
 export async function fetchParticipants(apiUrl: string): Promise<Participant[]> {
-  const response = await fetch(`${apiUrl}/groups/${groupId}/participants`);
+  const response = await fetch(`${apiUrl}/groups/${await resolveGroupId(apiUrl)}/participants`);
 
   if (!response.ok) {
     throw new Error("Could not load Friday Group.");
@@ -42,8 +67,22 @@ export async function fetchParticipants(apiUrl: string): Promise<Participant[]> 
   return response.json();
 }
 
+// Whether the facilitator has opened the room right now. This — not the clock — is what
+// decides if a participant may step in: the session is only joinable once the facilitator
+// has entered (start-session), and everyone is removed when they leave (end-session).
+export async function fetchSessionValid(apiUrl: string): Promise<boolean> {
+  const response = await fetch(`${apiUrl}/groups/${await resolveGroupId(apiUrl)}/is-valid`);
+
+  if (!response.ok) {
+    throw new Error("Could not check whether the room is open.");
+  }
+
+  const data = (await response.json()) as { isSessionNow: boolean };
+  return data.isSessionNow;
+}
+
 export async function fetchGroupMessages(apiUrl: string): Promise<GroupMessage[]> {
-  const response = await fetch(`${apiUrl}/groups/${groupId}/messages`);
+  const response = await fetch(`${apiUrl}/groups/${await resolveGroupId(apiUrl)}/messages`);
 
   if (!response.ok) {
     throw new Error("Could not load messages.");
@@ -63,7 +102,7 @@ export async function fetchFacilitatorMessages(
   apiUrl: string,
 ): Promise<GroupMessage[]> {
   const response = await fetch(
-    `${apiUrl}/groups/${groupId}/${participantId}/facilitator-messages`,
+    `${apiUrl}/groups/${await resolveGroupId(apiUrl)}/${participantId}/facilitator-messages`,
   );
 
   if (!response.ok) {
@@ -95,7 +134,7 @@ export async function sendMessage(
       ? { participantId, body }
       : { fromId: participantId, toId: facilitatorId, body };
 
-  const response = await fetch(`${apiUrl}/groups/${groupId}/${endpoint}`, {
+  const response = await fetch(`${apiUrl}/groups/${await resolveGroupId(apiUrl)}/${endpoint}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -123,7 +162,7 @@ export async function saveReflection(
   apiUrl: string,
   reflection: ReflectionInput,
 ): Promise<ReflectionResponse> {
-  const response = await fetch(`${apiUrl}/groups/${groupId}/reflections`, {
+  const response = await fetch(`${apiUrl}/groups/${await resolveGroupId(apiUrl)}/reflections`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -191,7 +230,7 @@ export async function saveOnboarding(
 export async function fetchSupportLinks(
   apiUrl: string,
 ): Promise<SupportLink[]> {
-  const response = await fetch(`${apiUrl}/groups/${groupId}/support-links`);
+  const response = await fetch(`${apiUrl}/groups/${await resolveGroupId(apiUrl)}/support-links`);
 
   if (!response.ok) {
     throw new Error("Could not load resources.");
@@ -204,7 +243,7 @@ export async function fetchMeditationPlaylists(
   apiUrl: string,
 ): Promise<MeditationPlaylist[]> {
   const response = await fetch(
-    `${apiUrl}/groups/${groupId}/meditation-playlists`,
+    `${apiUrl}/groups/${await resolveGroupId(apiUrl)}/meditation-playlists`,
   );
 
   if (!response.ok) {
@@ -219,7 +258,7 @@ export async function saveDoodle(
   imageData: string,
   shareWithFacilitator: boolean,
 ): Promise<Doodle> {
-  const response = await fetch(`${apiUrl}/groups/${groupId}/doodles`, {
+  const response = await fetch(`${apiUrl}/groups/${await resolveGroupId(apiUrl)}/doodles`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -240,7 +279,7 @@ export async function saveDoodle(
 
 export async function fetchDoodles(apiUrl: string): Promise<Doodle[]> {
   const response = await fetch(
-    `${apiUrl}/groups/${groupId}/participants/${participantId}/doodles`,
+    `${apiUrl}/groups/${await resolveGroupId(apiUrl)}/participants/${participantId}/doodles`,
   );
 
   if (!response.ok) {
@@ -255,7 +294,7 @@ export async function fetchLatestReflection(
 ): Promise<ReflectionResponse | null> {
   try {
     const response = await fetch(
-      `${apiUrl}/groups/${groupId}/participants/${participantId}/reflection`,
+      `${apiUrl}/groups/${await resolveGroupId(apiUrl)}/participants/${participantId}/reflection`,
     );
 
     if (!response.ok) {

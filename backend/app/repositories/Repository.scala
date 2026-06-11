@@ -3,6 +3,7 @@ package repositories
 import config.DatabaseConfig
 import slick.jdbc.PostgresProfile.api.*
 
+import java.time.{LocalDateTime, ZoneId}
 import javax.inject.*
 import scala.concurrent.ExecutionContext
 
@@ -20,4 +21,7 @@ private abstract class Repository @Inject() (
     password = databaseConfig.password,
     driver = "org.postgresql.Driver"
   )
+
+  protected def getCurrentTime(): LocalDateTime =
+    LocalDateTime.now(ZoneId.of("Europe/London"))
 }

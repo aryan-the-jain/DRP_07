@@ -68,11 +68,6 @@ export type ReflectionResponse = {
   createdAt: string;
 };
 
-export enum OnboardingStatus {
-  Draft = "draft",
-  Complete = "complete",
-}
-
 export type OnboardingPayload = {
   callName: string;
   pronouns: string | null;
@@ -82,8 +77,6 @@ export type OnboardingPayload = {
   culturalBackground: string | null;
   griefRecency: string | null;
   whoLost: string | null;
-  status: OnboardingStatus;
 };
 
-// Mirrors the backend `ReturnOnboarding`. `hobbies` is a JSON-encoded string[].
 export type OnboardingResponse = { participantId: number } & OnboardingPayload;

@@ -74,8 +74,7 @@ case class ReturnOnboarding(
     hobbies: List[String],
     culturalBackground: Option[String],
     griefRecency: Option[String],
-    whoLost: Option[String],
-    status: String
+    whoLost: Option[String]
 )
 
 // ---- facilitator-side views -------------------------------------------------
@@ -96,6 +95,7 @@ case class ReturnFacilitatorGroup(
     dayOfWeek: String,
     scheduledTime: String,
     scheduledDurationMinutes: Int,
+    creationTime: LocalDateTime,
     description: Option[String],
     members: Seq[ReturnFacilitatorMember]
 )
@@ -114,7 +114,7 @@ case class ReturnFacilitatorParticipant(
     griefRecency: Option[String],
     whoLost: Option[String],
     role: Role,
-    onboardingStatus: String,
+    onboardingTime: LocalDateTime,
     groupId: Option[Int]
 )
 
@@ -129,6 +129,17 @@ case class ReturnInboxEntry(
     lastMessageFromId: Option[Int],
     lastMessageAt: Option[LocalDateTime],
     hasUnread: Boolean,
+    sharedPrivateNote: Option[String],
     sharedFacilitatorNote: Option[String],
-    sharedFreeWriting: Option[String]
+    sharedFreeWriting: Option[String],
+    lastReflectionShareAt: Option[LocalDateTime]
+)
+
+case class ReturnIsSessionNow(
+    isSessionNow: Boolean
+)
+
+case class ReturnNotePrompts(
+    creationReason: String,
+    safeguardingConcerns: String
 )

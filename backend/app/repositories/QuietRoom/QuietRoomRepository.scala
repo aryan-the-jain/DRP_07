@@ -28,7 +28,7 @@ class QuietRoomRepository @Inject() (executionContext: ExecutionContext)
       groupId: Int,
       request: CreateReflection
   ): Future[Reflection] = {
-    val now = LocalDateTime.now()
+    val now = getCurrentTime()
     val privateNote = request.privateNote.map(_.trim).filter(_.nonEmpty)
     val facilitatorNote = request.facilitatorNote.map(_.trim).filter(_.nonEmpty)
     val freeWriting = request.freeWriting.map(_.trim).filter(_.nonEmpty)
@@ -176,7 +176,7 @@ class QuietRoomRepository @Inject() (executionContext: ExecutionContext)
      sharing with the facilitator (sharedWithFacilitator = true) — sharing is just
      a kept doodle with the flag set, mirroring how reflections model sharing. */
   def saveDoodle(groupId: Int, request: CreateDoodle): Future[ReturnDoodle] = {
-    val now = LocalDateTime.now()
+    val now = getCurrentTime()
     val doodle = UserDoodle(
       id = 0,
       participantId = request.participantId,

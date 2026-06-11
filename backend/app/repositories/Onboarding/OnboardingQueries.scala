@@ -13,33 +13,7 @@ class OnboardingQueries(
     private val grieversTable: TableQuery[GrieversTable],
     private val participantsTable: TableQuery[ParticipantsTable]
 )(using ExecutionContext) {
-  def selectAllOnboardingInformation(participantId: Int): Query[
-    (
-        Rep[Int],
-        Rep[String],
-        Rep[Option[String]],
-        Rep[Option[String]],
-        Rep[String],
-        Rep[List[String]],
-        Rep[Option[String]],
-        Rep[Option[String]],
-        Rep[Option[String]],
-        Rep[String]
-    ),
-    (
-        Int,
-        String,
-        Option[String],
-        Option[String],
-        String,
-        List[String],
-        Option[String],
-        Option[String],
-        Option[String],
-        String
-    ),
-    Seq
-  ] = {
+  def selectAllOnboardingInformation(participantId: Int) = {
     for
       g <- grieversTable if g.grieverId === participantId
       p <- participantsTable if p.participantId === g.grieverId
@@ -52,8 +26,7 @@ class OnboardingQueries(
       p.hobbies,
       g.culturalBackground,
       g.griefRecency,
-      g.whoLost,
-      g.onboardingStatus
+      g.whoLost
     )
   }
 
@@ -91,16 +64,14 @@ class OnboardingQueries(
           (
             g.culturalBackground,
             g.griefRecency,
-            g.whoLost,
-            g.onboardingStatus
+            g.whoLost
           )
         )
         .update(
           (
             update.culturalBackground,
             update.griefRecency,
-            update.whoLost,
-            update.status
+            update.whoLost
           )
         )
 
