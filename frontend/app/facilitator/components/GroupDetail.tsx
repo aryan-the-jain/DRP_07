@@ -763,6 +763,14 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
     <div className="stack" style={{ minHeight: "100%", background: "var(--paper)", position: "relative" }}>
       <div className="scroll" style={{ flex: 1, padding: "26px 32px 32px" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+          {/* Slim, calm back link — matches the arrivals page. */}
+          <button
+            className="btn ghost sm"
+            onClick={() => router.push("/facilitator")}
+            style={{ border: "none", padding: "3px 6px", marginLeft: -6, marginBottom: 16, color: "var(--muted)" }}
+          >
+            <Icon name="back" size={15} c="var(--muted)" /> Back to my groups
+          </button>
           {status === "loading" && <Centered>Loading…</Centered>}
           {status === "error" && <Centered>We couldn’t find that group.</Centered>}
 

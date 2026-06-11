@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
 import { BrandMark, IconName, LineIcon } from "../../components/DesignPrimitives";
+import { apiBase, fetchArrivals } from "../lib/api";
 
 // The facilitator-side shell. It mirrors the participant SidebarLayout style
 // (collapsible "alongside" rail + content area) but with the facilitator's own
@@ -36,6 +37,30 @@ function isActive(pathname: string, href: string): boolean {
 export function FacilitatorSidebar({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  // How many people are waiting to be placed — shown as a badge on Arrivals.
+  const [arrivalsCount, setArrivalsCount] = useState(0);
+
+  // Best-effort, gentle poll. The sidebar also remounts on each navigation, so
+  // the count refreshes naturally after a facilitator places someone.
+  useEffect(() => {
+    let active = true;
+    const apiUrl = apiBase();
+    const load = () =>
+      fetchArrivals(apiUrl)
+        .then((arrivals) => {
+          if (active) setArrivalsCount(arrivals.length);
+        })
+        .catch(() => {
+          /* keep the last known count */
+        });
+    const timeoutId = window.setTimeout(load, 0);
+    const intervalId = window.setInterval(load, 10000);
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   // Restore saved preference; default to collapsed on narrow screens.
   useEffect(() => {
@@ -104,18 +129,61 @@ export function FacilitatorSidebar({ children }: { children: ReactNode }) {
         >
           {NAV.map((item) => {
             const active = isActive(pathname, item.href);
+            const count =
+              item.href === "/facilitator/arrivals" ? arrivalsCount : 0;
+            const badge = count > 9 ? "9+" : String(count);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
+                aria-label={
+                  count > 0
+                    ? `${item.label}, ${count} waiting to be placed`
+                    : undefined
+                }
                 title={collapsed ? item.label : undefined}
                 className={`nav-link ${active ? "active" : ""} ${
                   collapsed ? "justify-center" : ""
                 }`}
               >
-                <LineIcon name={item.icon} size={22} className="shrink-0" />
+                {/* icon (with a corner bubble when collapsed) */}
+                <span className="relative inline-flex shrink-0">
+                  <LineIcon name={item.icon} size={22} />
+                  {count > 0 && collapsed && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute -right-1.5 -top-1.5 inline-flex items-center justify-center rounded-full text-[10px] font-bold leading-none text-white"
+                      style={{
+                        minWidth: 16,
+                        height: 16,
+                        padding: "0 3px",
+                        background: "var(--warm)",
+                        border: "1.5px solid var(--paper)",
+                      }}
+                    >
+                      {badge}
+                    </span>
+                  )}
+                </span>
+
                 {!collapsed && <span className="leading-tight">{item.label}</span>}
+
+                {/* count pill, right-aligned, when expanded */}
+                {count > 0 && !collapsed && (
+                  <span
+                    aria-hidden="true"
+                    className="ml-auto inline-flex items-center justify-center rounded-full text-[11px] font-bold leading-none text-white"
+                    style={{
+                      minWidth: 20,
+                      height: 18,
+                      padding: "0 6px",
+                      background: "var(--warm)",
+                    }}
+                  >
+                    {badge}
+                  </span>
+                )}
               </Link>
             );
           })}

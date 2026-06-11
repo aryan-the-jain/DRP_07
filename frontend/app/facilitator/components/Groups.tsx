@@ -10,7 +10,6 @@ import { Avatar, DashRule, Icon, Logo, SoftLabel } from "./Primitives";
 import { CircleBadge, ConfirmPopup, Overlay } from "./Overlays";
 import { Hub } from "./Hub";
 import { InvitePanel } from "./Invite";
-import { ArrivalRow } from "./Onboarding";
 import {
   dmsFrom,
   groupCardFrom,
@@ -24,7 +23,6 @@ import {
   apiBase,
   createGroup,
   facilitatorId,
-  fetchArrivals,
   fetchGroups,
   fetchInbox,
   fetchParticipant,
@@ -164,7 +162,6 @@ export function FacHome() {
   const router = useRouter();
   const apiUrl = apiBase();
   const [groups, setGroups] = useState<GroupCard[]>([]);
-  const [arrivals, setArrivals] = useState<Person[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [modal, setModal] = useState<HomeModal>(null);
   const [tick, setTick] = useState(0);
@@ -175,7 +172,7 @@ export function FacHome() {
     let active = true;
     (async () => {
       try {
-        const [gs, ar] = await Promise.all([fetchGroups(apiUrl), fetchArrivals(apiUrl)]);
+        const gs = await fetchGroups(apiUrl);
         // Whether each group's session has already been held this week — once it has,
         // the card can't open the room again until the next scheduled occurrence.
         // A dropped check just falls back to the clock-derived state.
@@ -190,7 +187,6 @@ export function FacHome() {
             groupCardFrom(g, sessions[i]?.sessionClosedForWeek ?? false),
           ),
         );
-        setArrivals(ar.map(personFromParticipant));
         setStatus("ready");
       } catch {
         if (active) setStatus("error");
@@ -322,24 +318,6 @@ export function FacHome() {
                 </div>
               </div>
 
-              <div className="row" style={{ gap: 12, margin: "30px 0 14px", alignItems: "baseline" }}>
-                <SoftLabel>Waiting to be placed</SoftLabel>
-                <div style={{ flex: 1, borderTop: "2px dashed var(--line)" }} />
-                {arrivals.length > 0 && (
-                  <span className="wavy" style={{ fontSize: 15, color: "var(--warm-ink)" }} onClick={() => router.push("/facilitator/arrivals")}>
-                    See all {arrivals.length} →
-                  </span>
-                )}
-              </div>
-              {arrivals.length === 0 ? (
-                <span style={{ fontSize: 15, color: "var(--faint)" }}>No one is waiting to be placed right now.</span>
-              ) : (
-                <div className="stack" style={{ gap: 12 }}>
-                  {arrivals.map((m) => (
-                    <ArrivalRow key={m.id} m={m} onPlace={() => router.push(`/facilitator/arrivals/${m.id}?from=dashboard`)} />
-                  ))}
-                </div>
-              )}
             </>
           )}
         </div>
