@@ -32,7 +32,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   {
     href: "/calm/breathe",
     label: "Feel calm",
-    subtitle: "breathe, ground & settle",
+    subtitle: "breathe, observe & meditate",
     icon: "wind",
     tone: "calm",
     match: "/calm",
