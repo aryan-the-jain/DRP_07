@@ -175,14 +175,15 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
 
   /* Create a group. Groups are always weekly; the facilitator manages membership,
      so there is no cap. Duration defaults to a gentle hour. */
-  def createGroup(create: CreateGroup): Future[ReturnFacilitatorGroup] = {
+  def createGroup(create: JsonCreateGroup): Future[ReturnFacilitatorGroup] = {
+    val currentTime = getCurrentTime()
     val newGroup = SupportGroup(
       0,
       create.name,
       DayOfWeek.valueOf(create.dayOfWeek),
       LocalTime.parse(create.scheduledTime),
       create.scheduledDurationMinutes,
-      getCurrentTime(),
+      currentTime,
       create.description,
       false,
       None
@@ -196,7 +197,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
         create.dayOfWeek,
         create.scheduledTime,
         create.scheduledDurationMinutes,
-        create.creationTime,
+        currentTime,
         create.description,
         Seq.empty
       )

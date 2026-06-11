@@ -109,4 +109,6 @@ object JsonFormats {
 
   given updateNotePrompts: Reads[UpdateNotePrompts] =
     Json.reads[UpdateNotePrompts]
+
+  given jsonCreateGroup: Reads[JsonCreateGroup] = Json.reads[JsonCreateGroup]
 }
