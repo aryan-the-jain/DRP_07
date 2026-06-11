@@ -659,3 +659,49 @@ button:not(:disabled):active {
     animation: none !important;
   }
 }
+
+/* ---- sidebar nav ---- */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 40px 14px 40px 14px / 14px 40px 14px 40px;
+  padding: 10px 14px;
+  color: var(--muted);
+  font-family: var(--hand);
+  font-weight: 700;
+  font-size: 15px;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+.nav-link:hover {
+  background: color-mix(in oklch, var(--warm) 12%, var(--paper));
+  color: var(--warm-ink);
+}
+/* Active item: a fuller peach pill with terracotta text + icon. */
+.nav-link.active {
+  background: color-mix(in oklch, var(--warm) 26%, var(--paper));
+  color: var(--warm-ink);
+}
+/* Emphasised item (the quiet space): a sage pill that always stands out, so
+   the quiet room reads as a featured destination in the rail. */
+.nav-link.calm {
+  background: color-mix(in oklch, var(--calm) 18%, var(--paper));
+  color: var(--calm-ink);
+}
+.nav-link.calm:hover {
+  background: color-mix(in oklch, var(--calm) 26%, var(--paper));
+  color: var(--calm-ink);
+}
+.nav-link.calm.active {
+  background: color-mix(in oklch, var(--calm) 32%, var(--paper));
+  color: var(--calm-ink);
+}
+.nav-link:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--paper),
+    0 0 0 5px var(--warm);
+}
+
