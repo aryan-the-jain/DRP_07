@@ -218,7 +218,7 @@ function OptionalBadge() {
         alignItems: "center",
         gap: 6,
         fontFamily: "var(--font-hand)",
-        fontSize: 15,
+        fontSize: 12,
         lineHeight: 1,
         color: "var(--calm-ink)",
         background: "var(--calm-soft)",
@@ -236,7 +236,7 @@ function OptionalBadge() {
           border: "1.6px solid var(--calm)",
         }}
       />
-      optional · skip freely
+      optional
     </span>
   );
 }
