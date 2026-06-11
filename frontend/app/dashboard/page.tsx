@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { LineIcon } from "../components/DesignPrimitives";
 import { ParticipantProfileModal } from "../components/ParticipantProfileModal";
 import { SidebarLayout } from "../components/SidebarLayout";
 import {
@@ -99,6 +101,19 @@ export default function DashboardPage() {
     <SidebarLayout>
       <main className="flex h-full min-h-0 flex-col overflow-hidden bg-paper text-ink">
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-8 sm:px-10 lg:px-16">
+        {/* Pinned to the pane's right edge — the screen's top-right. A soft
+            beige pill that reopens the onboarding/profile flow; secondary to
+            the warm "Step into the room" CTA. */}
+        <div className="mb-6 flex justify-end">
+          <Link
+            href="/onboarding"
+            className="btn sm [border-color:var(--line)] [color:var(--warm-ink)]"
+          >
+            <LineIcon name="user" size={15} />
+            <span className="max-[420px]:sr-only">Update profile</span>
+          </Link>
+        </div>
+
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
             {isLoading ? (
               <p className="py-12 text-center text-[15px] text-muted">
