@@ -35,4 +35,13 @@ class PeerSupportController @Inject() (
     peerSupportRepository.sendGroupMessage(groupId, _),
     (m: CreateGroupMessage) => m.body.trim.nonEmpty
   )
+
+  def isValidSessionNow(groupId: Int): Action[AnyContent] =
+    peerSupportRepository.isValidSessionNow(groupId).returnOk()
+
+  def startSession(groupId: Int): Action[AnyContent] =
+    peerSupportRepository.startSession(groupId).returnOk()
+
+  def endSession(groupId: Int): Action[AnyContent] =
+    peerSupportRepository.endSession(groupId).returnOk()
 }

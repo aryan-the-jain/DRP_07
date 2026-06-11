@@ -56,7 +56,7 @@ class SupportRequestRepository @Inject() (executionContext: ExecutionContext)
         supportType = request.supportType,
         message = request.message,
         status = "open",
-        createdAt = LocalDateTime.now()
+        createdAt = getCurrentTime()
       )
 
     db.run(insertQuery).flatMap { newId =>

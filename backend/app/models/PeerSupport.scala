@@ -15,7 +15,9 @@ case class SupportGroup(
     day: DayOfWeek,
     time: LocalTime,
     duration: Int, // TODO: Irontype
-    description: Option[String]
+    creationTime: LocalDateTime,
+    description: Option[String],
+    hasSessionNow: Boolean
 )
 
 case class Participant(
@@ -34,7 +36,7 @@ case class Griever(
     culturalBackground: Option[String],
     griefRecency: Option[String], // TODO: ENUM!
     whoLost: Option[String],
-    onboardingStatus: String // TODO: Enum!!!!!!!!
+    onboardingTime: LocalDateTime
 )
 
 case class Facilitator(
@@ -153,8 +155,7 @@ case class UpdateOnboarding(
     hobbies: List[String],
     culturalBackground: Option[String],
     griefRecency: Option[String],
-    whoLost: Option[String],
-    status: String
+    whoLost: Option[String]
 )
 
 // Facilitator creates / edits a group. dayOfWeek is a full upper-case name
@@ -164,6 +165,7 @@ case class CreateGroup(
     dayOfWeek: String,
     scheduledTime: String,
     scheduledDurationMinutes: Int,
+    creationTime: LocalDateTime,
     description: Option[String]
 )
 
@@ -181,4 +183,19 @@ case class PlaceParticipant(
 )
 
 // Facilitator saves free-form notes about a group (per-group, only they see these).
-case class UpdateGroupNotes(notes: String)
+case class UpdateGroupNotes(
+    notes: String
+)
+
+case class UpdateNotePrompts(
+    creationReason: String,
+    safeguardingConcerns: String
+)
+
+case class FacilitatorNotes(
+    groupId: Int,
+    notes: String,
+    updatedAt: LocalDateTime,
+    creationReason: String,
+    safeguardingConcerns: String
+)

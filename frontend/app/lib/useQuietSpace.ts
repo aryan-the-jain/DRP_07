@@ -20,9 +20,7 @@ export function useQuietSpace(apiUrl: string) {
   const [isReflectionShared, setIsReflectionShared] = useState(false);
   const [quietSpaceError, setQuietSpaceError] = useState("");
 
-  // Pre-fill from the latest saved reflection so a draft survives a refresh or
-  // moving between the chat room and the standalone quiet route.
-  const loadReflectionDraft = useCallback(async () => {
+  const loadReflection = useCallback(async () => {
     try {
       const reflection = await fetchLatestReflection(apiUrl);
       if (reflection) {
@@ -38,7 +36,7 @@ export function useQuietSpace(apiUrl: string) {
         );
       }
     } catch {
-      // Gracefully ignore since it is just a draft load
+      // Gracefully ignore — reflection load is best-effort
     }
   }, [apiUrl]);
 
@@ -46,14 +44,13 @@ export function useQuietSpace(apiUrl: string) {
     // Defer so the first reflection load doesn't setState synchronously inside
     // the effect body (matches the chat room's loadRoom pattern).
     const timeoutId = window.setTimeout(() => {
-      void loadReflectionDraft();
+      void loadReflection();
     }, 0);
     return () => window.clearTimeout(timeoutId);
-  }, [loadReflectionDraft]);
+  }, [loadReflection]);
 
-  // Persist whatever has been written as a private draft (not shared) so it is
-  // restored next time. Best-effort: callers should not block leaving on it.
-  const persistDraftReflection = useCallback(async () => {
+  // Auto-save unshared reflection text on exit so it is restored next time.
+  const persistReflection = useCallback(async () => {
     const trimmedPrivate = privateNote.trim();
     const trimmedFacilitator = facilitatorNote.trim();
     const trimmedFreeWriting = freeWritingNote.trim();
@@ -71,7 +68,7 @@ export function useQuietSpace(apiUrl: string) {
           shareFreeWriting: false,
         });
       } catch {
-        // Quietly fail since this is a draft save
+        // Best-effort — silently ignore save failures on exit
       }
     }
 
@@ -163,8 +160,8 @@ export function useQuietSpace(apiUrl: string) {
     isSharingReflection,
     isReflectionShared,
     quietSpaceError,
-    loadReflectionDraft,
-    persistDraftReflection,
+    loadReflection,
+    persistReflection,
     handlePrivateNoteChange,
     handleFacilitatorNoteChange,
     handleFreeWritingNoteChange,

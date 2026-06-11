@@ -125,6 +125,27 @@ export function placeParticipant(
   );
 }
 
+// Entering the room opens the session (sets has_session_now = true); leaving it via "End
+// the session" closes it. These are what gate a participant's ability to join — the body
+// is ignored by the backend, so we send an empty object.
+export function startSession(apiUrl: string, groupId: number): Promise<number> {
+  return send(
+    `${apiUrl}/groups/${groupId}/start-session`,
+    "POST",
+    {},
+    "Could not open the room.",
+  );
+}
+
+export function endSession(apiUrl: string, groupId: number): Promise<number> {
+  return send(
+    `${apiUrl}/groups/${groupId}/end-session`,
+    "POST",
+    {},
+    "Could not end the session.",
+  );
+}
+
 export function sendGroupMessage(
   apiUrl: string,
   groupId: number,

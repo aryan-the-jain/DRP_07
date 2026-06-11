@@ -42,13 +42,16 @@ export function ArrivalRow({ m, onPlace }: { m: Person; onPlace: () => void }) {
     >
       <div className="row" style={{ gap: 13 }}>
         <Avatar name={m.name} size={44} tone={m.tone} onClick={onPlace} title={`Open ${m.name}'s arrival`} />
-        <div className="stack" style={{ gap: 2 }}>
+        <div className="stack" style={{ gap: 2, flex: 1, minWidth: 0 }}>
           <span className="h-title" style={{ fontSize: 20, color: "var(--ink)", cursor: "pointer" }} onClick={onPlace}>
             {m.name}
           </span>
           <span style={{ fontSize: 13.5, color: "var(--muted)" }}>
             {[m.pronouns, m.age].filter(Boolean).join(" · ") || "—"}
           </span>
+          {m.finished && (
+            <span style={{ fontSize: 12.5, color: "var(--calm-ink)", whiteSpace: "nowrap", overflow: "hidden" }}>{m.finished}</span>
+          )}
         </div>
       </div>
 
@@ -195,7 +198,7 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
                   {m.pronouns && m.age && <span style={{ color: "var(--faint)" }}>·</span>}
                   {m.age && <span>{m.age}</span>}
                   {(m.pronouns || m.age) && m.finished && <span style={{ color: "var(--faint)" }}>·</span>}
-                  {m.finished && <span>{m.finished}</span>}
+                  {m.finished && <span style={{ color: "var(--calm-ink)" }}>{m.finished}</span>}
                 </div>
               </div>
             </div>

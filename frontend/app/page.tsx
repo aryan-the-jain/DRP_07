@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatRoom } from "./components/ChatRoom";
+import { SessionEndedDialog } from "./components/SessionEndedDialog";
 import {
   fallbackApiUrl,
   fetchFacilitatorMessages,
   fetchGroup,
   fetchGroupMessages,
   fetchParticipants,
+  fetchSessionValid,
   sendMessage,
 } from "./lib/api";
 import { ActiveTab, GroupMessage, Participant, SupportGroup } from "./lib/types";
@@ -51,6 +53,9 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  // Set once the facilitator closes the room while we're in it: the chat is over and the
+  // farewell popup takes over.
+  const [sessionEnded, setSessionEnded] = useState(false);
   const participantListRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const isParticipantListOpen =
@@ -81,10 +86,18 @@ export default function Home() {
     setErrorMessage("");
 
     try {
-      const [groupData, participantsData] = await Promise.all([
+      const [groupData, participantsData, valid] = await Promise.all([
         fetchGroup(apiUrl),
         fetchParticipants(apiUrl),
+        fetchSessionValid(apiUrl),
       ]);
+
+      // The room is only joinable once the facilitator has opened it. If it isn't open,
+      // send the participant gently back home rather than showing a stale chat.
+      if (!valid) {
+        router.replace("/dashboard");
+        return;
+      }
 
       setGroup(groupData);
       setParticipants(participantsData);
@@ -94,7 +107,7 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [apiUrl, loadMessages, loadFacilitatorMessages]);
+  }, [apiUrl, loadMessages, loadFacilitatorMessages, router]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -119,6 +132,23 @@ export default function Home() {
 
     return () => window.clearInterval(intervalId);
   }, [loadMessages, loadFacilitatorMessages]);
+
+  // Watch for the facilitator closing the room. We only reach the room when the session is
+  // open, so a poll that comes back closed means they've ended it — show the farewell
+  // popup and stop polling.
+  useEffect(() => {
+    if (sessionEnded) return;
+
+    const intervalId = window.setInterval(() => {
+      fetchSessionValid(apiUrl)
+        .then((valid) => {
+          if (!valid) setSessionEnded(true);
+        })
+        .catch(() => {});
+    }, MESSAGE_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [apiUrl, sessionEnded]);
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -212,9 +242,7 @@ export default function Home() {
   }
 
   async function handleExitQuietSpace() {
-    // Save any draft, then return to the group — the chat-room exit behaviour
-    // is unchanged; only the persistence moved into the shared hook.
-    await quiet.persistDraftReflection();
+    await quiet.persistReflection();
     setActiveTab("group");
   }
 
@@ -224,7 +252,8 @@ export default function Home() {
   }
 
   return (
-    <ChatRoom
+    <>
+      <ChatRoom
       apiUrl={apiUrl}
       activeTab={activeTab}
       group={group}
@@ -262,6 +291,14 @@ export default function Home() {
       onShareSelectionChange={quiet.handleShareSelectionChange}
       onExitQuietSpace={handleExitQuietSpace}
       onShareReflection={quiet.handleShareReflection}
-    />
+      />
+      {sessionEnded && (
+        <SessionEndedDialog
+          facilitatorName={group?.facilitatorName ?? "Sean"}
+          onQuietSpace={() => router.push("/quiet")}
+          onContinue={() => router.push("/dashboard")}
+        />
+      )}
+    </>
   );
 }

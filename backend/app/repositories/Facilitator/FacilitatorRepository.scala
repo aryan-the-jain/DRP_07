@@ -4,7 +4,7 @@ import models.*
 import slick.jdbc.PostgresProfile.api.*
 import repositories.PeerSupport.Instances.given
 
-import java.time.{DayOfWeek, LocalDateTime, LocalTime}
+import java.time.{DayOfWeek, LocalDateTime, LocalTime, ZoneId}
 import javax.inject.*
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -37,37 +37,6 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       p.role
     )
 
-  // private def detail(
-  //     participantId: Int,
-  //     name: String,
-  //     pronouns: Option[String],
-  //     age: Option[String],
-  //     initials: String,
-  //     fact: String,
-  //     hobbies: List[String],
-  //     culturalBackground: Option[String],
-  //     griefRecency: Option[String],
-  //     whoLost: Option[String],
-  //     role: Role,
-  //     onboardingStatus: String,
-  //     groupId: Option[Int]
-  // ): ReturnFacilitatorParticipant =
-  //   ReturnFacilitatorParticipant(
-  //     participantId,
-  //     name,
-  //     pronouns,
-  //     age,
-  //     initials,
-  //     fact,
-  //     hobbies,
-  //     culturalBackground,
-  //     griefRecency,
-  //     whoLost,
-  //     role,
-  //     onboardingStatus,
-  //     groupId
-  //   )
-
   /* Every group, each with its member summaries. Scheduling is left as the raw
      day/time so the frontend can format "live tonight" / "next …" itself. */
   def groups(): Future[Seq[ReturnFacilitatorGroup]] =
@@ -88,19 +57,18 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
           g.day.name(),
           g.time.toString,
           g.duration,
+          g.creationTime,
           g.description,
           members
         )
       }
     }
 
-  /* People who finished onboarding and are not yet in any group. */
+  /* People who have not yet been placed in any group. */
   def arrivals(): Future[Seq[ReturnFacilitatorParticipant]] = {
-    // TODO: Remove magic string!
     val placed = groupParticipants.map(_.participantId)
     val query = for
-      g <- grievers
-      if g.onboardingStatus === "complete" && !g.grieverId.in(placed)
+      g <- grievers if !g.grieverId.in(placed)
       p <- participants if p.participantId === g.grieverId
     yield (
       g.grieverId,
@@ -114,13 +82,27 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       g.griefRecency,
       g.whoLost,
       p.role,
-      g.onboardingStatus
+      g.onboardingTime
     )
 
     db.run(query.result)
       .map(
         _.map(
-          ReturnFacilitatorParticipant(_, _, _, _, _, _, _, _, _, _, _, _, None)
+          ReturnFacilitatorParticipant(
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            None
+          )
         )
       )
   }
@@ -144,7 +126,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       g.griefRecency,
       g.whoLost,
       p.role,
-      g.onboardingStatus
+      g.onboardingTime
     )
 
     for {
@@ -200,7 +182,9 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       DayOfWeek.valueOf(create.dayOfWeek),
       LocalTime.parse(create.scheduledTime),
       create.scheduledDurationMinutes,
-      create.description
+      getCurrentTime(),
+      create.description,
+      false
     )
     val insert =
       (supportGroups returning supportGroups.map(_.groupId)) += newGroup
@@ -211,6 +195,7 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
         create.dayOfWeek,
         create.scheduledTime,
         create.scheduledDurationMinutes,
+        create.creationTime,
         create.description,
         Seq.empty
       )
@@ -240,8 +225,8 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
     db.run(
       facilitatorGroupNotes.filter(_.groupId === groupId).result.headOption
     ).map {
-      case Some((_, notes, updatedAt)) => ReturnGroupNotes(notes, updatedAt)
-      case None => ReturnGroupNotes("", java.time.LocalDateTime.now())
+      case Some(fn) => ReturnGroupNotes(fn.notes, fn.updatedAt)
+      case None     => ReturnGroupNotes("", getCurrentTime())
     }
 
   /* Upsert the facilitator's notes for a group, stamping the current time. */
@@ -249,10 +234,13 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
       groupId: Int,
       update: UpdateGroupNotes
   ): Future[ReturnGroupNotes] = {
-    val now = java.time.LocalDateTime.now()
-    val row = (groupId, update.notes, now)
-    db.run(facilitatorGroupNotes.insertOrUpdate(row))
-      .map(_ => ReturnGroupNotes(update.notes, now))
+    val now = getCurrentTime()
+    db.run {
+      facilitatorGroupNotes
+        .filter(_.groupId === groupId)
+        .map(g => (g.notes, g.updatedAt))
+        .update((update.notes, now))
+    }.map(_ => ReturnGroupNotes(update.notes, now))
   }
 
   /* Delete a group and all data that depends on it, in a single transaction. */
@@ -297,9 +285,31 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
             last.map(_.fromId),
             last.map(_.createdAt),
             last.exists(_.fromId == id),
+            // TODO: Worst naming scheme in the history of ever.
+            ref.filter(_.sharedGuided).flatMap(_.privateNote),
             ref.filter(_.sharedGuided).flatMap(_.facilitatorNote),
-            ref.filter(_.sharedFreeWriting).flatMap(_.freeWriting)
+            ref.filter(_.sharedFreeWriting).flatMap(_.freeWriting),
+            ref.filter(_.sharedGuided) match {
+              case Some(r) => r.sharedGuidedAt
+              case None    =>
+                ref.filter(_.sharedFreeWriting).flatMap(_.sharedFreeWritingAt)
+            }
           )
         }
     }
+
+  def getNotePrompts(groupId: Int): Future[Seq[ReturnNotePrompts]] =
+    db.run(
+      facilitatorGroupNotes.filter(_.groupId === groupId).result
+    ).map(
+      _.map(n => ReturnNotePrompts(n.creationReason, n.safeguardingConcerns))
+    )
+
+  def setNotePrompts(groupId: Int, update: UpdateNotePrompts): Future[Int] =
+    db.run(
+      facilitatorGroupNotes
+        .filter(_.groupId === groupId)
+        .map(n => (n.creationReason, n.safeguardingConcerns))
+        .update(update.creationReason, update.safeguardingConcerns)
+    )
 }
