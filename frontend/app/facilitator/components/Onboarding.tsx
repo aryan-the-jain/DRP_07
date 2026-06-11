@@ -140,7 +140,7 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
     Promise.all([fetchParticipant(apiUrl, participantId), fetchGroups(apiUrl)])
       .then(([p, gs]) => {
         setPerson(personFromParticipant(p));
-        setGroups(gs.map(groupCardFrom));
+        setGroups(gs.map((g) => groupCardFrom(g)));
         setStatus("ready");
       })
       .catch(() => setStatus("error"));

@@ -11,6 +11,7 @@ import {
   fetchParticipants,
   fetchSessionValid,
   participantId,
+  SessionState,
 } from "../lib/api";
 import { Participant, SupportGroup } from "../lib/types";
 import { ThisWeekCard } from "./ThisWeekCard";
@@ -27,7 +28,7 @@ export default function DashboardPage() {
 
   const [group, setGroup] = useState<SupportGroup | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [isSessionValid, setIsSessionValid] = useState<boolean | null>(null);
+  const [sessionState, setSessionState] = useState<SessionState | null>(null);
   const [selectedParticipant, setSelectedParticipant] =
     useState<Participant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,8 +61,8 @@ export default function DashboardPage() {
       // "Step into the room" button activates the moment they do. Failures are swallowed:
       // a dropped poll just keeps the last known state rather than disrupting the page.
       fetchSessionValid(apiUrl)
-        .then((valid) => {
-          if (active) setIsSessionValid(valid);
+        .then((session) => {
+          if (active) setSessionState(session);
         })
         .catch(() => {});
     }, 0);
@@ -76,7 +77,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       fetchSessionValid(apiUrl)
-        .then(setIsSessionValid)
+        .then(setSessionState)
         .catch(() => {});
     }, 5000);
 
@@ -133,7 +134,10 @@ export default function DashboardPage() {
                 <ThisWeekCard
                   group={group}
                   participants={participants}
-                  isSessionValid={isSessionValid}
+                  isSessionValid={sessionState?.isSessionNow ?? null}
+                  sessionClosedForWeek={
+                    sessionState?.sessionClosedForWeek ?? false
+                  }
                   onOpenProfile={setSelectedParticipant}
                   onEnterRoom={() => router.push("/")}
                 />

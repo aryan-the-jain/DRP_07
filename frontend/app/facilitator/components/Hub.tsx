@@ -6,7 +6,8 @@
 //   variant="docked" — the in-place slide-over (used on /facilitator/profile)
 // The header mirrors the summary pop-up; the tabs carry notification dots.
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
+import { dayLabelFor, isNewDay } from "../../lib/format";
 import { Avatar, DashRule, Field, Icon, IconName, SoftLabel } from "./Primitives";
 import { CloseBtn, HobbyChips, LostCategory, PopBlock, PrivacyNote } from "./Overlays";
 import type { Person } from "../lib/data";
@@ -114,6 +115,20 @@ function ProfileAbout({ m }: { m: Person }) {
   );
 }
 
+// A small centred day marker ("Today", "Yesterday", "6 June") shown once per
+// day, so threads that span weeks stay easy to follow.
+function DaySeparator({ iso }: { iso: string }) {
+  const label = dayLabelFor(iso);
+  if (!label) return null;
+  return (
+    <div className="row" style={{ justifyContent: "center" }} aria-hidden="true">
+      <span className="chip" style={{ fontSize: 12, padding: "2px 12px", color: "var(--faint)" }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function DMThread({ m, onSend }: { m: Person; onSend?: (body: string) => void }) {
   const [draft, setDraft] = useState("");
   const submit = () => {
@@ -133,9 +148,11 @@ function DMThread({ m, onSend }: { m: Person; onSend?: (body: string) => void })
               No messages yet — you could say hello.
             </div>
           )}
-          {m.dm.map((b, i) =>
-            b.from === "you" ? (
-              <div key={i} className="row" style={{ justifyContent: "flex-end" }}>
+          {m.dm.map((b, i) => (
+            <Fragment key={i}>
+            {isNewDay(m.dm[i - 1]?.atIso, b.atIso) && <DaySeparator iso={b.atIso} />}
+            {b.from === "you" ? (
+              <div className="row" style={{ justifyContent: "flex-end" }}>
                 <div className="stack" style={{ gap: 4, alignItems: "flex-end", maxWidth: "82%" }}>
                   <div
                     className="sk thin"
@@ -147,7 +164,7 @@ function DMThread({ m, onSend }: { m: Person; onSend?: (body: string) => void })
                 </div>
               </div>
             ) : (
-              <div key={i} className="row" style={{ gap: 9, alignItems: "flex-end" }}>
+              <div className="row" style={{ gap: 9, alignItems: "flex-end" }}>
                 <Avatar name={m.name} size={28} tone={m.tone} />
                 <div className="stack" style={{ gap: 4, maxWidth: "82%" }}>
                   <div className="sk thin soft" style={{ padding: "10px 14px", fontSize: 15.5, lineHeight: 1.4, color: "var(--ink)" }}>
@@ -158,8 +175,9 @@ function DMThread({ m, onSend }: { m: Person; onSend?: (body: string) => void })
                   </span>
                 </div>
               </div>
-            )
-          )}
+            )}
+            </Fragment>
+          ))}
         </div>
       </div>
       <div className="row" style={{ padding: "12px 16px", gap: 10, borderTop: "2px dashed var(--line)" }}>
@@ -195,11 +213,16 @@ function ReflectionList({ m }: { m: Person }) {
           </div>
         )}
         {m.reflections.map((r, i) => (
-          <div key={i} className="sk v2 thin" style={{ padding: "15px 17px", borderColor: "var(--sky)" }}>
+          <Fragment key={i}>
+          {r.atIso && isNewDay(m.reflections[i - 1]?.atIso ?? undefined, r.atIso) && (
+            <DaySeparator iso={r.atIso} />
+          )}
+          <div className="sk v2 thin" style={{ padding: "15px 17px", borderColor: "var(--sky)" }}>
             <span style={{ fontSize: 14.5, color: "var(--sky-ink)" }}>{r.q}</span>
             <p style={{ fontSize: 16, color: "var(--ink)", lineHeight: 1.5, margin: "9px 0 10px" }}>{r.a}</p>
             {r.at && <span style={{ fontSize: 12.5, color: "var(--faint)" }}>{r.at}</span>}
           </div>
+          </Fragment>
         ))}
       </div>
     </div>

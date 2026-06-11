@@ -16,6 +16,7 @@ case class ReturnParticipant(
     displayName: String,
     pronouns: Option[String],
     initials: String,
+    age: Option[String],
     hobbies: List[String],
     fact: String,
     role: Role
@@ -136,7 +137,8 @@ case class ReturnInboxEntry(
 )
 
 case class ReturnIsSessionNow(
-    isSessionNow: Boolean
+    isSessionNow: Boolean,
+    sessionClosedForWeek: Boolean
 )
 
 case class ReturnNotePrompts(

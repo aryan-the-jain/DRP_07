@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { Avatar, DashRule, Icon, Logo, SoftLabel } from "./Primitives";
 import { CircleBadge, FullProfilePopup, LostChip, Overlay } from "./Overlays";
 import { groupCardFrom, HOBBY_ICON, personFromParticipant, type GroupCard, type Person } from "../lib/data";
-import { apiBase, fetchGroups, fetchParticipant } from "../lib/api";
+import { apiBase, fetchGroups, fetchParticipant, fetchSessionState } from "../lib/api";
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
@@ -87,7 +87,8 @@ export function GroupRoster({ groupId }: { groupId: number }) {
           if (active) setStatus("error");
           return;
         }
-        const card = groupCardFrom(found);
+        const session = await fetchSessionState(apiUrl, groupId).catch(() => null);
+        const card = groupCardFrom(found, session?.sessionClosedForWeek ?? false);
         const ps = await Promise.all(card.members.map((mm) => fetchParticipant(apiUrl, mm.id)));
         if (!active) return;
         setGroup(card);

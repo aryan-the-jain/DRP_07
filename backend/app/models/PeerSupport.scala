@@ -17,8 +17,31 @@ case class SupportGroup(
     duration: Int, // TODO: Irontype
     creationTime: LocalDateTime,
     description: Option[String],
-    hasSessionNow: Boolean
+    hasSessionNow: Boolean,
+    lastSessionEndedAt: Option[LocalDateTime]
 )
+
+/* A session can only be held once per scheduled week. Because the facilitator
+   can open the room before the scheduled time, a close is attributed to the
+   meeting DAY it happened on, not the scheduled minute: ending the room at any
+   point on the meeting day — early, on time, or mid-session — uses up that
+   week's session and locks the room until the next meeting day. The lock lifts
+   at the start of that day (not the scheduled minute) so the facilitator can
+   open the next session a little early too. */
+object SessionWeek {
+  def closedForWeek(
+      day: DayOfWeek,
+      lastEnded: Option[LocalDateTime],
+      now: LocalDateTime
+  ): Boolean =
+    lastEnded.exists { ended =>
+      // The meeting day of the close's own week (the meeting day at or before
+      // the close), then the next meeting day a week on.
+      val daysSinceMeetingDay = (ended.getDayOfWeek.getValue - day.getValue + 7) % 7
+      val reopenDay = ended.toLocalDate.minusDays(daysSinceMeetingDay).plusDays(7)
+      now.toLocalDate.isBefore(reopenDay)
+    }
+}
 
 case class Participant(
     participantId: Int,

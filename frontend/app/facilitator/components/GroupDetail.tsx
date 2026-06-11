@@ -29,6 +29,7 @@ import {
   fetchNotePrompts,
   fetchParticipant,
   fetchPrivateThread,
+  fetchSessionState,
   updateGroupNotes,
   updateNotePrompts,
   type GroupNotesResponse,
@@ -706,7 +707,8 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
         const gs = await fetchGroups(apiUrl);
         const found = gs.find((g) => g.groupId === groupId);
         if (!found) { if (active) setStatus("error"); return; }
-        const card = groupCardFrom(found);
+        const session = await fetchSessionState(apiUrl, groupId).catch(() => null);
+        const card = groupCardFrom(found, session?.sessionClosedForWeek ?? false);
         if (!active) return;
         setGroup(card);
 

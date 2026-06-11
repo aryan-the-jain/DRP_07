@@ -86,6 +86,24 @@ export function fetchPrivateThread(
   );
 }
 
+// Whether the room is open right now and whether this week's session has already been
+// held (a closed session stays closed until the next scheduled week). Reuses the
+// participant-side endpoint.
+export type SessionStateResponse = {
+  isSessionNow: boolean;
+  sessionClosedForWeek: boolean;
+};
+
+export function fetchSessionState(
+  apiUrl: string,
+  groupId: number,
+): Promise<SessionStateResponse> {
+  return getJson(
+    `${apiUrl}/groups/${groupId}/is-valid`,
+    "Could not check the room.",
+  );
+}
+
 // ---- writes ----
 export type GroupInput = {
   name: string;
@@ -127,14 +145,23 @@ export function placeParticipant(
 
 // Entering the room opens the session (sets has_session_now = true); leaving it via "End
 // the session" closes it. These are what gate a participant's ability to join — the body
-// is ignored by the backend, so we send an empty object.
-export function startSession(apiUrl: string, groupId: number): Promise<number> {
-  return send(
-    `${apiUrl}/groups/${groupId}/start-session`,
-    "POST",
-    {},
-    "Could not open the room.",
-  );
+// is ignored by the backend, so we send an empty object. The backend refuses (409) when
+// this week's session has already been held; that surfaces as SESSION_CLOSED_FOR_WEEK so
+// the room can show its gentle closed state instead of opening.
+export const SESSION_CLOSED_FOR_WEEK = "SESSION_CLOSED_FOR_WEEK";
+
+export async function startSession(
+  apiUrl: string,
+  groupId: number,
+): Promise<number> {
+  const response = await fetch(`${apiUrl}/groups/${groupId}/start-session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({}),
+  });
+  if (response.status === 409) throw new Error(SESSION_CLOSED_FOR_WEEK);
+  if (!response.ok) throw new Error("Could not open the room.");
+  return response.json() as Promise<number>;
 }
 
 export function endSession(apiUrl: string, groupId: number): Promise<number> {

@@ -67,18 +67,24 @@ export async function fetchParticipants(apiUrl: string): Promise<Participant[]> 
   return response.json();
 }
 
-// Whether the facilitator has opened the room right now. This — not the clock — is what
-// decides if a participant may step in: the session is only joinable once the facilitator
-// has entered (start-session), and everyone is removed when they leave (end-session).
-export async function fetchSessionValid(apiUrl: string): Promise<boolean> {
+// Whether the facilitator has opened the room right now, and whether this week's
+// session has already been held (closed sessions stay closed until the next
+// scheduled week). The flag — not the clock — is what decides if a participant
+// may step in: the session is only joinable once the facilitator has entered
+// (start-session), and everyone is removed when they leave (end-session).
+export type SessionState = {
+  isSessionNow: boolean;
+  sessionClosedForWeek: boolean;
+};
+
+export async function fetchSessionValid(apiUrl: string): Promise<SessionState> {
   const response = await fetch(`${apiUrl}/groups/${await resolveGroupId(apiUrl)}/is-valid`);
 
   if (!response.ok) {
     throw new Error("Could not check whether the room is open.");
   }
 
-  const data = (await response.json()) as { isSessionNow: boolean };
-  return data.isSessionNow;
+  return (await response.json()) as SessionState;
 }
 
 export async function fetchGroupMessages(apiUrl: string): Promise<GroupMessage[]> {

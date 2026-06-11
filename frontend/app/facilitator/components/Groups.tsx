@@ -29,6 +29,7 @@ import {
   fetchInbox,
   fetchParticipant,
   fetchPrivateThread,
+  fetchSessionState,
   updateGroup,
   type GroupInput,
 } from "../lib/api";
@@ -176,8 +177,20 @@ export function FacHome() {
     (async () => {
       try {
         const [gs, ar] = await Promise.all([fetchGroups(apiUrl), fetchArrivals(apiUrl)]);
+        // Whether each group's session has already been held this week — once it has,
+        // the card can't open the room again until the next scheduled occurrence.
+        // A dropped check just falls back to the clock-derived state.
+        const sessions = await Promise.all(
+          gs.map((g) =>
+            fetchSessionState(apiUrl, g.groupId).catch(() => null),
+          ),
+        );
         if (!active) return;
-        setGroups(gs.map(groupCardFrom));
+        setGroups(
+          gs.map((g, i) =>
+            groupCardFrom(g, sessions[i]?.sessionClosedForWeek ?? false),
+          ),
+        );
         setArrivals(ar.map(personFromParticipant));
         setStatus("ready");
       } catch {
@@ -461,8 +474,8 @@ export function GroupForm({ mode = "create", initial, returnTo }: { mode?: "crea
   // When reached while placing someone, head back to that person's page instead of home.
   const backDest = !editing && returnTo ? returnTo : "/facilitator";
 
-  const initTime = initial ? from24h(initial.scheduledTime) : { hour12: 7, minute: 0, meridiem: "pm" as const };
-  const initDay = initial ? Math.max(0, DAY_NAMES.indexOf(initial.dayOfWeek)) : 4;
+  const initTime = initial ? from24h(initial.scheduledTime) : { hour12: 10, minute: 0, meridiem: "am" as const };
+  const initDay = initial ? Math.max(0, DAY_NAMES.indexOf(initial.dayOfWeek)) : 0;
 
   const [name, setName] = useState(initial?.name ?? "");
   const [dayIndex, setDayIndex] = useState(initDay);

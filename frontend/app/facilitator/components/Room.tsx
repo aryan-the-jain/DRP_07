@@ -31,9 +31,11 @@ import {
   fetchInbox,
   fetchParticipant,
   fetchPrivateThread,
+  fetchSessionState,
   liveGroupId,
   sendGroupMessage,
   sendPrivateMessage,
+  SESSION_CLOSED_FOR_WEEK,
   startSession,
 } from "../lib/api";
 
@@ -191,35 +193,40 @@ function PrivateFeedItem({ item, onOpen }: { item: FeedItem; onOpen: () => void 
   );
 }
 
-// Interleave the private messages and shared reflections into one mixed stream.
+// Merge the private messages and shared reflections into one stream, newest
+// first — the rail is a triage surface, so whoever wrote most recently floats
+// to the top. Items without a timestamp sink to the bottom. The feed is
+// rebuilt from the polled inbox every render, so it reorders as messages
+// arrive.
 function buildPrivateFeed(inbox: InboxEntryResponse[]): FeedItem[] {
   const dms = inbox
     .filter((e) => e.lastMessageBody)
-    .map((e): FeedItem => ({
+    .map((e): FeedItem & { atIso: string | null } => ({
       id: e.participant.id,
       kind: "message",
       name: e.participant.displayName,
       tone: toneFor(e.participant.id),
       at: e.lastMessageAt ? formatMessageTime(e.lastMessageAt) : "",
+      atIso: e.lastMessageAt,
       text: (e.lastMessageFromId === facilitatorId ? "You: " : "") + (e.lastMessageBody ?? ""),
     }));
   const refs = inbox
     .filter((e) => e.sharedPrivateNote || e.sharedFacilitatorNote || e.sharedFreeWriting)
-    .map((e): FeedItem => ({
+    .map((e): FeedItem & { atIso: string | null } => ({
       id: e.participant.id,
       kind: "reflection",
       name: e.participant.displayName,
       tone: toneFor(e.participant.id),
       at: e.lastReflectionShareAt ? formatMessageTime(e.lastReflectionShareAt) : "",
+      atIso: e.lastReflectionShareAt,
       q: e.sharedPrivateNote ? "How are you feeling now?" : e.sharedFacilitatorNote ? "What has made you come here today?" : "From their free writing",
       text: e.sharedPrivateNote ?? e.sharedFacilitatorNote ?? e.sharedFreeWriting ?? "",
     }));
-  const out: FeedItem[] = [];
-  for (let i = 0; i < dms.length || i < refs.length; i++) {
-    if (i < dms.length) out.push(dms[i]);
-    if (i < refs.length) out.push(refs[i]);
-  }
-  return out;
+  return [...dms, ...refs].sort((a, b) => {
+    if (!a.atIso) return b.atIso ? 1 : 0;
+    if (!b.atIso) return -1;
+    return new Date(b.atIso).getTime() - new Date(a.atIso).getTime();
+  });
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
@@ -243,7 +250,7 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
   const [members, setMembers] = useState<Mini[]>([]);
   const [messages, setMessages] = useState<GroupMessageResponse[]>([]);
   const [inbox, setInbox] = useState<InboxEntryResponse[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "error" | "closed">("loading");
   const [modal, setModal] = useState<RoomModal>(null);
   const [draft, setDraft] = useState("");
   const [panelOpen, setPanelOpen] = useState(true);
@@ -289,10 +296,11 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
     let active = true;
     (async () => {
       try {
-        const [groups, msgs, box] = await Promise.all([
+        const [groups, msgs, box, session] = await Promise.all([
           fetchGroups(apiUrl),
           fetchGroupMessages(apiUrl, groupId),
           fetchInbox(apiUrl, groupId),
+          fetchSessionState(apiUrl, groupId).catch(() => null),
         ]);
         if (!active) return;
         const live = groups.find((g) => g.groupId === groupId);
@@ -305,11 +313,22 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
               .map((m) => ({ id: m.id, name: m.displayName, tone: toneFor(m.id) })),
           );
         }
+        // A session can only be held once per scheduled week — once it has been
+        // ended, the room stays closed until next time.
+        if (session?.sessionClosedForWeek) {
+          setStatus("closed");
+          return;
+        }
         setMessages(msgs);
         setInbox(box);
         setStatus("ready");
-        // Entering the room opens the session so participants can join.
-        startSession(apiUrl, groupId).catch(() => {});
+        // Entering the room opens the session so participants can join. The backend
+        // refuses if this week's session already happened (e.g. a stale deep link).
+        startSession(apiUrl, groupId).catch((e: unknown) => {
+          if (active && e instanceof Error && e.message === SESSION_CLOSED_FOR_WEEK) {
+            setStatus("closed");
+          }
+        });
       } catch {
         if (active) setStatus("error");
       }
@@ -388,6 +407,23 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
 
   if (status === "loading") return <Centered>Opening the room…</Centered>;
   if (status === "error") return <Centered>We couldn’t reach the server.</Centered>;
+  if (status === "closed")
+    return (
+      <Centered>
+        <div className="stack" style={{ alignItems: "center", gap: 14, textAlign: "center" }}>
+          <span className="h-title" style={{ fontSize: 24, color: "var(--ink)" }}>
+            This week’s session has already been held.
+          </span>
+          <span style={{ fontSize: 15.5, maxWidth: 420, lineHeight: 1.5 }}>
+            {groupName ? `${groupName} will` : "The group will"} meet again at its
+            usual time next week — the room stays gently closed until then.
+          </span>
+          <button className="btn warm" onClick={() => router.push("/facilitator")}>
+            Back to your groups
+          </button>
+        </div>
+      </Centered>
+    );
 
   const feed = buildPrivateFeed(inbox);
   const byId = new Map(members.map((m) => [m.id, m] as const));

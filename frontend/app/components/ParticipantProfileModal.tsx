@@ -41,6 +41,13 @@ export function ParticipantProfileModal({
               <p className="text-sm capitalize text-muted">
                 {participant.role}
               </p>
+              {(participant.pronouns || participant.age) && (
+                <p className="mt-0.5 text-sm text-muted">
+                  {[participant.pronouns, participant.age]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
             </div>
           </div>
 
@@ -63,9 +70,9 @@ export function ParticipantProfileModal({
           </section>
 
           <section className="sk thin soft v3 bg-paper p-4">
-            <h3 className="leader flex items-center gap-1.5">
+            <h3 className="leader flex items-center gap-1.5 [color:var(--warm-ink)]">
               <LineIcon name="heart" size={13} />
-              Fact
+              A fact about them
             </h3>
             <p className="mt-2 text-[15px] leading-6 text-ink">
               {participant.fact}

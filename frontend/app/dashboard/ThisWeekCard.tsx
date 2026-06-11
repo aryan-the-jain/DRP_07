@@ -11,6 +11,10 @@ type ThisWeekCardProps = {
   // Whether the facilitator has opened the room right now (backend session flag). null
   // while we're still checking. This — not the clock — gates stepping in.
   isSessionValid: boolean | null;
+  // Whether this week's session has already been held — once the facilitator
+  // closes the room it stays closed until the next scheduled week, so every
+  // time-related label points at next week.
+  sessionClosedForWeek: boolean;
   onOpenProfile: (participant: Participant) => void;
   onEnterRoom: () => void;
 };
@@ -100,20 +104,29 @@ export function ThisWeekCard({
   group,
   participants,
   isSessionValid,
+  sessionClosedForWeek,
   onOpenProfile,
   onEnterRoom,
 }: ThisWeekCardProps) {
-  const schedule = formatSessionSchedule(group?.dayOfWeek, group?.scheduledTime);
+  const schedule = formatSessionSchedule(
+    group?.dayOfWeek,
+    group?.scheduledTime,
+    group?.scheduledDurationMinutes,
+    sessionClosedForWeek,
+  );
   const facilitator = participants.find((p) => p.role === "facilitator");
   const members = participants.filter((p) => p.role !== "facilitator");
   // "Others" who'll be there — the members excluding the current participant.
   const others = members.filter((p) => p.id !== participantId);
   // Schedule-derived status drives only the badge/label; joinability is isSessionValid.
-  const { live, liveSoon } = liveStatus(
+  // Once this week's session has been held, the clock no longer matters.
+  const clockStatus = liveStatus(
     group?.dayOfWeek,
     group?.scheduledTime,
     group?.scheduledDurationMinutes,
   );
+  const live = !sessionClosedForWeek && clockStatus.live;
+  const liveSoon = !sessionClosedForWeek && clockStatus.liveSoon;
   const facilitatorFirstName =
     facilitator?.displayName?.split(" ")[0] ?? "the facilitator";
 
@@ -123,7 +136,7 @@ export function ThisWeekCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-2.5">
             <p className="leader [color:var(--warm)]">
-              This week
+              {sessionClosedForWeek ? "Next week" : "This week"}
               {schedule?.dateLabel ? ` · ${schedule.dayLabel} ${schedule.dateLabel}` : ""}
             </p>
           </div>
@@ -132,7 +145,7 @@ export function ThisWeekCard({
               {group?.name ?? "Your group"}
             </h2>
             <SessionBadge
-              isSessionValid={isSessionValid}
+              isSessionValid={isSessionValid && !sessionClosedForWeek}
               live={live}
               liveSoon={liveSoon}
             />
@@ -169,7 +182,7 @@ export function ThisWeekCard({
           </div>
         </div>
 
-        {isSessionValid ? (
+        {isSessionValid && !sessionClosedForWeek ? (
           <button
             type="button"
             onClick={onEnterRoom}

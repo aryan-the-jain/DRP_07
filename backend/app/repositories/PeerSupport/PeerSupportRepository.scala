@@ -72,13 +72,34 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext)
   }
 
   def isValidSessionNow(groupId: Int): Future[ReturnIsSessionNow] = {
-    val query = groupQuerier.isSessionValid(groupId)
-    db.run(query.result.head).map(ReturnIsSessionNow.apply)
+    val query = groupQuerier.selectSessionState(groupId)
+    db.run(query.result.head).map { case (isNow, day, _, lastEnded) =>
+      ReturnIsSessionNow(
+        isNow,
+        SessionWeek.closedForWeek(day, lastEnded, getCurrentTime())
+      )
+    }
   }
 
-  def startSession(groupId: Int): Future[Int] =
-    db.run(groupQuerier.startSession(groupId))
+  /* The room can only be opened if this week's session hasn't already been
+     held — otherwise we refuse, so a session can't be reopened until the next
+     scheduled week. */
+  def startSession(groupId: Int): Future[Either[String, Int]] = {
+    val now = getCurrentTime()
+    val action = groupQuerier
+      .selectSessionState(groupId)
+      .result
+      .headOption
+      .flatMap {
+        case Some((_, day, _, lastEnded))
+            if !SessionWeek.closedForWeek(day, lastEnded, now) =>
+          groupQuerier.startSession(groupId).map(Right(_))
+        case Some(_) => DBIO.successful(Left("sessionClosedForWeek"))
+        case None    => DBIO.successful(Left("groupNotFound"))
+      }
+    db.run(action.transactionally)
+  }
 
   def endSession(groupId: Int): Future[Int] =
-    db.run(groupQuerier.endSession(groupId))
+    db.run(groupQuerier.endSession(groupId, getCurrentTime()))
 }
