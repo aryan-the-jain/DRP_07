@@ -8,8 +8,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatMessageTime } from "../../lib/format";
-import { Avatar, DashRule, Icon, RoomHeader } from "./Primitives";
+import { dayLabelFor, formatMessageTime, isNewDay } from "../../lib/format";
+import { Avatar, DashRule, Icon } from "./Primitives";
 import { ConfirmPopup, Overlay } from "./Overlays";
 import { Hub, type HubTab } from "./Hub";
 import {
@@ -52,41 +52,42 @@ function Bubble({
 }) {
   const you = m.id === facilitatorId;
   const at = formatMessageTime(m.createdAt);
-  if (you) {
-    return (
-      <div className="row" style={{ gap: 11, alignItems: "flex-end", flexDirection: "row-reverse" }}>
-        <Avatar name="Sean" size={36} you />
-        <div className="stack" style={{ gap: 5, alignItems: "flex-end", maxWidth: 520 }}>
-          <div className="row" style={{ gap: 8 }}>
-            <span style={{ fontSize: 12.5, color: "var(--faint)" }}>{at}</span>
-            <span style={{ fontSize: 14.5, color: "var(--warm-ink)" }}>You · holding this space</span>
-          </div>
-          <div
-            className="sk thin"
-            style={{ background: "var(--warm)", borderColor: "transparent", color: "#fff", padding: "11px 16px", fontSize: 16, lineHeight: 1.45 }}
-          >
-            {m.body}
-          </div>
-        </div>
-      </div>
-    );
-  }
-  const name = sender?.name ?? "Someone";
+  const name = you ? "You" : sender?.name ?? "Someone";
   return (
-    <div className="row" style={{ gap: 11, alignItems: "flex-start" }}>
-      <Avatar name={name} size={36} tone={sender?.tone ?? toneFor(m.id)} onClick={() => onAvatar(m.id)} title={`Open ${name}'s profile`} />
-      <div className="stack" style={{ gap: 5, maxWidth: 520 }}>
-        <div className="row" style={{ gap: 8 }}>
-          <span className="h-title" style={{ fontSize: 18, color: "var(--ink)", cursor: "pointer" }} onClick={() => onAvatar(m.id)}>
+    <article className={`flex gap-3 sm:gap-4 ${you ? "flex-row-reverse" : ""}`}>
+      <Avatar
+        name={you ? "Sean" : name}
+        size={40}
+        you={you}
+        tone={you ? undefined : sender?.tone ?? toneFor(m.id)}
+        onClick={you ? undefined : () => onAvatar(m.id)}
+        title={you ? undefined : `Open ${name}'s profile`}
+      />
+      <div
+        className={`flex min-w-0 flex-1 flex-col ${you ? "items-end" : "items-start"}`}
+      >
+        <div
+          className={`mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 ${you ? "justify-end" : ""}`}
+        >
+          <span
+            className="text-sm font-semibold text-ink"
+            style={you ? undefined : { cursor: "pointer" }}
+            onClick={you ? undefined : () => onAvatar(m.id)}
+          >
             {name}
           </span>
-          <span style={{ fontSize: 12.5, color: "var(--faint)" }}>{at}</span>
+          {you && (
+            <span className="chip calm px-2 py-0 text-[11px]">holding this space</span>
+          )}
+          <time className="text-xs text-faint">{at}</time>
         </div>
-        <div className="sk thin soft" style={{ padding: "11px 16px", fontSize: 16, lineHeight: 1.45, color: "var(--ink)" }}>
+        <div
+          className={`bubble w-fit max-w-full text-[15px] leading-6 text-ink sm:text-base ${you ? "mine" : ""}`}
+        >
           {m.body}
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -206,6 +207,98 @@ type RoomModal =
   | { type: "end" }
   | null;
 
+// The "N here with you" chip, made interactive like the participant room's
+// participant popover: hover (or click to pin) opens the member list; tapping
+// someone opens their profile.
+function MembersChip({
+  members,
+  onOpen,
+}: {
+  members: Mini[];
+  onOpen: (id: number) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+  const isOpen = hovered || pinned;
+
+  useEffect(() => {
+    function onDocMouseDown(e: MouseEvent) {
+      if (pinned && ref.current && !ref.current.contains(e.target as Node)) {
+        setPinned(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, [pinned]);
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <button
+        type="button"
+        className="chip cursor-pointer transition hover:border-warm hover:bg-warm-soft"
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
+        onClick={() => setPinned((p) => !p)}
+      >
+        <Icon name="people" size={15} c="var(--muted)" /> {members.length} here with you
+      </button>
+
+      {isOpen && (
+        <div className="sk soft absolute left-0 top-full z-30 mt-2 w-72 bg-card p-2 text-ink shadow-[0_18px_45px_rgba(68,52,35,0.18)]">
+          <div className="flex items-start justify-between gap-3 px-3 py-2">
+            <div>
+              <p className="leader">In the room</p>
+              <p className="mt-1 text-sm text-muted">
+                Tap someone to open their profile.
+              </p>
+            </div>
+            {pinned && (
+              <button
+                type="button"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line text-muted transition hover:bg-warm-soft hover:text-ink"
+                aria-label="Close member list"
+                onClick={() => setPinned(false)}
+              >
+                <Icon name="x" size={14} c="var(--muted)" />
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-72 overflow-y-auto">
+            {members.length === 0 ? (
+              <p className="px-3 py-2 text-sm text-muted">No one here yet.</p>
+            ) : (
+              members.map((mb) => (
+                <button
+                  key={mb.id}
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left transition hover:bg-warm-soft focus:bg-warm-soft focus:outline-none"
+                  onClick={() => {
+                    onOpen(mb.id);
+                    setPinned(false);
+                    setHovered(false);
+                  }}
+                >
+                  <Avatar name={mb.name} size={36} tone={mb.tone} />
+                  <span className="block min-w-0 truncate text-sm font-semibold text-ink">
+                    {mb.name}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
   const router = useRouter();
   const apiUrl = apiBase();
@@ -222,6 +315,13 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
   const [splitterHover, setSplitterHover] = useState(false);
   const [panelCard, setPanelCard] = useState<{ person: Person; tab: HubTab } | null>(null);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Keep the group conversation pinned to the latest message (e.g. right after
+  // the facilitator sends one), matching the participant room's behaviour.
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: "end" });
+  }, [messages]);
 
   const onSplitterMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -394,34 +494,59 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
 
   return (
     <div className="stack" style={{ height: "100vh", background: "var(--paper)", position: "relative" }}>
-      <RoomHeader
-        room={groupName}
-        here={`${members.length} here with you`}
-        mins={duration ? `${duration} minutes together` : ""}
-        right={
+      <header className="shrink-0 border-b-2 border-dashed border-line bg-card">
+        <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div>
+              <p className="leader">tonight&apos;s room</p>
+              <h1 className="h-title text-2xl text-ink sm:text-[28px]">{groupName}</h1>
+            </div>
+            <MembersChip
+              members={members}
+              onOpen={(id) => openCard(id, "about")}
+            />
+            {duration && (
+              <span className="chip">
+                <Icon name="clock" size={15} c="var(--muted)" /> {duration} minutes together
+              </span>
+            )}
+          </div>
           <button className="btn red-ghost sm" onClick={() => setModal({ type: "end" })}>
-            <Icon name="x" size={15} />
-            End the session
+            <Icon name="x" size={15} /> End the session
           </button>
-        }
-      />
-      <DashRule />
+        </div>
+      </header>
       <div className="row" style={{ flex: 1, minHeight: 0, alignItems: "stretch" }}>
         <div className="scroll" style={{ flex: 1, padding: "26px 40px" }}>
-          <div style={{ maxWidth: 760, margin: "0 auto" }}>
-            <div className="row" style={{ gap: 11, justifyContent: "center", marginBottom: 22, color: "var(--faint)", fontSize: 14 }}>
-            </div>
+          <div className="mx-auto flex max-w-3xl flex-col gap-5">
             {messages.length === 0 ? (
-              <div className="row" style={{ justifyContent: "center", color: "var(--muted)", fontSize: 15.5 }}>
+              <div className="sk thin soft dash bg-paper p-6 text-center text-[15px] leading-relaxed text-muted">
                 No messages yet. You can open gently when you’re ready.
               </div>
             ) : (
-              <div className="stack" style={{ gap: 18 }}>
-                {messages.map((m, i) => (
-                  <Bubble key={i} m={m} sender={byId.get(m.id)} onAvatar={(id) => openCard(id, "about")} />
-                ))}
-              </div>
+              messages.map((m, i) => {
+                const dateLabel = isNewDay(messages[i - 1]?.createdAt, m.createdAt)
+                  ? dayLabelFor(m.createdAt)
+                  : null;
+                return (
+                  <div key={i} className="flex flex-col gap-5">
+                    {dateLabel && (
+                      <div className="flex justify-center" aria-hidden="true">
+                        <span className="chip px-3 py-0.5 text-[12px] text-faint">
+                          {dateLabel}
+                        </span>
+                      </div>
+                    )}
+                    <Bubble
+                      m={m}
+                      sender={byId.get(m.id)}
+                      onAvatar={(id) => openCard(id, "about")}
+                    />
+                  </div>
+                );
+              })
             )}
+            <div ref={messagesEndRef} aria-hidden="true" />
           </div>
         </div>
 
@@ -547,19 +672,26 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
           </div>
         )}
       </div>
-      <DashRule />
-      <div className="row" style={{ padding: "16px 30px", gap: 14 }}>
-        <input
-          className="field"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendToGroup()}
-          placeholder={`Share something with the ${groupName}…`}
-        />
-        <button className="btn warm lg" onClick={sendToGroup} disabled={!draft.trim()}>
-          <Icon name="send" size={18} c="#fff" /> Send
-        </button>
-      </div>
+      <footer className="shrink-0 border-t-2 border-dashed border-line bg-card px-4 py-4 sm:px-5">
+        <div className="mx-auto flex max-w-4xl items-center gap-3">
+          <input
+            className="field min-h-12 flex-1 !rounded-full px-5"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendToGroup()}
+            placeholder={`Share something with the ${groupName}…`}
+          />
+          <button
+            className="btn warm inline-flex h-12 min-w-12 items-center justify-center gap-2 !rounded-full px-5"
+            onClick={sendToGroup}
+            disabled={!draft.trim()}
+            aria-label="Send message"
+          >
+            <Icon name="send" size={18} c="#fff" />
+            <span className="hidden sm:inline">Send</span>
+          </button>
+        </div>
+      </footer>
 
       {modal && (
         <Overlay onClose={() => setModal(null)}>
