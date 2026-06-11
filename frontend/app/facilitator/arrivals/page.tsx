@@ -1,5 +1,10 @@
+import { FacilitatorSidebar } from "../components/FacilitatorSidebar";
 import { OnboardingList } from "../components/Onboarding";
 
 export default function ArrivalsPage() {
-  return <OnboardingList />;
+  return (
+    <FacilitatorSidebar>
+      <OnboardingList />
+    </FacilitatorSidebar>
+  );
 }

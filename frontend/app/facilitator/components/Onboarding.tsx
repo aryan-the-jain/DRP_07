@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Avatar, DashRule, Field, Icon, Logo, SoftLabel } from "./Primitives";
+import { Avatar, DashRule, Field, Icon, SoftLabel } from "./Primitives";
 import {
   ConfirmPopup,
   FullProfilePopup,
@@ -106,7 +106,7 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
   // page — either way, send the facilitator back where they came from.
   const cameFromDashboard = from === "dashboard";
   const backTo = cameFromDashboard ? "/facilitator" : "/facilitator/arrivals";
-  const backLabel = cameFromDashboard ? "Home" : "New arrivals";
+  const backLabel = cameFromDashboard ? "Back to home" : "Back to arrivals";
   // Starting a new group from here should return to this person's page (so they can be
   // placed into the group just made), not the facilitator home.
   const selfPath = `/facilitator/arrivals/${participantId}${cameFromDashboard ? "?from=dashboard" : ""}`;
@@ -171,20 +171,19 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
   const m = person;
 
   return (
-    <div className="stack" style={{ minHeight: "100%", height: "100vh", background: "var(--paper)", position: "relative" }}>
-      <div className="row" style={{ padding: "15px 26px", gap: 14 }}>
-        <button className="btn ghost sm" onClick={() => router.push(backTo)}>
-          <Icon name="back" size={16} c="var(--muted)" /> {backLabel}
-        </button>
-        <div style={{ flex: 1 }} />
-        <Logo size={26} />
-      </div>
-      <DashRule />
-
+    <div className="stack" style={{ minHeight: "100%", height: "100%", background: "var(--paper)", position: "relative" }}>
       <div className="row" style={{ flex: 1, minHeight: 0, alignItems: "stretch" }}>
         {/* ---------------- LEFT · who they are ---------------- */}
         <div className="scroll" style={{ flex: 1, padding: "26px 32px" }}>
           <div style={{ maxWidth: 600, margin: "0 auto" }}>
+            {/* Slim, calm back link — returns to wherever they came from (?from). */}
+            <button
+              className="btn ghost sm"
+              onClick={() => router.push(backTo)}
+              style={{ border: "none", padding: "3px 6px", marginLeft: -6, marginBottom: 16, color: "var(--muted)" }}
+            >
+              <Icon name="back" size={15} c="var(--muted)" /> {backLabel}
+            </button>
             <div className="row" style={{ gap: 18, alignItems: "flex-start" }}>
               <Avatar name={m.name} size={64} tone={m.tone} />
               <div className="stack" style={{ gap: 6, flex: 1, paddingTop: 2 }}>
@@ -390,14 +389,6 @@ export function OnboardingList() {
 
   return (
     <div className="stack" style={{ minHeight: "100%", background: "var(--paper)", position: "relative" }}>
-      <div className="row" style={{ padding: "15px 26px", gap: 14 }}>
-        <button className="btn ghost sm" onClick={() => router.push("/facilitator")}>
-          <Icon name="back" size={16} c="var(--muted)" /> Home
-        </button>
-        <div style={{ flex: 1 }} />
-        <Logo size={26} />
-      </div>
-      <DashRule />
       <div className="scroll" style={{ flex: 1, padding: "26px 30px" }}>
         <div style={{ maxWidth: 980, margin: "0 auto" }}>
           <div className="row" style={{ gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
