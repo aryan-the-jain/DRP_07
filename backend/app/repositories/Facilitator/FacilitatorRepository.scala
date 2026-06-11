@@ -211,7 +211,16 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
     db.run(
       supportGroups
         .filter(_.groupId === groupId)
-        .map(g => (g.name, g.day, g.time, g.duration, g.description, g.lastSessionEndedAt))
+        .map(g =>
+          (
+            g.name,
+            g.day,
+            g.time,
+            g.duration,
+            g.description,
+            g.lastSessionEndedAt
+          )
+        )
         .update(
           (
             update.name,

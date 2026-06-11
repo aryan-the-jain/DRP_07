@@ -60,7 +60,16 @@ class GroupQueries(
         Rep[String],
         Rep[Role]
     ),
-    (Int, String, Option[String], String, Option[String], List[String], String, Role),
+    (
+        Int,
+        String,
+        Option[String],
+        String,
+        Option[String],
+        List[String],
+        String,
+        Role
+    ),
     Seq
   ] = {
     val ps = for
@@ -110,7 +119,16 @@ class GroupQueries(
         Rep[String],
         Rep[Role]
     ),
-    (Int, String, Option[String], String, Option[String], List[String], String, Role),
+    (
+        Int,
+        String,
+        Option[String],
+        String,
+        Option[String],
+        List[String],
+        String,
+        Role
+    ),
     Seq
   ] = {
     for p <- participants if p.participantId === participantId

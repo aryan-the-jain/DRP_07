@@ -37,8 +37,10 @@ object SessionWeek {
     lastEnded.exists { ended =>
       // The meeting day of the close's own week (the meeting day at or before
       // the close), then the next meeting day a week on.
-      val daysSinceMeetingDay = (ended.getDayOfWeek.getValue - day.getValue + 7) % 7
-      val reopenDay = ended.toLocalDate.minusDays(daysSinceMeetingDay).plusDays(7)
+      val daysSinceMeetingDay =
+        (ended.getDayOfWeek.getValue - day.getValue + 7) % 7
+      val reopenDay =
+        ended.toLocalDate.minusDays(daysSinceMeetingDay).plusDays(7)
       now.toLocalDate.isBefore(reopenDay)
     }
 }
