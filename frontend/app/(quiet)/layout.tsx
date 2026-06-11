@@ -8,8 +8,7 @@ import { QuietSpaceProvider } from "../lib/QuietSpaceContext";
 // Shared shell for every quiet-space group (/write, /calm, /draw, /resources).
 // It mounts the sidebar once and wraps the groups in the shared quiet-space
 // context, so reflection state is preserved as the visitor moves between
-// groups and sub-tabs. SidebarLayout works out the group-vs-home framing from
-// the stored world, so the layout itself stays presentational.
+// groups and sub-tabs.
 export default function QuietGroupsLayout({
   children,
 }: {

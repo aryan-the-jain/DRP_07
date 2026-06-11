@@ -1,10 +1,11 @@
 import { RefObject } from "react";
 
-import { Participant, SupportGroup } from "../lib/types";
-import { LineIcon } from "./DesignPrimitives";
+import { ActiveTab, Participant, SupportGroup } from "../lib/types";
+import { BrandMark, LineIcon } from "./DesignPrimitives";
 import { ParticipantPopover } from "./ParticipantPopover";
 
 type ChatHeaderProps = {
+  activeTab: ActiveTab;
   group: SupportGroup | null;
   participants: Participant[];
   isParticipantListOpen: boolean;
@@ -13,10 +14,12 @@ type ChatHeaderProps = {
   onParticipantListHoverChange: (isHovered: boolean) => void;
   onParticipantListPinnedChange: (isPinned: boolean) => void;
   onOpenParticipantProfile: (participant: Participant) => void;
+  onSetActiveTab: (activeTab: ActiveTab) => void;
   onExit: () => void;
 };
 
 export function ChatHeader({
+  activeTab,
   group,
   participants,
   isParticipantListOpen,
@@ -25,15 +28,19 @@ export function ChatHeader({
   onParticipantListHoverChange,
   onParticipantListPinnedChange,
   onOpenParticipantProfile,
+  onSetActiveTab,
   onExit,
 }: ChatHeaderProps) {
-  // The brand mark, "message the facilitator" entry, and the "{facilitator} is
-  // holding this space" line all live in the sidebar now, so the room header is
-  // just the session identity plus a calm way to leave.
+  const facilitatorName = group?.facilitatorName ?? "Sean";
+
+  const isFacilitatorTab = activeTab === "facilitator";
+
   return (
     <header className="shrink-0 border-b-2 border-dashed border-line bg-card">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <BrandMark />
+          <span className="hidden h-7 w-px bg-line sm:block" aria-hidden="true" />
           <div>
             <p className="leader">Today&apos;s room</p>
             <h1 className="h-title text-2xl text-ink sm:text-[28px]">
@@ -67,6 +74,41 @@ export function ChatHeader({
           </span>
         </div>
       </div>
+
+      {activeTab !== "quiet" && (
+        <div className="flex flex-col gap-2.5 border-t-2 border-dashed border-line px-4 py-3 text-[15px] text-muted sm:flex-row sm:items-center sm:px-5">
+          <span className="flex items-center gap-2">
+            <span className="av calm h-7 w-7 text-xs" aria-hidden="true">
+              {facilitatorName.slice(0, 1).toUpperCase()}
+            </span>
+            <span>
+              <strong className="font-semibold text-ink">
+                {facilitatorName}
+              </strong>{" "}
+              is holding this space
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              onSetActiveTab(isFacilitatorTab ? "group" : "facilitator")
+            }
+            className={`btn sm inline-flex w-fit items-center gap-2 ${isFacilitatorTab ? "" : "warm"}`}
+          >
+            {isFacilitatorTab ? (
+              <>
+                <LineIcon name="arrowLeft" size={15} />
+                Back to the group
+              </>
+            ) : (
+              <>
+                <LineIcon name="mail" size={15} />
+                Message {facilitatorName} privately
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </header>
   );
 }
