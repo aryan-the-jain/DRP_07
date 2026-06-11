@@ -108,7 +108,7 @@ function SidebarNavLink({
       aria-current={active ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       data-metric-id={item.metricId}
-      className={`nav-link ${item.tone === "calm" ? "calm" : ""} ${
+      className={`nav-link ${item.tone ? item.tone : ""} ${
         active ? "active" : ""
       } ${collapsed ? "justify-center" : ""}`}
     >

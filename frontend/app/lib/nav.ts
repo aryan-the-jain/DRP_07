@@ -12,7 +12,7 @@ export type NavGroup = {
   label: string;
   subtitle?: string;
   icon: IconName;
-  tone?: "calm";
+  tone?: "calm" | "warm";
   // Path prefix used to mark the group active (defaults to href).
   match?: string;
   // UX-metrics target id, kept on the relevant nav element.
@@ -20,7 +20,7 @@ export type NavGroup = {
 };
 
 export const SIDEBAR_GROUPS: NavGroup[] = [
-  { href: "/dashboard", label: "Home", icon: "home" },
+  { href: "/dashboard", label: "Home", icon: "home", tone: "warm" },
   {
     href: "/write/free",
     label: "Write",
