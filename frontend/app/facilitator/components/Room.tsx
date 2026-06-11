@@ -204,15 +204,15 @@ function buildPrivateFeed(inbox: InboxEntryResponse[]): FeedItem[] {
       text: (e.lastMessageFromId === facilitatorId ? "You: " : "") + (e.lastMessageBody ?? ""),
     }));
   const refs = inbox
-    .filter((e) => e.sharedFacilitatorNote || e.sharedFreeWriting)
+    .filter((e) => e.sharedPrivateNote || e.sharedFacilitatorNote || e.sharedFreeWriting)
     .map((e): FeedItem => ({
       id: e.participant.id,
       kind: "reflection",
       name: e.participant.displayName,
       tone: toneFor(e.participant.id),
       at: e.lastReflectionShareAt ? formatMessageTime(e.lastReflectionShareAt) : "",
-      q: e.sharedFacilitatorNote ? "Something they wanted you to see" : "From their free writing",
-      text: `“${e.sharedFacilitatorNote ?? e.sharedFreeWriting ?? ""}”`,
+      q: e.sharedPrivateNote ? "How are you feeling now?" : e.sharedFacilitatorNote ? "What has made you come here today?" : "From their free writing",
+      text: e.sharedPrivateNote ?? e.sharedFacilitatorNote ?? e.sharedFreeWriting ?? "",
     }));
   const out: FeedItem[] = [];
   for (let i = 0; i < dms.length || i < refs.length; i++) {
@@ -320,9 +320,12 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
   }, [apiUrl, groupId]);
 
   useEffect(() => {
-    const id = setInterval(loadMessages, 5000);
+    const id = setInterval(() => {
+      loadMessages();
+      loadInbox();
+    }, 5000);
     return () => clearInterval(id);
-  }, [loadMessages]);
+  }, [loadMessages, loadInbox]);
 
   // Load a member's profile + private thread + shared reflections into one enriched Person.
   const buildPerson = async (id: number): Promise<Person> => {
@@ -334,7 +337,7 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
     return {
       ...personFromParticipant(p),
       dm: dmsFrom(thread, facilitatorId),
-      reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
+      reflections: entry ? sharedReflections(entry.sharedPrivateNote, entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
       unread: entry?.hasUnread ? 1 : 0,
     };
   };
@@ -394,9 +397,10 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
       <RoomHeader
         room={groupName}
         here={`${members.length} here with you`}
-        mins={duration ? `${duration} mins together` : ""}
+        mins={duration ? `${duration} minutes together` : ""}
         right={
-          <button className="btn ghost" onClick={() => setModal({ type: "end" })}>
+          <button className="btn red-ghost sm" onClick={() => setModal({ type: "end" })}>
+            <Icon name="x" size={15} />
             End the session
           </button>
         }
@@ -570,7 +574,8 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
           )}
           {modal.type === "end" && (
             <ConfirmPopup
-              icon="leaf"
+              icon="x"
+              accent="var(--red)"
               title="End tonight’s session?"
               body="Everyone is told the group is closing for tonight and gently returned home. Private messages from this session won’t carry over."
               confirm="End session"

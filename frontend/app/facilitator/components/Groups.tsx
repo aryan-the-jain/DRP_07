@@ -204,7 +204,7 @@ export function FacHome() {
         person: {
           ...personFromParticipant(p),
           dm: dmsFrom(thread, facilitatorId),
-          reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
+          reflections: entry ? sharedReflections(entry.sharedPrivateNote, entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
           unread: entry?.hasUnread ? 1 : 0,
         },
       });
@@ -454,10 +454,12 @@ function from24h(time: string): { hour12: number; minute: number; meridiem: "am"
   };
 }
 
-export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edit"; initial?: FacGroupResponse }) {
+export function GroupForm({ mode = "create", initial, returnTo }: { mode?: "create" | "edit"; initial?: FacGroupResponse; returnTo?: string }) {
   const router = useRouter();
   const apiUrl = apiBase();
   const editing = mode === "edit";
+  // When reached while placing someone, head back to that person's page instead of home.
+  const backDest = !editing && returnTo ? returnTo : "/facilitator";
 
   const initTime = initial ? from24h(initial.scheduledTime) : { hour12: 7, minute: 0, meridiem: "pm" as const };
   const initDay = initial ? Math.max(0, DAY_NAMES.indexOf(initial.dayOfWeek)) : 4;
@@ -500,8 +502,8 @@ export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edi
   return (
     <div className="stack" style={{ minHeight: "100%", background: "var(--paper)", position: "relative" }}>
       <div className="row" style={{ padding: "15px 26px", gap: 14 }}>
-        <button className="btn ghost sm" onClick={() => router.push("/facilitator")}>
-          <Icon name="back" size={16} c="var(--muted)" /> {editing ? initial?.name ?? "Your groups" : "Your groups"}
+        <button className="btn ghost sm" onClick={() => router.push(backDest)}>
+          <Icon name="back" size={16} c="var(--muted)" /> {editing ? initial?.name ?? "Your groups" : returnTo ? "Back" : "Your groups"}
         </button>
         <div style={{ flex: 1 }} />
         <Logo size={24} />
@@ -588,7 +590,7 @@ export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edi
               {editing ? "Save changes" : "Create group"} <Icon name="check" size={17} c="#fff" />
             </button>
             <div style={{ flex: 1 }} />
-            <button className="btn ghost" onClick={() => router.push("/facilitator")}>
+            <button className="btn ghost" onClick={() => router.push(backDest)}>
               Discard
             </button>
           </div>
@@ -599,7 +601,7 @@ export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edi
         // After creating, head back to the dashboard; after editing, return to the group's
         // own details page — that's where the edit was reached from.
         (() => {
-          const dest = editing && initial ? `/facilitator/groups/${initial.groupId}` : "/facilitator";
+          const dest = editing && initial ? `/facilitator/groups/${initial.groupId}` : backDest;
           const go = () => router.push(dest);
           return (
             <Overlay onClose={go}>
@@ -612,7 +614,7 @@ export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edi
                     ? "Your edits are live. Members will see anything that affects them next time they open the app."
                     : "Lovely. Your new group is ready — you can invite people in from its card."
                 }
-                confirm={editing ? "Back to group details" : "Back to your groups"}
+                confirm={editing ? "Back to group details" : returnTo ? "Back" : "Back to your groups"}
                 cancel={null}
                 onClose={go}
                 onConfirm={go}
@@ -625,8 +627,8 @@ export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edi
   );
 }
 
-export function GroupCreate() {
-  return <GroupForm mode="create" />;
+export function GroupCreate({ returnTo }: { returnTo?: string }) {
+  return <GroupForm mode="create" returnTo={returnTo} />;
 }
 
 export function GroupEdit({ groupId }: { groupId: number }) {

@@ -200,6 +200,36 @@ export function updateGroupNotes(
   );
 }
 
+// The facilitator's two reflective prompts for a group: why they put these people
+// together, and anything to keep a gentle eye on (safeguarding). Both private to them.
+export type NotePrompts = { creationReason: string; safeguardingConcerns: string };
+
+// GET returns an array (the repo returns a Seq); take the first row, default to empty.
+export async function fetchNotePrompts(
+  apiUrl: string,
+  groupId: number,
+): Promise<NotePrompts> {
+  const rows = await getJson<NotePrompts[]>(
+    `${apiUrl}/facilitator/groups/${groupId}/note-prompts`,
+    "Could not load group prompts.",
+  );
+  return rows[0] ?? { creationReason: "", safeguardingConcerns: "" };
+}
+
+// The PATCH replaces both columns, so always send the pair together.
+export function updateNotePrompts(
+  apiUrl: string,
+  groupId: number,
+  prompts: NotePrompts,
+): Promise<unknown> {
+  return send(
+    `${apiUrl}/facilitator/groups/${groupId}/note-prompts`,
+    "PATCH",
+    prompts,
+    "Could not save group prompts.",
+  );
+}
+
 export async function deleteGroup(
   apiUrl: string,
   groupId: number,

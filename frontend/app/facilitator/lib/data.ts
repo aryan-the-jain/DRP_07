@@ -53,6 +53,7 @@ export type InboxEntryResponse = {
   lastMessageFromId: number | null;
   lastMessageAt: string | null;
   hasUnread: boolean;
+  sharedPrivateNote: string | null;
   sharedFacilitatorNote: string | null;
   sharedFreeWriting: string | null;
   lastReflectionShareAt: string | null;
@@ -288,13 +289,15 @@ export function dmsFrom(messages: FacMessageResponse[], facilitatorId: number): 
 }
 
 export function sharedReflections(
+  privateNote: string | null,
   facilitatorNote: string | null,
   freeWriting: string | null,
   sharedAt: string | null = null,
 ): Reflection[] {
   const at = sharedAt ? formatMessageTime(sharedAt) : null;
   const out: Reflection[] = [];
-  if (facilitatorNote) out.push({ q: "Something they wanted you to see", a: facilitatorNote, at });
+  if (privateNote) out.push({ q: "How are you feeling now?", a: privateNote, at });
+  if (facilitatorNote) out.push({ q: "What has made you come here today?", a: facilitatorNote, at });
   if (freeWriting) out.push({ q: "From their free writing", a: freeWriting, at });
   return out;
 }

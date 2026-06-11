@@ -107,6 +107,9 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
   const cameFromDashboard = from === "dashboard";
   const backTo = cameFromDashboard ? "/facilitator" : "/facilitator/arrivals";
   const backLabel = cameFromDashboard ? "Home" : "New arrivals";
+  // Starting a new group from here should return to this person's page (so they can be
+  // placed into the group just made), not the facilitator home.
+  const selfPath = `/facilitator/arrivals/${participantId}${cameFromDashboard ? "?from=dashboard" : ""}`;
   const [person, setPerson] = useState<Person | null>(null);
   const [groups, setGroups] = useState<GroupCard[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -283,16 +286,16 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
             </span>
           </div>
           <div className="scroll" style={{ flex: 1, padding: "8px 18px 18px" }}>
-            {groups.length === 0 ? (
-              <div
-                className="sk thin soft"
-                style={{ padding: "18px 16px", textAlign: "center", color: "var(--muted)", fontSize: 15, borderStyle: "dashed" }}
-              >
-                You don’t have any groups yet — create one first.
-              </div>
-            ) : (
-              <div className="stack" style={{ gap: 12 }}>
-                {groups.map((c) => (
+            <div className="stack" style={{ gap: 12 }}>
+              {groups.length === 0 ? (
+                <div
+                  className="sk thin soft"
+                  style={{ padding: "18px 16px", textAlign: "center", color: "var(--muted)", fontSize: 15, borderStyle: "dashed" }}
+                >
+                  You don’t have any groups yet — start one below.
+                </div>
+              ) : (
+                groups.map((c) => (
                   <GroupPlaceCard
                     key={c.groupId}
                     c={c}
@@ -301,9 +304,33 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
                     onDetails={() => setModal({ type: "group", group: c })}
                     onAvatar={(id) => openMember(id, c.name)}
                   />
-                ))}
+                ))
+              )}
+              {/* start a new group — mirrors the trailing card on the home panel */}
+              <div
+                className="sk dash soft"
+                onClick={() => router.push(`/facilitator/groups/new?returnTo=${encodeURIComponent(selfPath)}`)}
+                style={{
+                  padding: 22,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  minHeight: 150,
+                  cursor: "pointer",
+                  background: "transparent",
+                }}
+              >
+                <div className="av anon" style={{ width: 44, height: 44 }}>
+                  <Icon name="plus" size={22} c="var(--muted)" />
+                </div>
+                <span style={{ fontSize: 16, color: "var(--muted)" }}>Start a new group</span>
+                <span style={{ fontSize: 13.5, color: "var(--faint)", textAlign: "center", maxWidth: 180 }}>
+                  for a new day, a new focus, or an overflowing group
+                </span>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
