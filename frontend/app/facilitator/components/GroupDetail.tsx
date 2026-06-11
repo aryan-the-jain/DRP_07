@@ -13,7 +13,6 @@ import { InvitePanel } from "./Invite";
 import {
   dmsFrom,
   groupCardFrom,
-  lostLabel,
   personFromParticipant,
   sharedReflections,
   type GroupCard,

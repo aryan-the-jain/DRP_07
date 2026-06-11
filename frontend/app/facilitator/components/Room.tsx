@@ -90,42 +90,6 @@ function Bubble({
   );
 }
 
-// A sketchy on/off switch for the panel's visibility toggle.
-function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div
-      onClick={() => onChange(!on)}
-      role="switch"
-      aria-checked={on}
-      style={{
-        width: 40,
-        height: 23,
-        borderRadius: 20,
-        border: "1.8px solid var(--ink)",
-        background: on ? "var(--warm)" : "var(--card)",
-        position: "relative",
-        cursor: "pointer",
-        transition: "background .15s",
-        flex: "0 0 auto",
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          top: 1.5,
-          left: on ? 18 : 2,
-          width: 17,
-          height: 17,
-          borderRadius: "50%",
-          background: "var(--paper)",
-          border: "1.6px solid var(--ink)",
-          transition: "left .15s",
-        }}
-      />
-    </div>
-  );
-}
-
 // One unified private item — warm/orange for a message, sky/blue for a reflection. Always
 // shows a time when one is known (reflections have no shared-at column, so theirs is blank).
 type FeedItem = {

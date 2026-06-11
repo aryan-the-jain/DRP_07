@@ -66,7 +66,6 @@ function HoverFace({ name, tone, onClick }: { name: string; tone: GroupCard["mem
 // The notes icon button is hidden during live sessions.
 function GroupCard({
   c,
-  onInvite,
   onAvatar,
   onGroupDetails,
   onNotes,
