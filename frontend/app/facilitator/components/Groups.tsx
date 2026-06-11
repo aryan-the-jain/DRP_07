@@ -229,12 +229,6 @@ export function FacHome() {
 
   return (
     <div className="stack" style={{ minHeight: "100%", background: "var(--paper)", position: "relative" }}>
-      <div className="row" style={{ padding: "16px 30px", gap: 14 }}>
-        <Logo size={28} />
-        <div style={{ flex: 1 }} />
-      </div>
-      <DashRule />
-
       <div className="scroll" style={{ flex: 1, padding: "28px 30px" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto" }}>
           <div className="stack" style={{ gap: 4 }}>

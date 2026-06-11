@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatTimeSince } from "../../lib/format";
-import { Avatar, DashRule, Field, Icon, Logo, SoftLabel, type IconName } from "./Primitives";
+import { Avatar, DashRule, Field, Icon, SoftLabel, type IconName } from "./Primitives";
 import { CircleBadge, CloseBtn, ConfirmPopup, HobbyChips, LostCategory, LostChip, Overlay, PopBlock } from "./Overlays";
 import { Hub } from "./Hub";
 import { InvitePanel } from "./Invite";
@@ -761,16 +761,6 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
 
   return (
     <div className="stack" style={{ minHeight: "100%", background: "var(--paper)", position: "relative" }}>
-      {/* top bar */}
-      <div className="row" style={{ padding: "15px 26px", gap: 10 }}>
-        <button className="btn ghost sm" onClick={() => router.push("/facilitator")}>
-          <Icon name="back" size={16} c="var(--muted)" /> Your groups
-        </button>
-        <div style={{ flex: 1 }} />
-        <Logo size={24} />
-      </div>
-      <DashRule />
-
       <div className="scroll" style={{ flex: 1, padding: "26px 32px 32px" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           {status === "loading" && <Centered>Loading…</Centered>}

@@ -1,3 +1,4 @@
+import { FacilitatorSidebar } from "../../components/FacilitatorSidebar";
 import { OnboardingCard } from "../../components/Onboarding";
 
 export default async function ArrivalReadPage({
@@ -9,5 +10,9 @@ export default async function ArrivalReadPage({
 }) {
   const { id } = await params;
   const { from } = await searchParams;
-  return <OnboardingCard participantId={Number(id)} from={from} />;
+  return (
+    <FacilitatorSidebar>
+      <OnboardingCard participantId={Number(id)} from={from} />
+    </FacilitatorSidebar>
+  );
 }
