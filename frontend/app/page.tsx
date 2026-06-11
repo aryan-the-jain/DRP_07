@@ -241,7 +241,6 @@ export default function Home() {
       {sessionEnded && (
         <SessionEndedDialog
           facilitatorName={group?.facilitatorName ?? "your facilitator"}
-          onQuietSpace={() => router.push("/quiet")}
           onContinue={() => router.push("/dashboard")}
         />
       )}
