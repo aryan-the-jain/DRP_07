@@ -14,11 +14,11 @@ import { apiBase, fetchArrivals } from "../lib/api";
 const STORAGE_KEY = "fac.sidebar.collapsed";
 const MOBILE_BREAKPOINT = 768;
 
-type FacNavItem = { href: string; label: string; icon: IconName };
+type FacNavItem = { href: string; label: string; icon: IconName; tone?: "warm" | "calm" };
 
 const NAV: FacNavItem[] = [
-  { href: "/facilitator", label: "My groups", icon: "home" },
-  { href: "/facilitator/arrivals", label: "Arrivals", icon: "people" },
+  { href: "/facilitator", label: "My groups", icon: "home", tone: "warm" },
+  { href: "/facilitator/arrivals", label: "Arrivals", icon: "people", tone: "warm" },
 ];
 
 // Arrivals owns the /facilitator/arrivals subtree; Home owns everything else
@@ -143,7 +143,7 @@ export function FacilitatorSidebar({ children }: { children: ReactNode }) {
                     : undefined
                 }
                 title={collapsed ? item.label : undefined}
-                className={`nav-link ${active ? "active" : ""} ${
+                className={`nav-link ${item.tone ? item.tone : ""} ${active ? "active" : ""} ${
                   collapsed ? "justify-center" : ""
                 }`}
               >

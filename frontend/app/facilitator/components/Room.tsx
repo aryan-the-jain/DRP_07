@@ -76,9 +76,6 @@ function Bubble({
           >
             {name}
           </span>
-          {you && (
-            <span className="chip calm px-2 py-0 text-[11px]">holding this space</span>
-          )}
           <time className="text-xs text-faint">{at}</time>
         </div>
         <div
