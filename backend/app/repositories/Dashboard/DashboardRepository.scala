@@ -30,6 +30,6 @@ class DashboardRepository @Inject() (executionContext: ExecutionContext)
 
   def getIcebreakers(participantId: Int): Future[Seq[ReturnIcebreakers]] =
     db.run(
-      dashboardQuerier.selectIcebreakers(participantId).sortBy(_._3.asc).result
+      dashboardQuerier.selectIcebreakers(participantId).sortBy(_._3.desc).result
     ).map(_.map(ReturnIcebreakers.apply))
 }
