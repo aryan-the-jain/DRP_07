@@ -32,7 +32,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   {
     href: "/calm/breathe",
     label: "Feel calm",
-    subtitle: "breathe, ground & settle",
+    subtitle: "breathe, observe & meditate",
     icon: "wind",
     tone: "calm",
     match: "/calm",
@@ -55,6 +55,43 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
     match: "/resources",
   },
 ];
+
+// --- Contextual sidebar items (used outside the dashboard) -----------------
+//
+// The sidebar swaps its main options by zone. In the group room it shows the
+// group plus a doorway into the quiet space; in the quiet space it shows a way
+// back to the group plus the same four intents the dashboard lists.
+
+// Shown (active) when the visitor is in the group room.
+export const GROUP_ITEM: NavGroup = {
+  href: "/",
+  label: "The group",
+  subtitle: "today's session",
+  icon: "people",
+  match: "/",
+};
+
+// The doorway from the room into the quiet space. It lands on free writing —
+// the "write your thoughts down" default the old in-chat quiet button used.
+// A match that never fits a real path keeps it reading as a doorway, not a tab.
+export const STEP_INTO_QUIET_ITEM: NavGroup = {
+  href: "/write/free",
+  label: "Step into the quiet space",
+  icon: "quiet",
+  tone: "calm",
+  match: "/__step-into-quiet",
+};
+
+// Shown at the top of the quiet-space sidebar.
+export const BACK_TO_GROUP_ITEM: NavGroup = {
+  href: "/",
+  label: "Back to group",
+  icon: "arrowLeft",
+};
+
+// The four intents, reused as the quiet-space sidebar (Write / Feel calm /
+// Draw / Resources — everything in SIDEBAR_GROUPS except Home).
+export const QUIET_INTENTS: NavGroup[] = SIDEBAR_GROUPS.slice(1);
 
 export type SubTab = {
   href: string;

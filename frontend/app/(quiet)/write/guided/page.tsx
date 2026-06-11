@@ -6,6 +6,7 @@ import { LineIcon } from "../../../components/DesignPrimitives";
 import { GroupTabs } from "../../../components/quiet/GroupTabs";
 import { QuietSpaceFrame } from "../../../components/quiet/QuietSpaceFrame";
 import { GuidedReflectionFields } from "../../../components/quiet/ReflectionFields";
+import { SaveDraftButton } from "../../../components/quiet/SaveDraftButton";
 import { ShareReflectionDialog } from "../../../components/quiet/ShareReflectionDialog";
 import { WRITE_TABS } from "../../../lib/nav";
 import { useQuietSpaceContext } from "../../../lib/QuietSpaceContext";
@@ -61,7 +62,12 @@ export default function GuidedPage() {
         heading="Guided questions"
         description="Gentle prompts to help you reflect. Your answers stay private unless you choose to share."
         error={quietSpaceError}
-        action={shareButton}
+        action={
+          <div className="flex items-center gap-2">
+            <SaveDraftButton />
+            {shareButton}
+          </div>
+        }
       >
         <GroupTabs tabs={WRITE_TABS} ariaLabel="Write" />
 
