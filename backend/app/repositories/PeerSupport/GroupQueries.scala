@@ -3,7 +3,7 @@ package repositories.PeerSupport
 import slick.jdbc.PostgresProfile.api.*
 import slick.sql.FixedSqlAction
 import models.*
-import Instances.given
+import repositories.Instances.given
 
 import java.time.{DayOfWeek, LocalDateTime, LocalTime}
 import play.api.http.MediaRange.parse

@@ -25,6 +25,10 @@ GET     /groups/:groupId/meditation-playlists      controllers.QuietRoomControll
 POST    /groups/:groupId/doodles                   controllers.QuietRoomController.saveDoodle(groupId: Int)
 GET     /groups/:groupId/participants/:participantId/doodles   controllers.QuietRoomController.doodles(groupId: Int, participantId: Int)
 
+# User dashboard questions
+POST    /participants/:participantId/icebreakers   controllers.DashboardController.saveIcebreaker(participantId: Int)
+GET     /participants/:participantId/icebreakers   controllers.DashboardController.getIcebreakers(participantId: Int)
+
 # Current session validity
 GET     /groups/:groupId/is-valid                  controllers.PeerSupportController.isValidSessionNow(groupId: Int)
 POST    /groups/:groupId/start-session             controllers.PeerSupportController.startSession(groupId: Int)

@@ -1,9 +1,10 @@
 package models
 
 import play.api.libs.json.*
-
 import java.time.{LocalDateTime, DayOfWeek}
 import java.time.format.DateTimeFormatter
+import repositories.Instances.given
+import Weather.fromString
 
 object JsonFormats {
   given localDateTimeWrites: Writes[LocalDateTime] =
@@ -111,4 +112,21 @@ object JsonFormats {
     Json.reads[UpdateNotePrompts]
 
   given jsonCreateGroup: Reads[JsonCreateGroup] = Json.reads[JsonCreateGroup]
+
+  import play.api.libs.json.*
+
+  given jsonWeatherRead: Reads[Weather] = Reads {
+    // TODO: REALLY UNSAFE
+    case JsString(weather) => JsSuccess(weather.fromString())
+    case _                 => JsError()
+  }
+
+  given jsonWeatherWrite: Writes[Weather] = Writes(w => JsString(w.text))
+
+  given createGrieverDashboardReflection
+      : Reads[CreateGrieverDashboardReflection] =
+    Json.reads[CreateGrieverDashboardReflection]
+
+  given returnIcebreakers: Writes[ReturnIcebreakers] =
+    Json.writes[ReturnIcebreakers]
 }

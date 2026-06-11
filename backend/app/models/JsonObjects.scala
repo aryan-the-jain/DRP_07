@@ -145,3 +145,9 @@ case class ReturnNotePrompts(
     creationReason: String,
     safeguardingConcerns: String
 )
+
+case class ReturnIcebreakers(
+    choice: Weather,
+    description: Option[String],
+    time: LocalDateTime
+)

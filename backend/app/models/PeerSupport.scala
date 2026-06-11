@@ -233,3 +233,37 @@ case class FacilitatorNotes(
     creationReason: String,
     safeguardingConcerns: String
 )
+
+enum Weather(val text: String) {
+  case ClearSkies extends Weather("clear skies")
+  case SomeSun extends Weather("some sun")
+  case Overcast extends Weather("overcast")
+  case Rain extends Weather("rain")
+  case Stormy extends Weather("stormy")
+  case Fog extends Weather("fog")
+}
+
+object Weather {
+  extension (s: String) {
+    def fromString(): Weather = s match {
+      case "clear skies" => ClearSkies
+      case "some sun"    => SomeSun
+      case "overcast"    => Overcast
+      case "rain"        => Rain
+      case "stormy"      => Stormy
+      case "fog"         => Fog
+    }
+  }
+}
+
+case class CreateGrieverDashboardReflection(
+    choice: Weather,
+    description: Option[String]
+)
+
+case class GrieverDashboardReflection(
+    grieverId: Int,
+    choice: Weather,
+    description: Option[String],
+    time: LocalDateTime
+)

@@ -3,7 +3,7 @@ package repositories.Onboarding
 import slick.sql.FixedSqlAction
 import slick.jdbc.PostgresProfile.api.*
 import models.*
-import repositories.PeerSupport.Instances.given
+import repositories.Instances.given
 
 import repositories.tables.{GrieversTable, ParticipantsTable}
 import scala.concurrent.ExecutionContext

@@ -1,7 +1,8 @@
-package repositories.PeerSupport
+package repositories
 
 import slick.jdbc.PostgresProfile.api.*
-import models.Role
+import models.{Role, Weather}
+import models.Weather.fromString
 
 import java.time.{DayOfWeek, LocalTime}
 
@@ -20,6 +21,12 @@ object Instances {
     MappedColumnType.base[DayOfWeek, String](
       day => day.name(),
       day => DayOfWeek.valueOf(day)
+    )
+
+  given WeatherColumnType: BaseColumnType[Weather] =
+    MappedColumnType.base[Weather, String](
+      weather => weather.text,
+      weather => weather.fromString()
     )
 
   given hobbiesColumnType: BaseColumnType[List[String]] =
