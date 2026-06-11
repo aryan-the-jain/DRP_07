@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { BrandMark, LineIcon } from "../components/DesignPrimitives";
 import { ParticipantProfileModal } from "../components/ParticipantProfileModal";
+import { SidebarLayout } from "../components/SidebarLayout";
 import {
   fallbackApiUrl,
   fetchGroup,
@@ -96,11 +96,8 @@ export default function DashboardPage() {
   const firstName = self?.displayName?.split(" ")[0] ?? "";
 
   return (
-    <main className="fixed inset-0 flex flex-col overflow-hidden bg-paper text-ink">
-      <header className="shrink-0 border-b-2 border-dashed border-line px-6 py-4 sm:px-10 sm:py-5">
-        <BrandMark />
-      </header>
-
+    <SidebarLayout>
+      <main className="flex h-full min-h-0 flex-col overflow-hidden bg-paper text-ink">
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-8 sm:px-10 lg:px-16">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
             {isLoading ? (
@@ -140,38 +137,6 @@ export default function DashboardPage() {
                   onOpenProfile={setSelectedParticipant}
                   onEnterRoom={() => router.push("/")}
                 />
-
-                {/* Quiet space doorway */}
-                <section
-                  className="sk v3 p-5 sm:p-6"
-                  style={{
-                    borderColor: "var(--calm)",
-                    background: "var(--calm-soft)",
-                  }}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <LineIcon name="quiet" size={30} className="[color:var(--calm)]" />
-                      <div>
-                        <h2 className="h-title text-2xl text-[var(--calm-ink)]">
-                          A quiet space, just for you
-                        </h2>
-                        <p className="mt-1 text-[15px] leading-relaxed text-[var(--calm-ink)]">
-                          Somewhere private to pause, breathe, or write down
-                          whatever you&apos;re carrying. It&apos;s open whenever
-                          you need it.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => router.push("/quiet")}
-                      className="btn calm inline-flex items-center gap-2"
-                    >
-                      Step into the quiet space
-                    </button>
-                  </div>
-                </section>
               </>
             )}
         </div>
@@ -183,6 +148,7 @@ export default function DashboardPage() {
           onClose={() => setSelectedParticipant(null)}
         />
       )}
-    </main>
+      </main>
+    </SidebarLayout>
   );
 }
