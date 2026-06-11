@@ -193,6 +193,51 @@ export async function saveReflection(
   return response.json();
 }
 
+// A kept weather check-in: the chosen sky ("clear skies", "overcast", …) as the
+// backend stores it, an optional private note, and when it was kept. The GET
+// returns these oldest-first.
+export type Icebreaker = {
+  choice: string;
+  description: string | null;
+  time: string;
+};
+
+export async function saveIcebreaker(
+  apiUrl: string,
+  choice: string,
+  description: string | null,
+): Promise<void> {
+  const response = await fetch(
+    `${apiUrl}/participants/${participantId}/icebreakers`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ choice, description }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "We couldn't keep that thought just now. Please check your connection and try again.",
+    );
+  }
+}
+
+export async function fetchIcebreakers(apiUrl: string): Promise<Icebreaker[]> {
+  const response = await fetch(
+    `${apiUrl}/participants/${participantId}/icebreakers`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Could not load your kept thoughts.");
+  }
+
+  return (await response.json()) as Icebreaker[];
+}
+
 export async function fetchOnboarding(
   apiUrl: string,
 ): Promise<OnboardingResponse | null> {

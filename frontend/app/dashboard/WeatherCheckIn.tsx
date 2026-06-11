@@ -1,10 +1,20 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { Fragment, useCallback, useEffect, useState, type CSSProperties } from "react";
+
+import { LineIcon } from "../components/DesignPrimitives";
+import { dayLabelFor, isNewDay } from "../lib/format";
+import {
+  fallbackApiUrl,
+  fetchIcebreakers,
+  saveIcebreaker,
+  type Icebreaker,
+} from "../lib/api";
 
 // A gentle daily check-in: pick the "weather" that matches how you feel, then
-// (optionally) keep a private reflection about why. Nothing here is stored yet —
-// it's a private, low-pressure moment, so the answers live only in local state.
+// (optionally) keep a private reflection about why. The chosen sky + note are
+// kept privately in the journal (POST /icebreakers), and earlier ones can be
+// revisited through the "Previous thoughts" popup.
 
 // Each sky carries its own subtle accent — desaturated, cosy, never neon — so
 // the icons read as finished little drawings rather than grey outlines.
@@ -32,6 +42,22 @@ const WEATHERS: Weather[] = [
   { key: "storm", sky: "Stormy", feel: "all at once" },
   { key: "fog", sky: "Fog", feel: "numb, far away" },
 ];
+
+// The backend stores `choice` as the lowercased sky label ("clear skies",
+// "overcast", …). Map those strings back to the internal SkyKey so a kept
+// thought can be drawn with its glyph; built from WEATHERS so the two stay in
+// sync. Unknown choices resolve to null and render as text only.
+const SKY_BY_CHOICE: Record<string, Weather> = Object.fromEntries(
+  WEATHERS.map((w) => [w.sky.toLowerCase(), w]),
+);
+
+function weatherForChoice(choice: string): Weather | null {
+  return SKY_BY_CHOICE[choice.trim().toLowerCase()] ?? null;
+}
+
+function capitalise(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 
 const cloudPath =
   "M17.2 16.6H8a3.6 3.6 0 0 1-.5-7.17 4.9 4.9 0 0 1 9.2-1.1 3.4 3.4 0 0 1 .5 8.27z";
@@ -268,16 +294,202 @@ function WeatherTile({
   );
 }
 
+// A small centred day marker ("Today", "Yesterday", "6 June"), shown once per
+// day in the history so kept thoughts that span weeks stay easy to follow. The
+// user asked for dates only, so rows carry no clock time — the day chip is the
+// only timestamp.
+function DaySeparator({ iso }: { iso: string }) {
+  const label = dayLabelFor(iso);
+  if (!label) return null;
+  return (
+    <div style={{ display: "flex", justifyContent: "center" }} aria-hidden="true">
+      <span className="chip" style={{ fontSize: 12, padding: "2px 12px", color: "var(--faint)" }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// One kept thought in the history: the sky's drawing + label, with the private
+// note beneath. Carries its sky's accent on a left border, echoing the
+// facilitator's private feed.
+function ThoughtRow({ entry }: { entry: Icebreaker }) {
+  const w = weatherForChoice(entry.choice);
+  const accent = w ? WX[w.key].ink : "var(--line)";
+  return (
+    <div
+      className="sk thin"
+      style={{
+        padding: "12px 14px 12px 15px",
+        display: "flex",
+        gap: 11,
+        alignItems: "flex-start",
+        borderColor: accent,
+        borderLeftWidth: 5,
+        background: "var(--card)",
+      }}
+    >
+      {w && <WeatherGlyph kind={w.key} size={30} />}
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 0 }}>
+        <span
+          className="h-title"
+          style={{ fontSize: 16.5, color: w ? WX[w.key].ink : "var(--ink)", lineHeight: 1.1 }}
+        >
+          {capitalise(entry.choice)}
+        </span>
+        {entry.description ? (
+          <p style={{ fontSize: 14.5, color: "var(--ink)", lineHeight: 1.45, margin: 0 }}>
+            {entry.description}
+          </p>
+        ) : (
+          <span style={{ fontSize: 13.5, color: "var(--faint)", fontStyle: "italic" }}>
+            no note kept
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// A pop-up journal of earlier check-ins — same scrim + sketchy card the rest of
+// the app's modals use. The list is newest-first with gentle per-day markers.
+function PreviousThoughtsModal({
+  entries,
+  loading,
+  error,
+  onClose,
+}: {
+  entries: Icebreaker[];
+  loading: boolean;
+  error: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  // The GET returns oldest-first; show the most recent thought at the top.
+  const newestFirst = [...entries].reverse();
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-[rgba(58,52,45,0.22)] px-4 py-16 sm:items-center sm:py-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="previous-thoughts-title"
+      onClick={onClose}
+    >
+      <article
+        className="sk flex max-h-full w-full max-w-md flex-col bg-card text-ink shadow-[0_24px_70px_rgba(58,52,45,0.28)] animate-fadeIn"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4 p-6 pb-4">
+          <div className="flex items-center gap-3">
+            <SparkIcon size={22} c="var(--warm)" style={{ marginTop: 4 }} />
+            <div>
+              <h2 id="previous-thoughts-title" className="h-title text-2xl text-ink">
+                Thoughts you&apos;ve kept
+              </h2>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line text-muted transition hover:border-ink hover:bg-warm-soft hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warm"
+            aria-label="Close your kept thoughts"
+            onClick={onClose}
+          >
+            <LineIcon name="close" size={16} />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+          {loading ? (
+            <p className="py-6 text-center text-[15px] text-muted">gathering them…</p>
+          ) : error ? (
+            <p className="py-6 text-center text-[15px] text-muted">{error}</p>
+          ) : newestFirst.length === 0 ? (
+            <div className="sk thin soft dash bg-paper p-6 text-center text-[15px] leading-6 text-muted">
+              No thoughts kept yet — this is where they&apos;ll gather, gently, over time.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+              {newestFirst.map((entry, index) => (
+                <Fragment key={`${entry.time}-${index}`}>
+                  {isNewDay(newestFirst[index - 1]?.time, entry.time) && (
+                    <DaySeparator iso={entry.time} />
+                  )}
+                  <ThoughtRow entry={entry} />
+                </Fragment>
+              ))}
+            </div>
+          )}
+        </div>
+      </article>
+    </div>
+  );
+}
+
 export function WeatherCheckIn() {
   const [picked, setPicked] = useState<SkyKey | null>(null);
   const [reflectOpen, setReflectOpen] = useState(false);
   const [reflection, setReflection] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [history, setHistory] = useState<Icebreaker[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? fallbackApiUrl;
 
   const chosen = WEATHERS.find((w) => w.key === picked);
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    setHistoryError("");
+    try {
+      setHistory(await fetchIcebreakers(apiUrl));
+    } catch {
+      setHistoryError("We couldn't reach your kept thoughts just now.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [apiUrl]);
+
+  function openHistory() {
+    setHistoryOpen(true);
+    void loadHistory();
+  }
+
+  async function keepThought() {
+    if (!chosen || saving) return;
+    setSaving(true);
+    setSaveError("");
+    try {
+      await saveIcebreaker(apiUrl, chosen.sky.toLowerCase(), reflection.trim() || null);
+      // Keep the chosen sky + note on screen and confirm gently; refresh the
+      // journal in the background so it's there next time it's opened.
+      setSaved(true);
+      void loadHistory();
+    } catch {
+      setSaveError("We couldn't keep that just now — please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   // Tapping a tile toggles it: re-picking the current sky clears the check-in
   // (and closes the reflection); picking a new one opens the reflection.
   function pick(key: SkyKey) {
+    // A fresh pick is a fresh thought — clear any earlier confirmation/error.
+    setSaved(false);
+    setSaveError("");
     if (picked === key) {
       setPicked(null);
       setReflectOpen(false);
@@ -319,6 +531,15 @@ export function WeatherCheckIn() {
             always passes through.
           </div>
         </div>
+        <button
+          type="button"
+          className="btn ghost sm"
+          onClick={openHistory}
+          style={{ fontSize: 13.5, flexShrink: 0, whiteSpace: "nowrap" }}
+        >
+          <LineIcon name="clock" size={15} />
+          Previous thoughts
+        </button>
       </div>
 
       <div style={{ display: "flex", gap: 9, marginTop: 16 }}>
@@ -369,7 +590,11 @@ export function WeatherCheckIn() {
           </div>
           <textarea
             value={reflection}
-            onChange={(event) => setReflection(event.target.value)}
+            onChange={(event) => {
+              setReflection(event.target.value);
+              // Editing after keeping means there's something new to keep.
+              if (saved) setSaved(false);
+            }}
             placeholder="Today the weather is like this because…"
             className="sk thin"
             style={{
@@ -395,10 +620,14 @@ export function WeatherCheckIn() {
               marginTop: 12,
             }}
           >
-            {/* Placeholder for now — keeping a thought isn't wired up yet, so this
-                deliberately does nothing and leaves the reflection open. */}
-            <button type="button" className="btn warm" style={{ fontSize: 14 }}>
-              Keep this thought
+            <button
+              type="button"
+              className="btn warm"
+              style={{ fontSize: 14 }}
+              onClick={keepThought}
+              disabled={saving || saved}
+            >
+              {saving ? "Keeping…" : saved ? "Kept" : "Keep this thought"}
             </button>
             <button
               type="button"
@@ -406,20 +635,19 @@ export function WeatherCheckIn() {
               style={{ fontSize: 14 }}
               onClick={() => setReflectOpen(false)}
             >
-              Not now
+              Close
             </button>
-            <div style={{ flex: 1 }} />
-            <span
-              style={{
-                fontSize: 12.5,
-                color: "var(--faint)",
-                fontFamily: "ui-monospace, monospace",
-              }}
-            >
-              kept privately in your journal
-            </span>
           </div>
         </div>
+      )}
+
+      {historyOpen && (
+        <PreviousThoughtsModal
+          entries={history}
+          loading={historyLoading}
+          error={historyError}
+          onClose={() => setHistoryOpen(false)}
+        />
       )}
     </section>
   );
