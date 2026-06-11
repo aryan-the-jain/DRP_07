@@ -160,6 +160,15 @@ case class UpdateOnboarding(
 
 // Facilitator creates / edits a group. dayOfWeek is a full upper-case name
 // ("FRIDAY"); scheduledTime is an ISO local time ("20:00").
+
+case class JsonCreateGroup(
+    name: String,
+    dayOfWeek: String,
+    scheduledTime: String,
+    scheduledDurationMinutes: Int,
+    description: Option[String]
+)
+
 case class CreateGroup(
     name: String,
     dayOfWeek: String,

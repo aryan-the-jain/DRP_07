@@ -34,7 +34,7 @@ class FacilitatorController @Inject() (
 
   def createGroup: Action[JsValue] = createNew(
     facilitatorRepository.createGroup,
-    (g: CreateGroup) =>
+    (g: JsonCreateGroup) =>
       g.name.trim.nonEmpty && validSchedule(g.dayOfWeek, g.scheduledTime) &&
         validDuration(g.scheduledDurationMinutes)
   )
