@@ -18,19 +18,24 @@ type FacNavItem = { href: string; label: string; icon: IconName; tone?: "warm" |
 
 const NAV: FacNavItem[] = [
   { href: "/facilitator", label: "My groups", icon: "home", tone: "warm" },
+  { href: "/facilitator/messages", label: "Messages", icon: "mail", tone: "warm" },
   { href: "/facilitator/arrivals", label: "Arrivals", icon: "people", tone: "warm" },
 ];
 
-// Arrivals owns the /facilitator/arrivals subtree; Home owns everything else
-// under /facilitator (home, groups, room, …) so it stays lit on those pages.
+// Arrivals and Messages each own their subtree; Home owns everything else under
+// /facilitator (home, groups, room, …) so it stays lit on those pages.
 function isActive(pathname: string, href: string): boolean {
   if (href === "/facilitator/arrivals") {
     return pathname.startsWith("/facilitator/arrivals");
   }
+  if (href === "/facilitator/messages") {
+    return pathname.startsWith("/facilitator/messages");
+  }
   return (
     pathname === "/facilitator" ||
     (pathname.startsWith("/facilitator/") &&
-      !pathname.startsWith("/facilitator/arrivals"))
+      !pathname.startsWith("/facilitator/arrivals") &&
+      !pathname.startsWith("/facilitator/messages"))
   );
 }
 

@@ -67,6 +67,7 @@ function GroupCard({
   onAvatar,
   onGroupDetails,
   onNotes,
+  onMessages,
   onOpenRoom,
 }: {
   c: GroupCard;
@@ -74,6 +75,7 @@ function GroupCard({
   onAvatar: (id: number) => void;
   onGroupDetails: () => void;
   onNotes: () => void;
+  onMessages: () => void;
   onOpenRoom: () => void;
 }) {
   const liveish = c.live || c.liveSoon;
@@ -138,6 +140,11 @@ function GroupCard({
           <Icon name="note" size={15} c="var(--calm)" /> Notes
         </button>
       </div>
+
+      {/* messages & shared reflections for this group */}
+      <button className="btn ghost sm icon" style={{ width: "100%", justifyContent: "center", padding: "7px 6px", borderColor: "var(--sky)", color: "var(--sky-ink)" }} onClick={onMessages} title="Messages & shared reflections for this group">
+        <Icon name="bubbleLines" size={15} c="var(--sky)" /> Messages &amp; reflections
+      </button>
     </div>
   );
 }
@@ -290,6 +297,7 @@ export function FacHome() {
                     onAvatar={(id) => openMember(id, c.groupId)}
                     onGroupDetails={() => router.push(`/facilitator/groups/${c.groupId}`)}
                     onNotes={() => setModal({ type: "notes", group: c })}
+                    onMessages={() => router.push(`/facilitator/messages?groupId=${c.groupId}`)}
                     onOpenRoom={() => router.push(`/facilitator/room?groupId=${c.groupId}`)}
                   />
                 ))}

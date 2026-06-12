@@ -12,6 +12,7 @@ import { dayLabelFor, formatMessageTime, isNewDay } from "../../lib/format";
 import { Avatar, DashRule, Icon } from "./Primitives";
 import { ConfirmPopup, Overlay } from "./Overlays";
 import { Hub, type HubTab } from "./Hub";
+import { buildPrivateFeed, PrivateFeedItem, type FeedItem } from "./PrivateFeed";
 import {
   dmsFrom,
   personFromParticipant,
@@ -86,109 +87,6 @@ function Bubble({
       </div>
     </article>
   );
-}
-
-// One unified private item — warm/orange for a message, sky/blue for a reflection. Always
-// shows a time when one is known (reflections have no shared-at column, so theirs is blank).
-type FeedItem = {
-  id: number;
-  kind: "message" | "reflection";
-  name: string;
-  tone: Tone;
-  at: string;
-  q?: string;
-  text: string;
-};
-
-function PrivateFeedItem({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  const isMsg = item.kind === "message";
-  const accent = isMsg ? "var(--warm)" : "var(--sky)";
-  const accentInk = isMsg ? "var(--warm-ink)" : "var(--sky-ink)";
-  const tint = isMsg ? "var(--warm-soft)" : "var(--sky-soft)";
-  return (
-    <div
-      className="sk thin"
-      onClick={onOpen}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        padding: "12px 14px 12px 15px",
-        display: "flex",
-        gap: 11,
-        alignItems: "flex-start",
-        cursor: "pointer",
-        borderColor: accent,
-        borderLeftWidth: 5,
-        background: hovered ? "var(--paper)" : undefined,
-        transition: "background .15s",
-      }}
-    >
-      <Avatar name={item.name} size={36} tone={item.tone} />
-      <div className="stack" style={{ gap: 4, flex: 1, minWidth: 0 }}>
-        <div className="row" style={{ gap: 7 }}>
-          <span className="h-title" style={{ fontSize: 17, color: "var(--ink)" }}>
-            {item.name}
-          </span>
-          <span className="chip" style={{ fontSize: 10.5, padding: "1px 8px", borderColor: accent, background: tint, color: accentInk }}>
-            <Icon name={isMsg ? "bubble" : "note"} size={11} c={accentInk} /> {isMsg ? "message" : "reflection"}
-          </span>
-          <div style={{ flex: 1 }} />
-          {item.at && <span style={{ fontSize: 11.5, color: "var(--faint)" }}>{item.at}</span>}
-        </div>
-        {!isMsg && item.q && <span style={{ fontSize: 12.5, color: accentInk, lineHeight: 1.35 }}>{item.q}</span>}
-        <span
-          style={{
-            fontSize: 14,
-            color: "var(--muted)",
-            lineHeight: 1.4,
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          {item.text}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// Merge the private messages and shared reflections into one stream, newest
-// first — the rail is a triage surface, so whoever wrote most recently floats
-// to the top. Items without a timestamp sink to the bottom. The feed is
-// rebuilt from the polled inbox every render, so it reorders as messages
-// arrive.
-function buildPrivateFeed(inbox: InboxEntryResponse[]): FeedItem[] {
-  const dms = inbox
-    .filter((e) => e.lastMessageBody)
-    .map((e): FeedItem & { atIso: string | null } => ({
-      id: e.participant.id,
-      kind: "message",
-      name: e.participant.displayName,
-      tone: toneFor(e.participant.id),
-      at: e.lastMessageAt ? formatMessageTime(e.lastMessageAt) : "",
-      atIso: e.lastMessageAt,
-      text: (e.lastMessageFromId === facilitatorId ? "You: " : "") + (e.lastMessageBody ?? ""),
-    }));
-  const refs = inbox
-    .filter((e) => e.sharedPrivateNote || e.sharedFacilitatorNote || e.sharedFreeWriting)
-    .map((e): FeedItem & { atIso: string | null } => ({
-      id: e.participant.id,
-      kind: "reflection",
-      name: e.participant.displayName,
-      tone: toneFor(e.participant.id),
-      at: e.lastReflectionShareAt ? formatMessageTime(e.lastReflectionShareAt) : "",
-      atIso: e.lastReflectionShareAt,
-      q: e.sharedPrivateNote ? "How are you feeling now?" : e.sharedFacilitatorNote ? "What has made you come here today?" : "From their free writing",
-      text: e.sharedPrivateNote ?? e.sharedFacilitatorNote ?? e.sharedFreeWriting ?? "",
-    }));
-  return [...dms, ...refs].sort((a, b) => {
-    if (!a.atIso) return b.atIso ? 1 : 0;
-    if (!b.atIso) return -1;
-    return new Date(b.atIso).getTime() - new Date(a.atIso).getTime();
-  });
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
@@ -486,7 +384,7 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
       </Centered>
     );
 
-  const feed = buildPrivateFeed(inbox);
+  const feed = buildPrivateFeed(inbox, groupId);
   const byId = new Map(members.map((m) => [m.id, m] as const));
 
   return (
@@ -630,7 +528,7 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
                   ) : (
                     <div className="stack" style={{ gap: 9 }}>
                       {feed.map((item, i) => (
-                        <PrivateFeedItem key={`${item.kind}-${item.id}-${i}`} item={item} onOpen={() => openItemInPanel(item)} />
+                        <PrivateFeedItem key={`${item.kind}-${item.id}-${i}`} item={item} showGroup={false} onOpen={() => openItemInPanel(item)} />
                       ))}
                     </div>
                   )}
