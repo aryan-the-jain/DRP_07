@@ -8,10 +8,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatMessageTime } from "../../lib/format";
-import { Avatar, DashRule, Icon, RoomHeader } from "./Primitives";
+import { dayLabelFor, formatMessageTime, isNewDay } from "../../lib/format";
+import { Avatar, DashRule, Icon } from "./Primitives";
 import { ConfirmPopup, Overlay } from "./Overlays";
 import { Hub, type HubTab } from "./Hub";
+import { buildPrivateFeed, PrivateFeedItem, type FeedItem } from "./PrivateFeed";
 import {
   dmsFrom,
   personFromParticipant,
@@ -31,9 +32,11 @@ import {
   fetchInbox,
   fetchParticipant,
   fetchPrivateThread,
+  fetchSessionState,
   liveGroupId,
   sendGroupMessage,
   sendPrivateMessage,
+  SESSION_CLOSED_FOR_WEEK,
   startSession,
 } from "../lib/api";
 
@@ -50,176 +53,40 @@ function Bubble({
 }) {
   const you = m.id === facilitatorId;
   const at = formatMessageTime(m.createdAt);
-  if (you) {
-    return (
-      <div className="row" style={{ gap: 11, alignItems: "flex-end", flexDirection: "row-reverse" }}>
-        <Avatar name="Sean" size={36} you />
-        <div className="stack" style={{ gap: 5, alignItems: "flex-end", maxWidth: 520 }}>
-          <div className="row" style={{ gap: 8 }}>
-            <span style={{ fontSize: 12.5, color: "var(--faint)" }}>{at}</span>
-            <span style={{ fontSize: 14.5, color: "var(--warm-ink)" }}>You · holding this space</span>
-          </div>
-          <div
-            className="sk thin"
-            style={{ background: "var(--warm)", borderColor: "transparent", color: "#fff", padding: "11px 16px", fontSize: 16, lineHeight: 1.45 }}
-          >
-            {m.body}
-          </div>
-        </div>
-      </div>
-    );
-  }
-  const name = sender?.name ?? "Someone";
+  const name = you ? "You" : sender?.name ?? "Someone";
   return (
-    <div className="row" style={{ gap: 11, alignItems: "flex-start" }}>
-      <Avatar name={name} size={36} tone={sender?.tone ?? toneFor(m.id)} onClick={() => onAvatar(m.id)} title={`Open ${name}'s profile`} />
-      <div className="stack" style={{ gap: 5, maxWidth: 520 }}>
-        <div className="row" style={{ gap: 8 }}>
-          <span className="h-title" style={{ fontSize: 18, color: "var(--ink)", cursor: "pointer" }} onClick={() => onAvatar(m.id)}>
+    <article className={`flex gap-3 sm:gap-4 ${you ? "flex-row-reverse" : ""}`}>
+      <Avatar
+        name={you ? "Sean" : name}
+        size={40}
+        you={you}
+        tone={you ? undefined : sender?.tone ?? toneFor(m.id)}
+        onClick={you ? undefined : () => onAvatar(m.id)}
+        title={you ? undefined : `Open ${name}'s profile`}
+      />
+      <div
+        className={`flex min-w-0 flex-1 flex-col ${you ? "items-end" : "items-start"}`}
+      >
+        <div
+          className={`mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 ${you ? "justify-end" : ""}`}
+        >
+          <span
+            className="text-sm font-semibold text-ink"
+            style={you ? undefined : { cursor: "pointer" }}
+            onClick={you ? undefined : () => onAvatar(m.id)}
+          >
             {name}
           </span>
-          <span style={{ fontSize: 12.5, color: "var(--faint)" }}>{at}</span>
+          <time className="text-xs text-faint">{at}</time>
         </div>
-        <div className="sk thin soft" style={{ padding: "11px 16px", fontSize: 16, lineHeight: 1.45, color: "var(--ink)" }}>
+        <div
+          className={`bubble w-fit max-w-full text-[15px] leading-6 text-ink sm:text-base ${you ? "mine" : ""}`}
+        >
           {m.body}
         </div>
       </div>
-    </div>
+    </article>
   );
-}
-
-// A sketchy on/off switch for the panel's visibility toggle.
-function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div
-      onClick={() => onChange(!on)}
-      role="switch"
-      aria-checked={on}
-      style={{
-        width: 40,
-        height: 23,
-        borderRadius: 20,
-        border: "1.8px solid var(--ink)",
-        background: on ? "var(--warm)" : "var(--card)",
-        position: "relative",
-        cursor: "pointer",
-        transition: "background .15s",
-        flex: "0 0 auto",
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          top: 1.5,
-          left: on ? 18 : 2,
-          width: 17,
-          height: 17,
-          borderRadius: "50%",
-          background: "var(--paper)",
-          border: "1.6px solid var(--ink)",
-          transition: "left .15s",
-        }}
-      />
-    </div>
-  );
-}
-
-// One unified private item — warm/orange for a message, sky/blue for a reflection. Always
-// shows a time when one is known (reflections have no shared-at column, so theirs is blank).
-type FeedItem = {
-  id: number;
-  kind: "message" | "reflection";
-  name: string;
-  tone: Tone;
-  at: string;
-  q?: string;
-  text: string;
-};
-
-function PrivateFeedItem({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  const isMsg = item.kind === "message";
-  const accent = isMsg ? "var(--warm)" : "var(--sky)";
-  const accentInk = isMsg ? "var(--warm-ink)" : "var(--sky-ink)";
-  const tint = isMsg ? "var(--warm-soft)" : "var(--sky-soft)";
-  return (
-    <div
-      className="sk thin"
-      onClick={onOpen}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        padding: "12px 14px 12px 15px",
-        display: "flex",
-        gap: 11,
-        alignItems: "flex-start",
-        cursor: "pointer",
-        borderColor: accent,
-        borderLeftWidth: 5,
-        background: hovered ? "var(--paper)" : undefined,
-        transition: "background .15s",
-      }}
-    >
-      <Avatar name={item.name} size={36} tone={item.tone} />
-      <div className="stack" style={{ gap: 4, flex: 1, minWidth: 0 }}>
-        <div className="row" style={{ gap: 7 }}>
-          <span className="h-title" style={{ fontSize: 17, color: "var(--ink)" }}>
-            {item.name}
-          </span>
-          <span className="chip" style={{ fontSize: 10.5, padding: "1px 8px", borderColor: accent, background: tint, color: accentInk }}>
-            <Icon name={isMsg ? "bubble" : "note"} size={11} c={accentInk} /> {isMsg ? "message" : "reflection"}
-          </span>
-          <div style={{ flex: 1 }} />
-          {item.at && <span style={{ fontSize: 11.5, color: "var(--faint)" }}>{item.at}</span>}
-        </div>
-        {!isMsg && item.q && <span style={{ fontSize: 12.5, color: accentInk, lineHeight: 1.35 }}>{item.q}</span>}
-        <span
-          style={{
-            fontSize: 14,
-            color: "var(--muted)",
-            lineHeight: 1.4,
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          {item.text}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// Interleave the private messages and shared reflections into one mixed stream.
-function buildPrivateFeed(inbox: InboxEntryResponse[]): FeedItem[] {
-  const dms = inbox
-    .filter((e) => e.lastMessageBody)
-    .map((e): FeedItem => ({
-      id: e.participant.id,
-      kind: "message",
-      name: e.participant.displayName,
-      tone: toneFor(e.participant.id),
-      at: e.lastMessageAt ? formatMessageTime(e.lastMessageAt) : "",
-      text: (e.lastMessageFromId === facilitatorId ? "You: " : "") + (e.lastMessageBody ?? ""),
-    }));
-  const refs = inbox
-    .filter((e) => e.sharedFacilitatorNote || e.sharedFreeWriting)
-    .map((e): FeedItem => ({
-      id: e.participant.id,
-      kind: "reflection",
-      name: e.participant.displayName,
-      tone: toneFor(e.participant.id),
-      at: e.lastReflectionShareAt ? formatMessageTime(e.lastReflectionShareAt) : "",
-      q: e.sharedFacilitatorNote ? "Something they wanted you to see" : "From their free writing",
-      text: `“${e.sharedFacilitatorNote ?? e.sharedFreeWriting ?? ""}”`,
-    }));
-  const out: FeedItem[] = [];
-  for (let i = 0; i < dms.length || i < refs.length; i++) {
-    if (i < dms.length) out.push(dms[i]);
-    if (i < refs.length) out.push(refs[i]);
-  }
-  return out;
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
@@ -235,6 +102,98 @@ type RoomModal =
   | { type: "end" }
   | null;
 
+// The "N here with you" chip, made interactive like the participant room's
+// participant popover: hover (or click to pin) opens the member list; tapping
+// someone opens their profile.
+function MembersChip({
+  members,
+  onOpen,
+}: {
+  members: Mini[];
+  onOpen: (id: number) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+  const isOpen = hovered || pinned;
+
+  useEffect(() => {
+    function onDocMouseDown(e: MouseEvent) {
+      if (pinned && ref.current && !ref.current.contains(e.target as Node)) {
+        setPinned(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, [pinned]);
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <button
+        type="button"
+        className="chip cursor-pointer transition hover:border-warm hover:bg-warm-soft"
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
+        onClick={() => setPinned((p) => !p)}
+      >
+        <Icon name="people" size={15} c="var(--muted)" /> {members.length} here with you
+      </button>
+
+      {isOpen && (
+        <div className="sk soft absolute left-0 top-full z-30 mt-2 w-72 bg-card p-2 text-ink shadow-[0_18px_45px_rgba(68,52,35,0.18)]">
+          <div className="flex items-start justify-between gap-3 px-3 py-2">
+            <div>
+              <p className="leader">In the room</p>
+              <p className="mt-1 text-sm text-muted">
+                Tap someone to open their profile.
+              </p>
+            </div>
+            {pinned && (
+              <button
+                type="button"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line text-muted transition hover:bg-warm-soft hover:text-ink"
+                aria-label="Close member list"
+                onClick={() => setPinned(false)}
+              >
+                <Icon name="x" size={14} c="var(--muted)" />
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-72 overflow-y-auto">
+            {members.length === 0 ? (
+              <p className="px-3 py-2 text-sm text-muted">No one here yet.</p>
+            ) : (
+              members.map((mb) => (
+                <button
+                  key={mb.id}
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left transition hover:bg-warm-soft focus:bg-warm-soft focus:outline-none"
+                  onClick={() => {
+                    onOpen(mb.id);
+                    setPinned(false);
+                    setHovered(false);
+                  }}
+                >
+                  <Avatar name={mb.name} size={36} tone={mb.tone} />
+                  <span className="block min-w-0 truncate text-sm font-semibold text-ink">
+                    {mb.name}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
   const router = useRouter();
   const apiUrl = apiBase();
@@ -243,7 +202,7 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
   const [members, setMembers] = useState<Mini[]>([]);
   const [messages, setMessages] = useState<GroupMessageResponse[]>([]);
   const [inbox, setInbox] = useState<InboxEntryResponse[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "error" | "closed">("loading");
   const [modal, setModal] = useState<RoomModal>(null);
   const [draft, setDraft] = useState("");
   const [panelOpen, setPanelOpen] = useState(true);
@@ -251,6 +210,13 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
   const [splitterHover, setSplitterHover] = useState(false);
   const [panelCard, setPanelCard] = useState<{ person: Person; tab: HubTab } | null>(null);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Keep the group conversation pinned to the latest message (e.g. right after
+  // the facilitator sends one), matching the participant room's behaviour.
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: "end" });
+  }, [messages]);
 
   const onSplitterMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -289,10 +255,11 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
     let active = true;
     (async () => {
       try {
-        const [groups, msgs, box] = await Promise.all([
+        const [groups, msgs, box, session] = await Promise.all([
           fetchGroups(apiUrl),
           fetchGroupMessages(apiUrl, groupId),
           fetchInbox(apiUrl, groupId),
+          fetchSessionState(apiUrl, groupId).catch(() => null),
         ]);
         if (!active) return;
         const live = groups.find((g) => g.groupId === groupId);
@@ -305,11 +272,22 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
               .map((m) => ({ id: m.id, name: m.displayName, tone: toneFor(m.id) })),
           );
         }
+        // A session can only be held once per scheduled week — once it has been
+        // ended, the room stays closed until next time.
+        if (session?.sessionClosedForWeek) {
+          setStatus("closed");
+          return;
+        }
         setMessages(msgs);
         setInbox(box);
         setStatus("ready");
-        // Entering the room opens the session so participants can join.
-        startSession(apiUrl, groupId).catch(() => {});
+        // Entering the room opens the session so participants can join. The backend
+        // refuses if this week's session already happened (e.g. a stale deep link).
+        startSession(apiUrl, groupId).catch((e: unknown) => {
+          if (active && e instanceof Error && e.message === SESSION_CLOSED_FOR_WEEK) {
+            setStatus("closed");
+          }
+        });
       } catch {
         if (active) setStatus("error");
       }
@@ -320,9 +298,12 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
   }, [apiUrl, groupId]);
 
   useEffect(() => {
-    const id = setInterval(loadMessages, 5000);
+    const id = setInterval(() => {
+      loadMessages();
+      loadInbox();
+    }, 5000);
     return () => clearInterval(id);
-  }, [loadMessages]);
+  }, [loadMessages, loadInbox]);
 
   // Load a member's profile + private thread + shared reflections into one enriched Person.
   const buildPerson = async (id: number): Promise<Person> => {
@@ -334,7 +315,7 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
     return {
       ...personFromParticipant(p),
       dm: dmsFrom(thread, facilitatorId),
-      reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
+      reflections: entry ? sharedReflections(entry.sharedPrivateNote, entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
       unread: entry?.hasUnread ? 1 : 0,
     };
   };
@@ -385,39 +366,82 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
 
   if (status === "loading") return <Centered>Opening the room…</Centered>;
   if (status === "error") return <Centered>We couldn’t reach the server.</Centered>;
+  if (status === "closed")
+    return (
+      <Centered>
+        <div className="stack" style={{ alignItems: "center", gap: 14, textAlign: "center" }}>
+          <span className="h-title" style={{ fontSize: 24, color: "var(--ink)" }}>
+            This week’s session has already been held.
+          </span>
+          <span style={{ fontSize: 15.5, maxWidth: 420, lineHeight: 1.5 }}>
+            {groupName ? `${groupName} will` : "The group will"} meet again at its
+            usual time next week — the room stays gently closed until then.
+          </span>
+          <button className="btn warm" onClick={() => router.push("/facilitator")}>
+            Back to your groups
+          </button>
+        </div>
+      </Centered>
+    );
 
-  const feed = buildPrivateFeed(inbox);
+  const feed = buildPrivateFeed(inbox, groupId);
   const byId = new Map(members.map((m) => [m.id, m] as const));
 
   return (
     <div className="stack" style={{ height: "100vh", background: "var(--paper)", position: "relative" }}>
-      <RoomHeader
-        room={groupName}
-        here={`${members.length} here with you`}
-        mins={duration ? `${duration} mins together` : ""}
-        right={
-          <button className="btn ghost" onClick={() => setModal({ type: "end" })}>
-            End the session
+      <header className="shrink-0 border-b-2 border-dashed border-line bg-card">
+        <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div>
+              <p className="leader">tonight&apos;s room</p>
+              <h1 className="h-title text-2xl text-ink sm:text-[28px]">{groupName}</h1>
+            </div>
+            <MembersChip
+              members={members}
+              onOpen={(id) => openCard(id, "about")}
+            />
+            {duration && (
+              <span className="chip">
+                <Icon name="clock" size={15} c="var(--muted)" /> {duration} minutes together
+              </span>
+            )}
+          </div>
+          <button className="btn red-ghost sm" onClick={() => setModal({ type: "end" })}>
+            <Icon name="x" size={15} /> End the session
           </button>
-        }
-      />
-      <DashRule />
+        </div>
+      </header>
       <div className="row" style={{ flex: 1, minHeight: 0, alignItems: "stretch" }}>
         <div className="scroll" style={{ flex: 1, padding: "26px 40px" }}>
-          <div style={{ maxWidth: 760, margin: "0 auto" }}>
-            <div className="row" style={{ gap: 11, justifyContent: "center", marginBottom: 22, color: "var(--faint)", fontSize: 14 }}>
-            </div>
+          <div className="mx-auto flex max-w-3xl flex-col gap-5">
             {messages.length === 0 ? (
-              <div className="row" style={{ justifyContent: "center", color: "var(--muted)", fontSize: 15.5 }}>
+              <div className="sk thin soft dash bg-paper p-6 text-center text-[15px] leading-relaxed text-muted">
                 No messages yet. You can open gently when you’re ready.
               </div>
             ) : (
-              <div className="stack" style={{ gap: 18 }}>
-                {messages.map((m, i) => (
-                  <Bubble key={i} m={m} sender={byId.get(m.id)} onAvatar={(id) => openCard(id, "about")} />
-                ))}
-              </div>
+              messages.map((m, i) => {
+                const dateLabel = isNewDay(messages[i - 1]?.createdAt, m.createdAt)
+                  ? dayLabelFor(m.createdAt)
+                  : null;
+                return (
+                  <div key={i} className="flex flex-col gap-5">
+                    {dateLabel && (
+                      <div className="flex justify-center" aria-hidden="true">
+                        <span className="chip px-3 py-0.5 text-[12px] text-faint">
+                          {dateLabel}
+                        </span>
+                      </div>
+                    )}
+                    <Bubble
+                      m={m}
+                      sender={byId.get(m.id)}
+                      onAvatar={(id) => openCard(id, "about")}
+                    />
+                  </div>
+                );
+              })
             )}
+            <div ref={messagesEndRef} aria-hidden="true" />
           </div>
         </div>
 
@@ -504,7 +528,7 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
                   ) : (
                     <div className="stack" style={{ gap: 9 }}>
                       {feed.map((item, i) => (
-                        <PrivateFeedItem key={`${item.kind}-${item.id}-${i}`} item={item} onOpen={() => openItemInPanel(item)} />
+                        <PrivateFeedItem key={`${item.kind}-${item.id}-${i}`} item={item} showGroup={false} onOpen={() => openItemInPanel(item)} />
                       ))}
                     </div>
                   )}
@@ -543,19 +567,26 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
           </div>
         )}
       </div>
-      <DashRule />
-      <div className="row" style={{ padding: "16px 30px", gap: 14 }}>
-        <input
-          className="field"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendToGroup()}
-          placeholder={`Share something with the ${groupName}…`}
-        />
-        <button className="btn warm lg" onClick={sendToGroup} disabled={!draft.trim()}>
-          <Icon name="send" size={18} c="#fff" /> Send
-        </button>
-      </div>
+      <footer className="shrink-0 border-t-2 border-dashed border-line bg-card px-4 py-4 sm:px-5">
+        <div className="mx-auto flex max-w-4xl items-center gap-3">
+          <input
+            className="field min-h-12 flex-1 !rounded-full px-5"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendToGroup()}
+            placeholder={`Share something with the ${groupName}…`}
+          />
+          <button
+            className="btn warm inline-flex h-12 min-w-12 items-center justify-center gap-2 !rounded-full px-5"
+            onClick={sendToGroup}
+            disabled={!draft.trim()}
+            aria-label="Send message"
+          >
+            <Icon name="send" size={18} c="#fff" />
+            <span className="hidden sm:inline">Send</span>
+          </button>
+        </div>
+      </footer>
 
       {modal && (
         <Overlay onClose={() => setModal(null)}>
@@ -570,7 +601,8 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
           )}
           {modal.type === "end" && (
             <ConfirmPopup
-              icon="leaf"
+              icon="x"
+              accent="var(--red)"
               title="End tonight’s session?"
               body="Everyone is told the group is closing for tonight and gently returned home. Private messages from this session won’t carry over."
               confirm="End session"

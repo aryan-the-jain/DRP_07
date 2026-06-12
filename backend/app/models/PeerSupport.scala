@@ -17,8 +17,33 @@ case class SupportGroup(
     duration: Int, // TODO: Irontype
     creationTime: LocalDateTime,
     description: Option[String],
-    hasSessionNow: Boolean
+    hasSessionNow: Boolean,
+    lastSessionEndedAt: Option[LocalDateTime]
 )
+
+/* A session can only be held once per scheduled week. Because the facilitator
+   can open the room before the scheduled time, a close is attributed to the
+   meeting DAY it happened on, not the scheduled minute: ending the room at any
+   point on the meeting day — early, on time, or mid-session — uses up that
+   week's session and locks the room until the next meeting day. The lock lifts
+   at the start of that day (not the scheduled minute) so the facilitator can
+   open the next session a little early too. */
+object SessionWeek {
+  def closedForWeek(
+      day: DayOfWeek,
+      lastEnded: Option[LocalDateTime],
+      now: LocalDateTime
+  ): Boolean =
+    lastEnded.exists { ended =>
+      // The meeting day of the close's own week (the meeting day at or before
+      // the close), then the next meeting day a week on.
+      val daysSinceMeetingDay =
+        (ended.getDayOfWeek.getValue - day.getValue + 7) % 7
+      val reopenDay =
+        ended.toLocalDate.minusDays(daysSinceMeetingDay).plusDays(7)
+      now.toLocalDate.isBefore(reopenDay)
+    }
+}
 
 case class Participant(
     participantId: Int,
@@ -160,6 +185,15 @@ case class UpdateOnboarding(
 
 // Facilitator creates / edits a group. dayOfWeek is a full upper-case name
 // ("FRIDAY"); scheduledTime is an ISO local time ("20:00").
+
+case class JsonCreateGroup(
+    name: String,
+    dayOfWeek: String,
+    scheduledTime: String,
+    scheduledDurationMinutes: Int,
+    description: Option[String]
+)
+
 case class CreateGroup(
     name: String,
     dayOfWeek: String,
@@ -198,4 +232,38 @@ case class FacilitatorNotes(
     updatedAt: LocalDateTime,
     creationReason: String,
     safeguardingConcerns: String
+)
+
+enum Weather(val text: String) {
+  case ClearSkies extends Weather("clear skies")
+  case SomeSun extends Weather("some sun")
+  case Overcast extends Weather("overcast")
+  case Rain extends Weather("rain")
+  case Stormy extends Weather("stormy")
+  case Fog extends Weather("fog")
+}
+
+object Weather {
+  extension (s: String) {
+    def fromString(): Weather = s match {
+      case "clear skies" => ClearSkies
+      case "some sun"    => SomeSun
+      case "overcast"    => Overcast
+      case "rain"        => Rain
+      case "stormy"      => Stormy
+      case "fog"         => Fog
+    }
+  }
+}
+
+case class CreateGrieverDashboardReflection(
+    choice: Weather,
+    description: Option[String]
+)
+
+case class GrieverDashboardReflection(
+    grieverId: Int,
+    choice: Weather,
+    description: Option[String],
+    time: LocalDateTime
 )

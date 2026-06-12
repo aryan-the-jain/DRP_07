@@ -95,6 +95,10 @@ export type SessionSchedule = {
 export function formatSessionSchedule(
   dayOfWeek?: string,
   scheduledTime?: string,
+  durationMinutes?: number | null,
+  // When this week's session has already been held (facilitator closed the
+  // room), point everything at next week's occurrence instead of today's.
+  forceNextWeek = false,
 ): SessionSchedule | null {
   if (!dayOfWeek || !scheduledTime) {
     return null;
@@ -115,14 +119,20 @@ export function formatSessionSchedule(
 
   let daysAway = daysUntilWeekday(weekdayIndex);
 
-  // If the session day is today but the scheduled time has already passed, show next week.
+  // If the session day is today but the whole session window (start + duration)
+  // has already passed, show next week. During the meeting itself the date
+  // stays today's.
   if (daysAway === 0 && scheduledTime) {
     const [hourPart, minutePart] = scheduledTime.split(":");
     const now = new Date();
     const sessionMins = Number(hourPart) * 60 + Number(minutePart ?? "0");
     const nowMins = now.getHours() * 60 + now.getMinutes();
-    if (nowMins >= sessionMins) daysAway = 7;
+    if (nowMins >= sessionMins + (durationMinutes ?? 60)) daysAway = 7;
   }
+
+  // This week's session has already happened — the next one is a week from
+  // today's occurrence.
+  if (forceNextWeek && daysAway === 0) daysAway = 7;
 
   const date = nextDateForWeekday(weekdayIndex);
   if (daysAway === 7) date.setDate(date.getDate() + 7);
@@ -161,6 +171,42 @@ export function liveStatus(
   if (now >= start && now < end) return { live: true, liveSoon: false };
   if (now < start) return { live: false, liveSoon: true };
   return { live: false, liveSoon: false };
+}
+
+// A gentle day label for message date separators ("Today", "Yesterday",
+// "6 June", or "6 June 2025" for older years).
+export function dayLabelFor(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const startOfDay = (d: Date) => {
+    const copy = new Date(d);
+    copy.setHours(0, 0, 0, 0);
+    return copy.getTime();
+  };
+  const diffDays = Math.round(
+    (startOfDay(new Date()) - startOfDay(date)) / 86_400_000,
+  );
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    ...(sameYear ? {} : { year: "numeric" }),
+  }).format(date);
+}
+
+// Whether two timestamps fall on different calendar days — used to decide
+// where a date separator goes in a message list.
+export function isNewDay(prevIso: string | undefined, iso: string): boolean {
+  if (!prevIso) return true;
+  const a = new Date(prevIso);
+  const b = new Date(iso);
+  return (
+    a.getFullYear() !== b.getFullYear() ||
+    a.getMonth() !== b.getMonth() ||
+    a.getDate() !== b.getDate()
+  );
 }
 
 export function initialsFor(name: string) {

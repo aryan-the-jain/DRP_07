@@ -39,8 +39,14 @@ class PeerSupportController @Inject() (
   def isValidSessionNow(groupId: Int): Action[AnyContent] =
     peerSupportRepository.isValidSessionNow(groupId).returnOk()
 
-  def startSession(groupId: Int): Action[AnyContent] =
-    peerSupportRepository.startSession(groupId).returnOk()
+  /* Opening the room is refused (409) once this week's session has already
+     been held, so it can't be reopened until the next scheduled week. */
+  def startSession(groupId: Int): Action[AnyContent] = Action.async {
+    peerSupportRepository.startSession(groupId).map {
+      case Right(updated) => Ok(Json.toJson(updated))
+      case Left(reason)   => Conflict(Json.obj("error" -> reason))
+    }
+  }
 
   def endSession(groupId: Int): Action[AnyContent] =
     peerSupportRepository.endSession(groupId).returnOk()

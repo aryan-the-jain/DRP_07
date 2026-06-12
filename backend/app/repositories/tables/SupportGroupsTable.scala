@@ -2,7 +2,7 @@ package repositories.tables
 
 import models.*
 import slick.jdbc.PostgresProfile.api.*
-import repositories.PeerSupport.Instances.given
+import repositories.Instances.given
 
 import java.time.{LocalTime, LocalDateTime, DayOfWeek}
 
@@ -16,6 +16,8 @@ class SupportGroupsTable(tag: Tag)
   def creationTime = column[LocalDateTime]("time_of_creation")
   def description = column[Option[String]]("description")
   def hasSessionNow = column[Boolean]("has_session_now")
+  def lastSessionEndedAt =
+    column[Option[LocalDateTime]]("last_ended_at")
 
   def * = (
     groupId,
@@ -25,7 +27,8 @@ class SupportGroupsTable(tag: Tag)
     duration,
     creationTime,
     description,
-    hasSessionNow
+    hasSessionNow,
+    lastSessionEndedAt
   )
     .mapTo[SupportGroup]
 }

@@ -22,6 +22,7 @@ export type Participant = {
   displayName: string;
   pronouns: string | null;
   initials: string;
+  age: string | null;
   hobbies: string[];
   fact: string;
   role: string;

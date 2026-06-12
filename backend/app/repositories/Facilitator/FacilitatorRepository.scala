@@ -2,7 +2,7 @@ package repositories.Facilitator
 
 import models.*
 import slick.jdbc.PostgresProfile.api.*
-import repositories.PeerSupport.Instances.given
+import repositories.Instances.given
 
 import java.time.{DayOfWeek, LocalDateTime, LocalTime, ZoneId}
 import javax.inject.*
@@ -175,16 +175,18 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
 
   /* Create a group. Groups are always weekly; the facilitator manages membership,
      so there is no cap. Duration defaults to a gentle hour. */
-  def createGroup(create: CreateGroup): Future[ReturnFacilitatorGroup] = {
+  def createGroup(create: JsonCreateGroup): Future[ReturnFacilitatorGroup] = {
+    val currentTime = getCurrentTime()
     val newGroup = SupportGroup(
       0,
       create.name,
       DayOfWeek.valueOf(create.dayOfWeek),
       LocalTime.parse(create.scheduledTime),
       create.scheduledDurationMinutes,
-      getCurrentTime(),
+      currentTime,
       create.description,
-      false
+      false,
+      None
     )
     val insert =
       (supportGroups returning supportGroups.map(_.groupId)) += newGroup
@@ -195,26 +197,38 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
         create.dayOfWeek,
         create.scheduledTime,
         create.scheduledDurationMinutes,
-        create.creationTime,
+        currentTime,
         create.description,
         Seq.empty
       )
     }
   }
 
-  /* Edit a group's name, schedule, duration and blurb. */
+  /* Edit a group's name, schedule, duration and blurb. Changing the settings also
+     clears the once-per-week lock (last_ended_at): a fresh schedule means the next
+     meeting is a new occurrence, so the facilitator can open it again. */
   def updateGroup(groupId: Int, update: UpdateGroup): Future[Int] =
     db.run(
       supportGroups
         .filter(_.groupId === groupId)
-        .map(g => (g.name, g.day, g.time, g.duration, g.description))
+        .map(g =>
+          (
+            g.name,
+            g.day,
+            g.time,
+            g.duration,
+            g.description,
+            g.lastSessionEndedAt
+          )
+        )
         .update(
           (
             update.name,
             DayOfWeek.valueOf(update.dayOfWeek),
             LocalTime.parse(update.scheduledTime),
             update.scheduledDurationMinutes,
-            update.description
+            update.description,
+            None
           )
         )
     )

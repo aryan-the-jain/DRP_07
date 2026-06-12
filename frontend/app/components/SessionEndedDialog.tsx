@@ -5,11 +5,9 @@ import { LineIcon } from "./DesignPrimitives";
 // Same overlay shape as ShareReflectionDialog so it feels native to the rest of the app.
 export function SessionEndedDialog({
   facilitatorName,
-  onQuietSpace,
   onContinue,
 }: {
   facilitatorName: string;
-  onQuietSpace: () => void;
   onContinue: () => void;
 }) {
   return (
@@ -38,16 +36,12 @@ export function SessionEndedDialog({
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap justify-end gap-2">
+        <div className="mt-6">
           <button
             type="button"
-            onClick={onQuietSpace}
-            className="btn calm sm inline-flex items-center gap-2"
+            onClick={onContinue}
+            className="btn calm w-full justify-center"
           >
-            <LineIcon name="quiet" size={16} />
-            Step into the quiet space
-          </button>
-          <button type="button" onClick={onContinue} className="btn warm sm">
             Continue
           </button>
         </div>

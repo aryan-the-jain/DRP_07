@@ -684,6 +684,19 @@ button:not(:disabled):active {
   background: color-mix(in oklch, var(--warm) 26%, var(--paper));
   color: var(--warm-ink);
 }
+/* Warm item (home): a peach pill that stands out. */
+.nav-link.warm {
+  background: color-mix(in oklch, var(--warm) 18%, var(--paper));
+  color: var(--warm-ink);
+}
+.nav-link.warm:hover {
+  background: color-mix(in oklch, var(--warm) 26%, var(--paper));
+  color: var(--warm-ink);
+}
+.nav-link.warm.active {
+  background: color-mix(in oklch, var(--warm) 32%, var(--paper));
+  color: var(--warm-ink);
+}
 /* Emphasised item (the quiet space): a sage pill that always stands out, so
    the quiet room reads as a featured destination in the rail. */
 .nav-link.calm {

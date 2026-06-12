@@ -6,14 +6,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatTimeSince } from "../../lib/format";
-import { Avatar, DashRule, Field, Icon, Logo, SoftLabel } from "./Primitives";
+import { Avatar, DashRule, Field, Icon, SoftLabel, type IconName } from "./Primitives";
 import { CircleBadge, CloseBtn, ConfirmPopup, HobbyChips, LostCategory, LostChip, Overlay, PopBlock } from "./Overlays";
 import { Hub } from "./Hub";
 import { InvitePanel } from "./Invite";
 import {
   dmsFrom,
   groupCardFrom,
-  lostLabel,
   personFromParticipant,
   sharedReflections,
   type GroupCard,
@@ -26,9 +25,12 @@ import {
   fetchGroupNotes,
   fetchGroups,
   fetchInbox,
+  fetchNotePrompts,
   fetchParticipant,
   fetchPrivateThread,
+  fetchSessionState,
   updateGroupNotes,
+  updateNotePrompts,
   type GroupNotesResponse,
 } from "../lib/api";
 
@@ -150,7 +152,7 @@ function NotesEditor({
   return (
     <div className="stack" style={{ gap: 13 }}>
       {has ? (
-        <div style={{ whiteSpace: "pre-wrap", fontFamily: "var(--scrawl)", fontSize: 19, lineHeight: 1.55, color: "var(--ink)" }}>
+        <div style={{ whiteSpace: "pre-wrap", fontFamily: "var(--hand)", fontSize: 16, lineHeight: 1.62, color: "var(--ink)" }}>
           {notes}
         </div>
       ) : (
@@ -171,6 +173,209 @@ function NotesEditor({
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+// ====================================================================== DETAIL SECTION
+// One reflective, facilitator-private card used for all three things they keep in hand about
+// a group: why it exists, anything to keep a gentle eye on, and their running notes. Read mode
+// shows the value in the readable body font; Edit sits at the top-right of the header. It is
+// presentational — value + onSave come from the parent (the two prompt fields share one PATCH).
+
+function DetailSection({
+  icon,
+  title,
+  value,
+  loaded,
+  onSave,
+  placeholder,
+  empty,
+  minHeight = 200,
+}: {
+  icon: IconName;
+  title: string;
+  value: string;
+  loaded: boolean;
+  onSave: (draft: string) => Promise<void>;
+  placeholder: string;
+  empty: string;
+  minHeight?: number;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+  const [flash, setFlash] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (editing && textareaRef.current) {
+      const el = textareaRef.current;
+      el.focus();
+      const v = el.value;
+      el.value = "";
+      el.value = v;
+    }
+  }, [editing]);
+
+  const has = !!value.trim();
+  const start = () => { setDraft(value); setEditing(true); };
+  const cancel = () => { setDraft(value); setEditing(false); };
+  const commit = async () => {
+    setSaving(true);
+    try {
+      await onSave(draft);
+      setEditing(false);
+      setFlash(true);
+      setTimeout(() => setFlash(false), 1800);
+    } catch {
+      /* ignore — user can retry */
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="sk v2 soft" style={{ padding: "18px 20px", background: "var(--card)" }}>
+      <div className="row" style={{ gap: 13, alignItems: "flex-start" }}>
+        <div className="av" style={{ width: 44, height: 44, background: "var(--calm-soft)", borderColor: "var(--calm)" }}>
+          <Icon name={icon} size={22} c="var(--calm-ink)" />
+        </div>
+        <div className="stack" style={{ gap: 3, flex: 1, minWidth: 0, paddingTop: 1 }}>
+          <span className="h-title" style={{ fontSize: 21, color: "var(--ink)" }}>{title}</span>
+          <span className="row" style={{ gap: 6, fontSize: 13, color: "var(--muted)" }}>
+            <Icon name="lock" size={13} c="var(--calm)" /> Private to you
+          </span>
+        </div>
+        {loaded && has && !editing && (
+          <button className="btn ghost sm" onClick={start} style={{ flexShrink: 0 }}>
+            <Icon name="pen" size={14} c="var(--muted)" /> Edit
+          </button>
+        )}
+      </div>
+
+      <div style={{ marginTop: 14 }}>
+        {!loaded ? (
+          <span style={{ fontSize: 14, color: "var(--muted)" }}>Loading…</span>
+        ) : editing ? (
+          <div className="stack" style={{ gap: 12 }}>
+            <textarea
+              ref={textareaRef}
+              className="field calm"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={placeholder}
+              style={{
+                width: "100%",
+                minHeight,
+                resize: "vertical",
+                fontFamily: "var(--hand)",
+                fontSize: 16,
+                lineHeight: 1.62,
+                color: "var(--ink)",
+                display: "block",
+              }}
+            />
+            <div className="row" style={{ gap: 10 }}>
+              <button className="btn calm sm" onClick={commit} disabled={saving}>
+                <Icon name="check" size={15} c="#fff" /> Save
+              </button>
+              {has && (
+                <button className="btn ghost sm" onClick={cancel}>
+                  Cancel
+                </button>
+              )}
+            </div>
+          </div>
+        ) : has ? (
+          <div className="stack" style={{ gap: 13 }}>
+            <div style={{ whiteSpace: "pre-wrap", fontFamily: "var(--hand)", fontSize: 16, lineHeight: 1.62, color: "var(--ink)" }}>
+              {value}
+            </div>
+            {flash && (
+              <span className="row" style={{ gap: 6, fontSize: 14, color: "var(--calm-ink)" }}>
+                <Icon name="check" size={14} c="var(--calm)" /> saved
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="stack" style={{ gap: 13 }}>
+            <div
+              className="sk thin soft"
+              style={{ padding: "20px 16px", textAlign: "center", color: "var(--muted)", fontSize: 15.5, borderStyle: "dashed" }}
+            >
+              {empty}
+            </div>
+            <div className="row" style={{ gap: 11 }}>
+              <button className="btn ghost sm" onClick={start}>
+                <Icon name="pen" size={15} c="var(--muted)" /> Write a note
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ====================================================================== GROUP NOTE SECTIONS
+// The three facilitator-private sections shown at the top of both group-detail surfaces. Fetches
+// the free-form notes + the two prompts once, owns their state, and wires each section's save.
+// The two prompts share one PATCH, so each prompt save sends the current pair to avoid wiping
+// the other field.
+
+function GroupNoteSections({ groupId }: { groupId: number }) {
+  const apiUrl = apiBase();
+  const [notes, setNotes] = useState("");
+  const [reason, setReason] = useState("");
+  const [safeg, setSafeg] = useState("");
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([fetchGroupNotes(apiUrl, groupId), fetchNotePrompts(apiUrl, groupId)])
+      .then(([n, p]) => {
+        if (!active) return;
+        setNotes(n.notes);
+        setReason(p.creationReason);
+        setSafeg(p.safeguardingConcerns);
+        setLoaded(true);
+      })
+      .catch(() => { if (active) setLoaded(true); });
+    return () => { active = false; };
+  }, [apiUrl, groupId]);
+
+  const saveReason = async (draft: string) => {
+    await updateNotePrompts(apiUrl, groupId, { creationReason: draft, safeguardingConcerns: safeg });
+    setReason(draft);
+  };
+  const saveNotes = async (draft: string) => {
+    const res = await updateGroupNotes(apiUrl, groupId, draft);
+    setNotes(res.notes);
+  };
+
+  return (
+    <div className="stack" style={{ gap: 20 }}>
+      <DetailSection
+        icon="heart"
+        title="Why this group exists"
+        value={reason}
+        loaded={loaded}
+        onSave={saveReason}
+        minHeight={140}
+        placeholder="Why did you start this group? What were you hoping to make room for — and what would you want to remember on a hard week?"
+        empty="Note why you started this group — something to ground yourself before a session."
+      />
+      <DetailSection
+        icon="note"
+        title="Your private notes"
+        value={notes}
+        loaded={loaded}
+        onSave={saveNotes}
+        minHeight={200}
+        placeholder="What do you want to remember about this group? Who to check in with, what landed, what to try next time…"
+        empty="Nothing jotted yet. After your next session, note who to check in with or what landed."
+      />
     </div>
   );
 }
@@ -426,21 +631,10 @@ export function GroupDetailPopup({
       </div>
       <DashRule />
 
-      {/* body — notes then members, stacked, mirroring the full page */}
+      {/* body — the facilitator's private sections, then members, mirroring the full page */}
       <div className="scroll" style={{ flex: 1, padding: "20px 24px 22px" }}>
         <div className="stack" style={{ gap: 20 }}>
-          <div className="sk v2 soft" style={{ padding: "18px 20px", background: "var(--card)" }}>
-            <div className="row" style={{ gap: 9, marginBottom: 4 }}>
-              <Icon name="note" size={17} c="var(--calm)" />
-              <span className="h-title" style={{ fontSize: 21, color: "var(--ink)", flex: 1 }}>
-                Your private notes
-              </span>
-            </div>
-            <span className="row" style={{ gap: 6, fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>
-              <Icon name="lock" size={13} c="var(--calm)" /> kept to you · written after sessions
-            </span>
-            <NotesEditor groupId={group.groupId} minHeight={200} />
-          </div>
+          <GroupNoteSections groupId={group.groupId} />
 
           <div className="stack" style={{ gap: 12 }}>
             <SoftLabel>
@@ -512,7 +706,8 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
         const gs = await fetchGroups(apiUrl);
         const found = gs.find((g) => g.groupId === groupId);
         if (!found) { if (active) setStatus("error"); return; }
-        const card = groupCardFrom(found);
+        const session = await fetchSessionState(apiUrl, groupId).catch(() => null);
+        const card = groupCardFrom(found, session?.sessionClosedForWeek ?? false);
         if (!active) return;
         setGroup(card);
 
@@ -541,7 +736,7 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
         person: {
           ...personFromParticipant(p),
           dm: dmsFrom(thread, facilitatorId),
-          reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
+          reflections: entry ? sharedReflections(entry.sharedPrivateNote, entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
           unread: entry?.hasUnread ? 1 : 0,
         },
       });
@@ -566,18 +761,16 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
 
   return (
     <div className="stack" style={{ minHeight: "100%", background: "var(--paper)", position: "relative" }}>
-      {/* top bar */}
-      <div className="row" style={{ padding: "15px 26px", gap: 10 }}>
-        <button className="btn ghost sm" onClick={() => router.push("/facilitator")}>
-          <Icon name="back" size={16} c="var(--muted)" /> Your groups
-        </button>
-        <div style={{ flex: 1 }} />
-        <Logo size={24} />
-      </div>
-      <DashRule />
-
       <div className="scroll" style={{ flex: 1, padding: "26px 32px 32px" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+          {/* Slim, calm back link — matches the arrivals page. */}
+          <button
+            className="btn ghost sm"
+            onClick={() => router.push("/facilitator")}
+            style={{ border: "none", padding: "3px 6px", marginLeft: -6, marginBottom: 16, color: "var(--muted)" }}
+          >
+            <Icon name="back" size={15} c="var(--muted)" /> Back to my groups
+          </button>
           {status === "loading" && <Centered>Loading…</Centered>}
           {status === "error" && <Centered>We couldn’t find that group.</Centered>}
 
@@ -638,21 +831,10 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
                 </p>
               )} */}
 
-              {/* notes then members, stacked */}
+              {/* the facilitator's private sections, then members, stacked */}
               <div className="stack" style={{ gap: 20, marginTop: 24 }}>
 
-                <div className="sk v2 soft" style={{ padding: "18px 20px", background: "var(--card)" }}>
-                  <div className="row" style={{ gap: 9, marginBottom: 4 }}>
-                    <Icon name="note" size={17} c="var(--calm)" />
-                    <span className="h-title" style={{ fontSize: 21, color: "var(--ink)", flex: 1 }}>
-                      Your private notes
-                    </span>
-                  </div>
-                  <span className="row" style={{ gap: 6, fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>
-                    <Icon name="lock" size={13} c="var(--calm)" /> kept to you · written after sessions
-                  </span>
-                  <NotesEditor groupId={groupId} minHeight={240} />
-                </div>
+                <GroupNoteSections groupId={groupId} />
 
                 {/* members */}
                 <div className="stack" style={{ gap: 12 }}>

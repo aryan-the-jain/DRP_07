@@ -1,10 +1,27 @@
 import { RefObject } from "react";
 
 import { participantId } from "../lib/api";
-import { formatMessageTime, initialsFor } from "../lib/format";
+import {
+  dayLabelFor,
+  formatMessageTime,
+  initialsFor,
+  isNewDay,
+} from "../lib/format";
 import { ActiveTab, GroupMessage, Participant } from "../lib/types";
 import { AvatarCircle } from "./DesignPrimitives";
 import { FacilitatorMessageModal } from "./FacilitatorMessageModal";
+
+// A small centred day marker ("Today", "Yesterday", "6 June") shown once per
+// day, so conversations that span weeks stay easy to follow.
+function DateSeparator({ iso }: { iso: string }) {
+  const label = dayLabelFor(iso);
+  if (!label) return null;
+  return (
+    <div className="flex justify-center" aria-hidden="true">
+      <span className="chip px-3 py-0.5 text-[12px] text-faint">{label}</span>
+    </div>
+  );
+}
 
 type MessageListProps = {
   activeTab: Exclude<ActiveTab, "quiet">;
@@ -55,9 +72,18 @@ export function MessageList({
               const isFacilitator = participant?.role === "facilitator";
               const isOwn = message.id === participantId;
 
+              const showDate = isNewDay(
+                visibleMessages[index - 1]?.createdAt,
+                message.createdAt,
+              );
+
               return (
-                <article
+                <div
                   key={`${message.id}-${message.createdAt}-${index}`}
+                  className="flex flex-col gap-5"
+                >
+                {showDate && <DateSeparator iso={message.createdAt} />}
+                <article
                   className={`flex gap-3 sm:gap-4 ${isOwn ? "flex-row-reverse" : ""}`}
                 >
                   <button
@@ -113,6 +139,7 @@ export function MessageList({
                     </div>
                   </div>
                 </article>
+                </div>
               );
             })
           )}

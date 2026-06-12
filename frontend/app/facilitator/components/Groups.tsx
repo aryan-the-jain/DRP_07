@@ -10,7 +10,6 @@ import { Avatar, DashRule, Icon, Logo, SoftLabel } from "./Primitives";
 import { CircleBadge, ConfirmPopup, Overlay } from "./Overlays";
 import { Hub } from "./Hub";
 import { InvitePanel } from "./Invite";
-import { ArrivalRow } from "./Onboarding";
 import {
   dmsFrom,
   groupCardFrom,
@@ -24,11 +23,11 @@ import {
   apiBase,
   createGroup,
   facilitatorId,
-  fetchArrivals,
   fetchGroups,
   fetchInbox,
   fetchParticipant,
   fetchPrivateThread,
+  fetchSessionState,
   updateGroup,
   type GroupInput,
 } from "../lib/api";
@@ -65,10 +64,10 @@ function HoverFace({ name, tone, onClick }: { name: string; tone: GroupCard["mem
 // The notes icon button is hidden during live sessions.
 function GroupCard({
   c,
-  onInvite,
   onAvatar,
   onGroupDetails,
   onNotes,
+  onMessages,
   onOpenRoom,
 }: {
   c: GroupCard;
@@ -76,6 +75,7 @@ function GroupCard({
   onAvatar: (id: number) => void;
   onGroupDetails: () => void;
   onNotes: () => void;
+  onMessages: () => void;
   onOpenRoom: () => void;
 }) {
   const liveish = c.live || c.liveSoon;
@@ -140,6 +140,11 @@ function GroupCard({
           <Icon name="note" size={15} c="var(--calm)" /> Notes
         </button>
       </div>
+
+      {/* messages & shared reflections for this group */}
+      <button className="btn ghost sm icon" style={{ width: "100%", justifyContent: "center", padding: "7px 6px", borderColor: "var(--sky)", color: "var(--sky-ink)" }} onClick={onMessages} title="Messages & shared reflections for this group">
+        <Icon name="bubbleLines" size={15} c="var(--sky)" /> Messages &amp; reflections
+      </button>
     </div>
   );
 }
@@ -164,7 +169,6 @@ export function FacHome() {
   const router = useRouter();
   const apiUrl = apiBase();
   const [groups, setGroups] = useState<GroupCard[]>([]);
-  const [arrivals, setArrivals] = useState<Person[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [modal, setModal] = useState<HomeModal>(null);
   const [tick, setTick] = useState(0);
@@ -175,10 +179,21 @@ export function FacHome() {
     let active = true;
     (async () => {
       try {
-        const [gs, ar] = await Promise.all([fetchGroups(apiUrl), fetchArrivals(apiUrl)]);
+        const gs = await fetchGroups(apiUrl);
+        // Whether each group's session has already been held this week — once it has,
+        // the card can't open the room again until the next scheduled occurrence.
+        // A dropped check just falls back to the clock-derived state.
+        const sessions = await Promise.all(
+          gs.map((g) =>
+            fetchSessionState(apiUrl, g.groupId).catch(() => null),
+          ),
+        );
         if (!active) return;
-        setGroups(gs.map(groupCardFrom));
-        setArrivals(ar.map(personFromParticipant));
+        setGroups(
+          gs.map((g, i) =>
+            groupCardFrom(g, sessions[i]?.sessionClosedForWeek ?? false),
+          ),
+        );
         setStatus("ready");
       } catch {
         if (active) setStatus("error");
@@ -204,7 +219,7 @@ export function FacHome() {
         person: {
           ...personFromParticipant(p),
           dm: dmsFrom(thread, facilitatorId),
-          reflections: entry ? sharedReflections(entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
+          reflections: entry ? sharedReflections(entry.sharedPrivateNote, entry.sharedFacilitatorNote, entry.sharedFreeWriting, entry.lastReflectionShareAt) : [],
           unread: entry?.hasUnread ? 1 : 0,
         },
       });
@@ -217,12 +232,6 @@ export function FacHome() {
 
   return (
     <div className="stack" style={{ minHeight: "100%", background: "var(--paper)", position: "relative" }}>
-      <div className="row" style={{ padding: "16px 30px", gap: 14 }}>
-        <Logo size={28} />
-        <div style={{ flex: 1 }} />
-      </div>
-      <DashRule />
-
       <div className="scroll" style={{ flex: 1, padding: "28px 30px" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto" }}>
           <div className="stack" style={{ gap: 4 }}>
@@ -288,6 +297,7 @@ export function FacHome() {
                     onAvatar={(id) => openMember(id, c.groupId)}
                     onGroupDetails={() => router.push(`/facilitator/groups/${c.groupId}`)}
                     onNotes={() => setModal({ type: "notes", group: c })}
+                    onMessages={() => router.push(`/facilitator/messages?groupId=${c.groupId}`)}
                     onOpenRoom={() => router.push(`/facilitator/room?groupId=${c.groupId}`)}
                   />
                 ))}
@@ -316,24 +326,6 @@ export function FacHome() {
                 </div>
               </div>
 
-              <div className="row" style={{ gap: 12, margin: "30px 0 14px", alignItems: "baseline" }}>
-                <SoftLabel>Waiting to be placed</SoftLabel>
-                <div style={{ flex: 1, borderTop: "2px dashed var(--line)" }} />
-                {arrivals.length > 0 && (
-                  <span className="wavy" style={{ fontSize: 15, color: "var(--warm-ink)" }} onClick={() => router.push("/facilitator/arrivals")}>
-                    See all {arrivals.length} →
-                  </span>
-                )}
-              </div>
-              {arrivals.length === 0 ? (
-                <span style={{ fontSize: 15, color: "var(--faint)" }}>No one is waiting to be placed right now.</span>
-              ) : (
-                <div className="stack" style={{ gap: 12 }}>
-                  {arrivals.map((m) => (
-                    <ArrivalRow key={m.id} m={m} onPlace={() => router.push(`/facilitator/arrivals/${m.id}?from=dashboard`)} />
-                  ))}
-                </div>
-              )}
             </>
           )}
         </div>
@@ -454,13 +446,15 @@ function from24h(time: string): { hour12: number; minute: number; meridiem: "am"
   };
 }
 
-export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edit"; initial?: FacGroupResponse }) {
+export function GroupForm({ mode = "create", initial, returnTo }: { mode?: "create" | "edit"; initial?: FacGroupResponse; returnTo?: string }) {
   const router = useRouter();
   const apiUrl = apiBase();
   const editing = mode === "edit";
+  // When reached while placing someone, head back to that person's page instead of home.
+  const backDest = !editing && returnTo ? returnTo : "/facilitator";
 
-  const initTime = initial ? from24h(initial.scheduledTime) : { hour12: 7, minute: 0, meridiem: "pm" as const };
-  const initDay = initial ? Math.max(0, DAY_NAMES.indexOf(initial.dayOfWeek)) : 4;
+  const initTime = initial ? from24h(initial.scheduledTime) : { hour12: 10, minute: 0, meridiem: "am" as const };
+  const initDay = initial ? Math.max(0, DAY_NAMES.indexOf(initial.dayOfWeek)) : 0;
 
   const [name, setName] = useState(initial?.name ?? "");
   const [dayIndex, setDayIndex] = useState(initDay);
@@ -500,8 +494,8 @@ export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edi
   return (
     <div className="stack" style={{ minHeight: "100%", background: "var(--paper)", position: "relative" }}>
       <div className="row" style={{ padding: "15px 26px", gap: 14 }}>
-        <button className="btn ghost sm" onClick={() => router.push("/facilitator")}>
-          <Icon name="back" size={16} c="var(--muted)" /> {editing ? initial?.name ?? "Your groups" : "Your groups"}
+        <button className="btn ghost sm" onClick={() => router.push(backDest)}>
+          <Icon name="back" size={16} c="var(--muted)" /> {editing ? initial?.name ?? "Your groups" : returnTo ? "Back" : "Your groups"}
         </button>
         <div style={{ flex: 1 }} />
         <Logo size={24} />
@@ -588,7 +582,7 @@ export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edi
               {editing ? "Save changes" : "Create group"} <Icon name="check" size={17} c="#fff" />
             </button>
             <div style={{ flex: 1 }} />
-            <button className="btn ghost" onClick={() => router.push("/facilitator")}>
+            <button className="btn ghost" onClick={() => router.push(backDest)}>
               Discard
             </button>
           </div>
@@ -599,7 +593,7 @@ export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edi
         // After creating, head back to the dashboard; after editing, return to the group's
         // own details page — that's where the edit was reached from.
         (() => {
-          const dest = editing && initial ? `/facilitator/groups/${initial.groupId}` : "/facilitator";
+          const dest = editing && initial ? `/facilitator/groups/${initial.groupId}` : backDest;
           const go = () => router.push(dest);
           return (
             <Overlay onClose={go}>
@@ -612,7 +606,7 @@ export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edi
                     ? "Your edits are live. Members will see anything that affects them next time they open the app."
                     : "Lovely. Your new group is ready — you can invite people in from its card."
                 }
-                confirm={editing ? "Back to group details" : "Back to your groups"}
+                confirm={editing ? "Back to group details" : returnTo ? "Back" : "Back to your groups"}
                 cancel={null}
                 onClose={go}
                 onConfirm={go}
@@ -625,8 +619,8 @@ export function GroupForm({ mode = "create", initial }: { mode?: "create" | "edi
   );
 }
 
-export function GroupCreate() {
-  return <GroupForm mode="create" />;
+export function GroupCreate({ returnTo }: { returnTo?: string }) {
+  return <GroupForm mode="create" returnTo={returnTo} />;
 }
 
 export function GroupEdit({ groupId }: { groupId: number }) {

@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Avatar, DashRule, Field, Icon, Logo, SoftLabel } from "./Primitives";
+import { Avatar, DashRule, Field, Icon, SoftLabel } from "./Primitives";
 import {
   ConfirmPopup,
   FullProfilePopup,
@@ -106,7 +106,10 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
   // page — either way, send the facilitator back where they came from.
   const cameFromDashboard = from === "dashboard";
   const backTo = cameFromDashboard ? "/facilitator" : "/facilitator/arrivals";
-  const backLabel = cameFromDashboard ? "Home" : "New arrivals";
+  const backLabel = cameFromDashboard ? "Back to home" : "Back to arrivals";
+  // Starting a new group from here should return to this person's page (so they can be
+  // placed into the group just made), not the facilitator home.
+  const selfPath = `/facilitator/arrivals/${participantId}${cameFromDashboard ? "?from=dashboard" : ""}`;
   const [person, setPerson] = useState<Person | null>(null);
   const [groups, setGroups] = useState<GroupCard[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -137,7 +140,7 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
     Promise.all([fetchParticipant(apiUrl, participantId), fetchGroups(apiUrl)])
       .then(([p, gs]) => {
         setPerson(personFromParticipant(p));
-        setGroups(gs.map(groupCardFrom));
+        setGroups(gs.map((g) => groupCardFrom(g)));
         setStatus("ready");
       })
       .catch(() => setStatus("error"));
@@ -168,20 +171,19 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
   const m = person;
 
   return (
-    <div className="stack" style={{ minHeight: "100%", height: "100vh", background: "var(--paper)", position: "relative" }}>
-      <div className="row" style={{ padding: "15px 26px", gap: 14 }}>
-        <button className="btn ghost sm" onClick={() => router.push(backTo)}>
-          <Icon name="back" size={16} c="var(--muted)" /> {backLabel}
-        </button>
-        <div style={{ flex: 1 }} />
-        <Logo size={26} />
-      </div>
-      <DashRule />
-
+    <div className="stack" style={{ minHeight: "100%", height: "100%", background: "var(--paper)", position: "relative" }}>
       <div className="row" style={{ flex: 1, minHeight: 0, alignItems: "stretch" }}>
         {/* ---------------- LEFT · who they are ---------------- */}
         <div className="scroll" style={{ flex: 1, padding: "26px 32px" }}>
           <div style={{ maxWidth: 600, margin: "0 auto" }}>
+            {/* Slim, calm back link — returns to wherever they came from (?from). */}
+            <button
+              className="btn ghost sm"
+              onClick={() => router.push(backTo)}
+              style={{ border: "none", padding: "3px 6px", marginLeft: -6, marginBottom: 16, color: "var(--muted)" }}
+            >
+              <Icon name="back" size={15} c="var(--muted)" /> {backLabel}
+            </button>
             <div className="row" style={{ gap: 18, alignItems: "flex-start" }}>
               <Avatar name={m.name} size={64} tone={m.tone} />
               <div className="stack" style={{ gap: 6, flex: 1, paddingTop: 2 }}>
@@ -283,16 +285,16 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
             </span>
           </div>
           <div className="scroll" style={{ flex: 1, padding: "8px 18px 18px" }}>
-            {groups.length === 0 ? (
-              <div
-                className="sk thin soft"
-                style={{ padding: "18px 16px", textAlign: "center", color: "var(--muted)", fontSize: 15, borderStyle: "dashed" }}
-              >
-                You don’t have any groups yet — create one first.
-              </div>
-            ) : (
-              <div className="stack" style={{ gap: 12 }}>
-                {groups.map((c) => (
+            <div className="stack" style={{ gap: 12 }}>
+              {groups.length === 0 ? (
+                <div
+                  className="sk thin soft"
+                  style={{ padding: "18px 16px", textAlign: "center", color: "var(--muted)", fontSize: 15, borderStyle: "dashed" }}
+                >
+                  You don’t have any groups yet — start one below.
+                </div>
+              ) : (
+                groups.map((c) => (
                   <GroupPlaceCard
                     key={c.groupId}
                     c={c}
@@ -301,9 +303,33 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
                     onDetails={() => setModal({ type: "group", group: c })}
                     onAvatar={(id) => openMember(id, c.name)}
                   />
-                ))}
+                ))
+              )}
+              {/* start a new group — mirrors the trailing card on the home panel */}
+              <div
+                className="sk dash soft"
+                onClick={() => router.push(`/facilitator/groups/new?returnTo=${encodeURIComponent(selfPath)}`)}
+                style={{
+                  padding: 22,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  minHeight: 150,
+                  cursor: "pointer",
+                  background: "transparent",
+                }}
+              >
+                <div className="av anon" style={{ width: 44, height: 44 }}>
+                  <Icon name="plus" size={22} c="var(--muted)" />
+                </div>
+                <span style={{ fontSize: 16, color: "var(--muted)" }}>Start a new group</span>
+                <span style={{ fontSize: 13.5, color: "var(--faint)", textAlign: "center", maxWidth: 180 }}>
+                  for a new day, a new focus, or an overflowing group
+                </span>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
@@ -363,14 +389,6 @@ export function OnboardingList() {
 
   return (
     <div className="stack" style={{ minHeight: "100%", background: "var(--paper)", position: "relative" }}>
-      <div className="row" style={{ padding: "15px 26px", gap: 14 }}>
-        <button className="btn ghost sm" onClick={() => router.push("/facilitator")}>
-          <Icon name="back" size={16} c="var(--muted)" /> Home
-        </button>
-        <div style={{ flex: 1 }} />
-        <Logo size={26} />
-      </div>
-      <DashRule />
       <div className="scroll" style={{ flex: 1, padding: "26px 30px" }}>
         <div style={{ maxWidth: 980, margin: "0 auto" }}>
           <div className="row" style={{ gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>

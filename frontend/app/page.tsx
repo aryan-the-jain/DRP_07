@@ -70,7 +70,7 @@ export default function Home() {
     setErrorMessage("");
 
     try {
-      const [groupData, participantsData, valid] = await Promise.all([
+      const [groupData, participantsData, session] = await Promise.all([
         fetchGroup(apiUrl),
         fetchParticipants(apiUrl),
         fetchSessionValid(apiUrl),
@@ -78,7 +78,7 @@ export default function Home() {
 
       // The room is only joinable once the facilitator has opened it. If it isn't open,
       // send the participant gently back home rather than showing a stale chat.
-      if (!valid) {
+      if (!session.isSessionNow) {
         router.replace("/dashboard");
         return;
       }
@@ -124,8 +124,8 @@ export default function Home() {
 
     const intervalId = window.setInterval(() => {
       fetchSessionValid(apiUrl)
-        .then((valid) => {
-          if (!valid) setSessionEnded(true);
+        .then((session) => {
+          if (!session.isSessionNow) setSessionEnded(true);
         })
         .catch(() => {});
     }, MESSAGE_POLL_INTERVAL_MS);
@@ -241,7 +241,6 @@ export default function Home() {
       {sessionEnded && (
         <SessionEndedDialog
           facilitatorName={group?.facilitatorName ?? "your facilitator"}
-          onQuietSpace={() => router.push("/quiet")}
           onContinue={() => router.push("/dashboard")}
         />
       )}

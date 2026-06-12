@@ -53,6 +53,7 @@ export type InboxEntryResponse = {
   lastMessageFromId: number | null;
   lastMessageAt: string | null;
   hasUnread: boolean;
+  sharedPrivateNote: string | null;
   sharedFacilitatorNote: string | null;
   sharedFreeWriting: string | null;
   lastReflectionShareAt: string | null;
@@ -132,8 +133,10 @@ export function sinceShort(recency: string | null | undefined): string {
 }
 
 // ----------------------------------------------------------------- view model
-export type DM = { from: "you" | "them"; t: string; at: string };
-export type Reflection = { q: string; a: string; at: string | null };
+// atIso is the raw timestamp, kept alongside the formatted label so threads can
+// insert per-day date separators.
+export type DM = { from: "you" | "them"; t: string; at: string; atIso: string };
+export type Reflection = { q: string; a: string; at: string | null; atIso: string | null };
 
 export type Person = {
   id: number;
@@ -284,26 +287,39 @@ export function dmsFrom(messages: FacMessageResponse[], facilitatorId: number): 
       from: m.fromId === facilitatorId ? "you" : "them",
       t: m.body,
       at: formatMessageTime(m.createdAt),
+      atIso: m.createdAt,
     }));
 }
 
 export function sharedReflections(
+  privateNote: string | null,
   facilitatorNote: string | null,
   freeWriting: string | null,
   sharedAt: string | null = null,
 ): Reflection[] {
   const at = sharedAt ? formatMessageTime(sharedAt) : null;
+  const atIso = sharedAt;
   const out: Reflection[] = [];
-  if (facilitatorNote) out.push({ q: "Something they wanted you to see", a: facilitatorNote, at });
-  if (freeWriting) out.push({ q: "From their free writing", a: freeWriting, at });
+  if (privateNote) out.push({ q: "How are you feeling now?", a: privateNote, at, atIso });
+  if (facilitatorNote) out.push({ q: "What has made you come here today?", a: facilitatorNote, at, atIso });
+  if (freeWriting) out.push({ q: "From their free writing", a: freeWriting, at, atIso });
   return out;
 }
 
 // Build the home-screen group card from the API group: friendly schedule labels, the
-// live / live-soon status, and the (non-facilitator) member avatars.
-export function groupCardFrom(g: FacGroupResponse): GroupCard {
-  const schedule = formatSessionSchedule(g.dayOfWeek, g.scheduledTime);
-  const { live, liveSoon } = liveStatus(g.dayOfWeek, g.scheduledTime, g.scheduledDurationMinutes ?? null);
+// live / live-soon status, and the (non-facilitator) member avatars. When this week's
+// session has already been held, the clock no longer matters — the card points at next
+// week's occurrence instead.
+export function groupCardFrom(g: FacGroupResponse, sessionClosedForWeek = false): GroupCard {
+  const schedule = formatSessionSchedule(
+    g.dayOfWeek,
+    g.scheduledTime,
+    g.scheduledDurationMinutes ?? null,
+    sessionClosedForWeek,
+  );
+  const clock = liveStatus(g.dayOfWeek, g.scheduledTime, g.scheduledDurationMinutes ?? null);
+  const live = !sessionClosedForWeek && clock.live;
+  const liveSoon = !sessionClosedForWeek && clock.liveSoon;
   return {
     groupId: g.groupId,
     name: g.name,

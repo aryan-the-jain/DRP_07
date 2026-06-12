@@ -3,9 +3,9 @@ package repositories.PeerSupport
 import slick.jdbc.PostgresProfile.api.*
 import slick.sql.FixedSqlAction
 import models.*
-import Instances.given
+import repositories.Instances.given
 
-import java.time.{DayOfWeek, LocalTime}
+import java.time.{DayOfWeek, LocalDateTime, LocalTime}
 import play.api.http.MediaRange.parse
 import repositories.tables.{
   SupportGroupsTable,
@@ -55,11 +55,21 @@ class GroupQueries(
         Rep[String],
         Rep[Option[String]],
         Rep[String],
+        Rep[Option[String]],
         Rep[List[String]],
         Rep[String],
         Rep[Role]
     ),
-    (Int, String, Option[String], String, List[String], String, Role),
+    (
+        Int,
+        String,
+        Option[String],
+        String,
+        Option[String],
+        List[String],
+        String,
+        Role
+    ),
     Seq
   ] = {
     val ps = for
@@ -70,11 +80,12 @@ class GroupQueries(
       p.name,
       p.pronouns,
       p.initials,
+      p.age,
       p.hobbies,
       p.fact,
       p.role
     )
-    ps.sortBy(p => (p._7.desc, p._2.asc))
+    ps.sortBy(p => (p._8.desc, p._2.asc))
   }
 
   /* Returns the list of all groups that the given user is in. */
@@ -103,11 +114,21 @@ class GroupQueries(
         Rep[String],
         Rep[Option[String]],
         Rep[String],
+        Rep[Option[String]],
         Rep[List[String]],
         Rep[String],
         Rep[Role]
     ),
-    (Int, String, Option[String], String, List[String], String, Role),
+    (
+        Int,
+        String,
+        Option[String],
+        String,
+        Option[String],
+        List[String],
+        String,
+        Role
+    ),
     Seq
   ] = {
     for p <- participants if p.participantId === participantId
@@ -116,29 +137,36 @@ class GroupQueries(
       p.name,
       p.pronouns,
       p.initials,
+      p.age,
       p.hobbies,
       p.fact,
       p.role
     )
   }
 
-  def isSessionValid(groupId: Int): Query[Rep[Boolean], Boolean, Seq] =
+  /* The current session flag together with the schedule and the last close
+   * time, so callers can work out whether this week's session already ran. */
+  def selectSessionState(groupId: Int): Query[
+    (Rep[Boolean], Rep[DayOfWeek], Rep[LocalTime], Rep[Option[LocalDateTime]]),
+    (Boolean, DayOfWeek, LocalTime, Option[LocalDateTime]),
+    Seq
+  ] =
     for g <- groups if g.groupId === groupId
-    yield g.hasSessionNow
-
-  private def updateSession(
-      groupId: Int,
-      flag: Boolean
-  ): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
-    groups.filter(_.groupId === groupId).map(_.hasSessionNow).update(flag)
+    yield (g.hasSessionNow, g.day, g.time, g.lastSessionEndedAt)
 
   def startSession(
       groupId: Int
   ): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
-    updateSession(groupId, true)
+    groups.filter(_.groupId === groupId).map(_.hasSessionNow).update(true)
 
+  /* Ending a session also records when, which is what locks the room until
+   * the next scheduled week. */
   def endSession(
-      groupId: Int
+      groupId: Int,
+      endedAt: LocalDateTime
   ): FixedSqlAction[Int, slick.dbio.NoStream, slick.dbio.Effect.Write] =
-    updateSession(groupId, false)
+    groups
+      .filter(_.groupId === groupId)
+      .map(g => (g.hasSessionNow, g.lastSessionEndedAt))
+      .update((false, Some(endedAt)))
 }

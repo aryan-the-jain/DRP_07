@@ -2,7 +2,7 @@ package repositories.tables
 
 import models.*
 import slick.jdbc.PostgresProfile.api.*
-import repositories.PeerSupport.Instances.given
+import repositories.Instances.given
 
 import java.time.LocalDateTime
 
