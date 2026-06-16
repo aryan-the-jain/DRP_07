@@ -110,15 +110,16 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext)
 
   def isValidSessionNow(groupId: Int): Future[ReturnIsSessionNow] = {
     val query = groupQuerier.selectSessionState(groupId)
-    db.run(query.result.head).map { case (isNow, day, time, duration, lastEnded) =>
-      val now = getCurrentTime()
-      // Joinable only while the facilitator has the room open AND the meeting's
-      // scheduled end hasn't passed — the clock auto-closes a room the
-      // facilitator forgot to end, instead of leaving it open indefinitely.
-      ReturnIsSessionNow(
-        isNow && !SessionWeek.pastScheduledEnd(day, time, duration, now),
-        SessionWeek.closedForWeek(day, lastEnded, now)
-      )
+    db.run(query.result.head).map {
+      case (isNow, day, time, duration, lastEnded) =>
+        val now = getCurrentTime()
+        // Joinable only while the facilitator has the room open AND the meeting's
+        // scheduled end hasn't passed — the clock auto-closes a room the
+        // facilitator forgot to end, instead of leaving it open indefinitely.
+        ReturnIsSessionNow(
+          isNow && !SessionWeek.pastScheduledEnd(day, time, duration, now),
+          SessionWeek.closedForWeek(day, lastEnded, now)
+        )
     }
   }
 
