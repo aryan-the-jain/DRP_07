@@ -69,7 +69,7 @@ export function ResourcesPanel({ apiUrl }: { apiUrl: string }) {
   if (links.length === 0) {
     return (
       <div className="sk thin soft dash bg-paper p-6 text-center text-[15px] leading-relaxed text-muted">
-        There's nothing here yet.
+        There is nothing here yet.
       </div>
     );
   }
