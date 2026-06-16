@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { BrandMark } from "../components/DesignPrimitives";
 import { QuietReflectionRoom } from "../components/QuietReflectionRoom";
 import { fallbackApiUrl } from "../lib/api";
+import { withPid } from "../lib/identity";
 import { useQuietSpace } from "../lib/useQuietSpace";
 
 // Standalone quiet space, reachable from the dashboard. It reuses the exact same
@@ -26,7 +27,7 @@ export default function QuietPage() {
     const returnTo = new URLSearchParams(window.location.search).get("return");
     const destination =
       returnTo && returnTo.startsWith("/") ? returnTo : "/dashboard";
-    router.push(destination);
+    router.push(withPid(destination));
   }
 
   return (

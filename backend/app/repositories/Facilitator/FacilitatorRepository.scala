@@ -39,14 +39,27 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
 
   /* Every group, each with its member summaries. Scheduling is left as the raw
      day/time so the frontend can format "live tonight" / "next …" itself. */
-  def groups(): Future[Seq[ReturnFacilitatorGroup]] =
+  def groups(
+      facilitatorId: Option[Int] = None
+  ): Future[Seq[ReturnFacilitatorGroup]] =
     for {
       gs <- db.run(supportGroups.sortBy(_.groupId).result)
       gps <- db.run(groupParticipants.result)
       ps <- db.run(participants.result)
     } yield {
       val byId = ps.map(p => p.participantId -> p).toMap
-      gs.map { g =>
+      // When scoped to a facilitator, only the groups they facilitate (i.e. are a
+      // FACILITATOR member of) are visible; otherwise every group is returned.
+      val visibleGroupIds: Option[Set[Int]] = facilitatorId.map { fid =>
+        gps
+          .filter(gp =>
+            gp.participantId == fid &&
+              byId.get(fid).exists(_.role == Role.FACILITATOR)
+          )
+          .map(_.groupId)
+          .toSet
+      }
+      gs.filter(g => visibleGroupIds.forall(_.contains(g.groupId))).map { g =>
         val members = gps
           .filter(_.groupId == g.groupId)
           .flatMap(gp => byId.get(gp.participantId))
@@ -175,7 +188,10 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
 
   /* Create a group. Groups are always weekly; the facilitator manages membership,
      so there is no cap. Duration defaults to a gentle hour. */
-  def createGroup(create: JsonCreateGroup): Future[ReturnFacilitatorGroup] = {
+  def createGroup(
+      create: JsonCreateGroup,
+      facilitatorId: Option[Int] = None
+  ): Future[ReturnFacilitatorGroup] = {
     val currentTime = getCurrentTime()
     val newGroup = SupportGroup(
       0,
@@ -190,18 +206,30 @@ class FacilitatorRepository @Inject() (executionContext: ExecutionContext)
     )
     val insert =
       (supportGroups returning supportGroups.map(_.groupId)) += newGroup
-    db.run(insert).map { newId =>
-      ReturnFacilitatorGroup(
-        newId,
-        create.name,
-        create.dayOfWeek,
-        create.scheduledTime,
-        create.scheduledDurationMinutes,
-        currentTime,
-        create.description,
-        Seq.empty
-      )
-    }
+    for {
+      newId <- db.run(insert)
+      // Place the creating facilitator into the group so the facilitator-scoped
+      // groups list includes it straight away.
+      members <- facilitatorId match {
+        case Some(fid) =>
+          for {
+            _ <- db.run(groupParticipants += GroupParticipants(newId, fid))
+            fac <- db.run(
+              participants.filter(_.participantId === fid).result.headOption
+            )
+          } yield fac.map(member).toSeq
+        case None => Future.successful(Seq.empty[ReturnFacilitatorMember])
+      }
+    } yield ReturnFacilitatorGroup(
+      newId,
+      create.name,
+      create.dayOfWeek,
+      create.scheduledTime,
+      create.scheduledDurationMinutes,
+      currentTime,
+      create.description,
+      members
+    )
   }
 
   /* Edit a group's name, schedule, duration and blurb. Changing the settings also

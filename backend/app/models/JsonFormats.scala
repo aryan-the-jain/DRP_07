@@ -50,6 +50,9 @@ object JsonFormats {
   given returnParticipantWrites: Writes[ReturnParticipant] =
     Json.writes[ReturnParticipant]
 
+  given returnPeopleWrites: Writes[ReturnPeople] =
+    Json.writes[ReturnPeople]
+
   given returnGroupMessageWrites: Writes[ReturnGroupMessage] =
     Json.writes[ReturnGroupMessage]
 

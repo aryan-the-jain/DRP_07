@@ -250,6 +250,7 @@ export function ThisWeekCard({
           </>
         ) : (
           <p className="text-sm text-muted">
+            {/* TODO: add more context to this */}
             We&apos;ll introduce you to the group soon.
           </p>
         )}

@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { withFid } from "../../lib/identity";
 import { Avatar, DashRule, Icon, Logo, SoftLabel } from "./Primitives";
 import { CircleBadge, ConfirmPopup, Overlay } from "./Overlays";
 import { Hub } from "./Hub";
@@ -278,7 +279,7 @@ export function FacHome() {
                       {liveGroup.members.length} in the group
                     </span>
                   </div>
-                  <button className="btn warm" onClick={() => router.push(`/facilitator/room?groupId=${liveGroup.groupId}`)}>
+                  <button className="btn warm" onClick={() => router.push(withFid(`/facilitator/room?groupId=${liveGroup.groupId}`))}>
                     Open the room <Icon name="chev" size={16} c="#fff" />
                   </button>
                 </div>
@@ -295,15 +296,15 @@ export function FacHome() {
                     c={c}
                     onInvite={() => setModal({ type: "invite", group: c })}
                     onAvatar={(id) => openMember(id, c.groupId)}
-                    onGroupDetails={() => router.push(`/facilitator/groups/${c.groupId}`)}
+                    onGroupDetails={() => router.push(withFid(`/facilitator/groups/${c.groupId}`))}
                     onNotes={() => setModal({ type: "notes", group: c })}
-                    onMessages={() => router.push(`/facilitator/messages?groupId=${c.groupId}`)}
-                    onOpenRoom={() => router.push(`/facilitator/room?groupId=${c.groupId}`)}
+                    onMessages={() => router.push(withFid(`/facilitator/messages?groupId=${c.groupId}`))}
+                    onOpenRoom={() => router.push(withFid(`/facilitator/room?groupId=${c.groupId}`))}
                   />
                 ))}
                 <div
                   className="sk dash soft"
-                  onClick={() => router.push("/facilitator/groups/new")}
+                  onClick={() => router.push(withFid("/facilitator/groups/new"))}
                   style={{
                     padding: 22,
                     display: "flex",
@@ -321,7 +322,7 @@ export function FacHome() {
                   </div>
                   <span style={{ fontSize: 16, color: "var(--muted)" }}>Start a new group</span>
                   <span style={{ fontSize: 13.5, color: "var(--faint)", textAlign: "center", maxWidth: 180 }}>
-                    for a new day, a new focus, or an overflowing group
+                    for a new day, a new focus, or new users
                   </span>
                 </div>
               </div>
@@ -450,8 +451,11 @@ export function GroupForm({ mode = "create", initial, returnTo }: { mode?: "crea
   const router = useRouter();
   const apiUrl = apiBase();
   const editing = mode === "edit";
-  // When reached while placing someone, head back to that person's page instead of home.
-  const backDest = !editing && returnTo ? returnTo : "/facilitator";
+  // When editing, return to the group's details page; when creating, return to the placement
+  // page (returnTo) or the facilitator home.
+  const backDest = editing && initial
+    ? `/facilitator/groups/${initial.groupId}`
+    : returnTo ?? "/facilitator";
 
   const initTime = initial ? from24h(initial.scheduledTime) : { hour12: 10, minute: 0, meridiem: "am" as const };
   const initDay = initial ? Math.max(0, DAY_NAMES.indexOf(initial.dayOfWeek)) : 0;
@@ -494,7 +498,7 @@ export function GroupForm({ mode = "create", initial, returnTo }: { mode?: "crea
   return (
     <div className="stack" style={{ minHeight: "100%", background: "var(--paper)", position: "relative" }}>
       <div className="row" style={{ padding: "15px 26px", gap: 14 }}>
-        <button className="btn ghost sm" onClick={() => router.push(backDest)}>
+        <button className="btn ghost sm" onClick={() => router.push(withFid(backDest))}>
           <Icon name="back" size={16} c="var(--muted)" /> {editing ? initial?.name ?? "Your groups" : returnTo ? "Back" : "Your groups"}
         </button>
         <div style={{ flex: 1 }} />
@@ -556,11 +560,11 @@ export function GroupForm({ mode = "create", initial, returnTo }: { mode?: "crea
               </div>
             </FormRow>
 
-            <FormRow label="How long does it run?" hint="Sessions stay gentle — long enough to settle, short enough not to tire.">
+            <FormRow label="How long does it run?" hint="Sessions are long enough to settle, short enough not to tire.">
               <DurationField minutes={durationMinutes} onChange={setDurationMinutes} />
             </FormRow>
 
-            <FormRow label="A few words members will see" hint="Optional — sets the tone before anyone steps in.">
+            <FormRow label="A few words members will see" hint="Optional - sets the tone before anyone steps in.">
               <textarea
                 className="field"
                 value={description}
@@ -582,7 +586,7 @@ export function GroupForm({ mode = "create", initial, returnTo }: { mode?: "crea
               {editing ? "Save changes" : "Create group"} <Icon name="check" size={17} c="#fff" />
             </button>
             <div style={{ flex: 1 }} />
-            <button className="btn ghost" onClick={() => router.push(backDest)}>
+            <button className="btn ghost" onClick={() => router.push(withFid(backDest))}>
               Discard
             </button>
           </div>
@@ -594,7 +598,7 @@ export function GroupForm({ mode = "create", initial, returnTo }: { mode?: "crea
         // own details page — that's where the edit was reached from.
         (() => {
           const dest = editing && initial ? `/facilitator/groups/${initial.groupId}` : backDest;
-          const go = () => router.push(dest);
+          const go = () => router.push(withFid(dest));
           return (
             <Overlay onClose={go}>
               <ConfirmPopup
@@ -604,7 +608,7 @@ export function GroupForm({ mode = "create", initial, returnTo }: { mode?: "crea
                 body={
                   editing
                     ? "Your edits are live. Members will see anything that affects them next time they open the app."
-                    : "Lovely. Your new group is ready — you can invite people in from its card."
+                    : "Lovely. Your new group is ready - you can add people in from its card."
                 }
                 confirm={editing ? "Back to group details" : returnTo ? "Back" : "Back to your groups"}
                 cancel={null}

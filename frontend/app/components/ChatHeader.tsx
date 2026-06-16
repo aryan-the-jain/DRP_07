@@ -54,7 +54,7 @@ export function ChatHeader({
 
           <span className="chip">
             <LineIcon name="clock" size={15} />
-            {group?.scheduledDurationMinutes ?? 30} mins together
+            {group?.scheduledDurationMinutes ?? 30} minutes together
           </span>
         </div>
 

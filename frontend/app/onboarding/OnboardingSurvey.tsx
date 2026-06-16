@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { BrandMark } from "../components/DesignPrimitives";
 import { fallbackApiUrl, fetchOnboarding, saveOnboarding } from "../lib/api";
+import { withPid } from "../lib/identity";
 import {
   OnboardingPayload,
   OnboardingResponse,
@@ -236,10 +237,13 @@ const SHOW_PENDING_SCREEN_AFTER_FINISH = false;
 
 export function OnboardingSurvey() {
   const router = useRouter();
+  // Coming from the dashboard's "Update profile" carries `?edit=1`; that path saves
+  // changes but doesn't count as (re-)completing onboarding, so it won't refresh the
+  // onboarding time. The full intro → survey flow has no `edit`, so it does.
+  const isEditing = useSearchParams().get("edit") === "1";
   const [section, setSection] = useState(0);
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS);
   const [finished, setFinished] = useState(false);
-  const [savedForLater, setSavedForLater] = useState(false);
   const [noticeDismissed, setNoticeDismissed] = useState(false);
   // The "that's everything we need" pause point — shown once, the first time the
   // user leaves the (only required) first section.
@@ -254,12 +258,8 @@ export function OnboardingSurvey() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Pre-fill from any saved answers so "pick up where I left off" survives a refresh.
-  // Returning from the quiet space (entered from the "saved" screen) carries a
-  // `resume=1` param, so land back on that screen rather than the bare survey.
   useEffect(() => {
     let active = true;
-    const resuming =
-      new URLSearchParams(window.location.search).get("resume") === "1";
     fetchOnboarding(apiUrl)
       .then((saved) => {
         if (active && saved) setAnswers(responseToAnswers(saved));
@@ -268,21 +268,24 @@ export function OnboardingSurvey() {
         // Saved answers couldn't be reached — start the survey fresh.
       })
       .finally(() => {
-        if (active) {
-          if (resuming) setSavedForLater(true);
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       });
     return () => {
       active = false;
     };
   }, [apiUrl]);
 
-  const persist = async (): Promise<boolean> => {
+  // `markComplete` refreshes the onboarding time — true only when genuinely finishing
+  // the survey (last section) outside of edit mode. Pauses and edits pass false.
+  const persist = async (markComplete = false): Promise<boolean> => {
     setSaving(true);
     setSaveError(null);
     try {
-      await saveOnboarding(apiUrl, answersToPayload(answers));
+      await saveOnboarding(
+        apiUrl,
+        answersToPayload(answers),
+        markComplete && !isEditing,
+      );
       return true;
     } catch (error) {
       setSaveError(
@@ -335,7 +338,7 @@ export function OnboardingSurvey() {
   const blockIncompleteFirstSection = (target: number) => {
     if (section === 0 && target !== 0 && !firstSectionComplete) {
       setValidationError(
-        "Your name and age are needed to set up your space — please add them before moving on.",
+        "Your name and age are needed to set up your space - please add them before moving on.",
       );
       return true;
     }
@@ -362,22 +365,21 @@ export function OnboardingSurvey() {
       setSection((s) => s + 1);
       return;
     }
-    if (await persist()) {
+    if (await persist(true)) {
       if (SHOW_PENDING_SCREEN_AFTER_FINISH) {
         setFinished(true);
       } else {
-        router.push("/dashboard");
+        router.push(withPid("/dashboard"));
       }
     }
   };
 
-  const onSaveAndFinishLater = async () => {
-    if (await persist()) setSavedForLater(true);
-  };
-
-  const onPauseEnter = async () => {
+  // Both "finish & come back later" actions — the survey footer's confirm dialog
+  // and the first-section pause popup — save what's been shared and head to the
+  // dashboard, where the "still finding your group" card takes over.
+  const finishToDashboard = async () => {
     setPendingSection(null);
-    if (await persist()) setFinished(true);
+    if (await persist()) router.push(withPid("/dashboard"));
   };
   const onPauseContinue = () => {
     if (pendingSection !== null) setSection(pendingSection);
@@ -417,20 +419,6 @@ export function OnboardingSurvey() {
     return <SubmitScreen />;
   }
 
-  // Saved & finishing later → a calm, reassuring screen back into the survey.
-  if (savedForLater) {
-    return (
-      <SavedScreen
-        onResume={() => setSavedForLater(false)}
-        onEnterQuietSpace={() =>
-          router.push(
-            `/quiet?return=${encodeURIComponent("/onboarding?resume=1")}`,
-          )
-        }
-      />
-    );
-  }
-
   return (
     <div
       style={{
@@ -464,11 +452,11 @@ export function OnboardingSurvey() {
           <button
             type="button"
             className="save-pill"
-            onClick={onSaveAndFinishLater}
+            onClick={finishToDashboard}
             disabled={saving}
           >
-            <Icon name={IconName.Bookmark} size={16} c="var(--calm)" /> Save &amp;
-            come back later
+            <Icon name={IconName.Bookmark} size={16} c="var(--calm)" /> Finish
+            &amp; come back later
           </button>
         </div>
 
@@ -594,8 +582,9 @@ export function OnboardingSurvey() {
       </div>
 
       {pausePromptOpen && (
-        <PausePopup onEnter={onPauseEnter} onContinue={onPauseContinue} />
+        <PausePopup onEnter={finishToDashboard} onContinue={onPauseContinue} />
       )}
+
     </div>
   );
 }
@@ -644,7 +633,7 @@ function PausePopup({
             margin: "0 0 8px",
           }}
         >
-          You can stop right here — we’ll match you to a group and let you know when it’s ready.
+          You can stop right here and we’ll start matching you to a group.
         </p>
         <p
           style={{
@@ -673,7 +662,7 @@ function PausePopup({
             style={{ fontSize: 15.5, borderColor: "var(--calm)", color: "#3c5a4c" }}
             onClick={onEnter}
           >
-            Come back later
+            Finish & come back later
           </button>
         </div>
       </div>
@@ -697,14 +686,14 @@ function SectionAbout({
     <div>
       <SectionHead
         title="A little about you"
-        sub="Just a few basics — so we know who we’re talking to."
+        sub="Just a few basics - so we know who we’re talking to."
       />
       {/* text · boxed field */}
       <Qn
         q="What would you like us to call you?"
         needed
         why="it’s the name your group and facilitator will see."
-        use="Your real name is never shown."
+        //TODO: do we need to show this? use="Your real name is never shown."
       >
         <TextField
           id="callName"
@@ -744,7 +733,7 @@ function SectionAbout({
         q="How old are you?"
         needed
         why="to place you with people at a similar stage of life."
-        use="Only used to match your group; never shown."
+        // This isn't true. use="Only used to match your group; never shown."
       >
         <OptChips
           items={AGE_RANGES}
@@ -774,14 +763,15 @@ function SectionMore({
     <div>
       <SectionHead
         title="A bit more about you"
-        sub="The lighter stuff — only what you’d like to share."
+        sub="The lighter stuff - only what you’d like to share."
       />
       {/* text · underline only */}
       <Qn
         q="Got a fact about yourself?"
         optional
         why="it helps you to find people with common interests."
-        use="Shared with your group to help you connect."
+        //TODO: do we need this? Every question in this section is shared with everyone
+        //use="Shared with your group and facilitator to help you connect."
       >
         <UnderlineField
           id="fact"
@@ -863,8 +853,8 @@ function SectionInYourTime({
       <Qn
         q="How recently did it happen?"
         optional
-        why="only to place you with people at a similar point in their grief."
-        use="Used once, to match your group; never displayed."
+        why="to place you with people at a similar point in their grief."
+        use="Only shared with the facilitator, so they can provide the right kind of support."
       >
         <OptList>
           {RECENCY.map((o, i) => (
@@ -884,7 +874,7 @@ function SectionInYourTime({
         q="Who did you lose?"
         optional
         why="so you can receive support from those who understand what it’s like."
-        use="Only ever shared with your group if you choose to."
+        use="Only shared with the facilitator, so they can provide the right kind of support."
       >
         <OptChips
           items={WHO_LOST}
@@ -914,6 +904,7 @@ function SectionInYourTime({
 // in the meantime. Retained for when real matching exists — currently the
 // survey routes straight to the dashboard instead (see
 // SHOW_PENDING_SCREEN_AFTER_FINISH).
+// TODO: move this to the dashboard group card.
 function SubmitScreen() {
   return (
     <Screen>
@@ -936,62 +927,11 @@ function SubmitScreen() {
             margin: "12px 12px 0",
           }}
         >
-          A good group takes a few of the right people. We’ll let you know the
-          moment yours is ready — there’s no rush, and no waiting room.
+          A good group takes a few of the right people.
+          {/* TODO: add more info? */}
         </p>
       </div>
       <QuietSpaceCard />
-    </Screen>
-  );
-}
-
-// Save & finish later → a reassuring "your place is held" screen with the same
-// quiet space, plus a clear way straight back into the survey.
-function SavedScreen({
-  onResume,
-  onEnterQuietSpace,
-}: {
-  onResume: () => void;
-  onEnterQuietSpace: () => void;
-}) {
-  return (
-    <Screen>
-      <div style={{ textAlign: "center" }}>
-        <div
-          style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}
-        >
-          <Icon name={IconName.Quiet} size={46} c="var(--calm)" />
-        </div>
-        <span className="leader" style={{ color: "var(--calm)" }}>
-          saved for now
-        </span>
-        <div
-          className="h-title"
-          style={{ fontSize: 24, lineHeight: 1.15, marginTop: 6 }}
-        >
-          Your place is held.
-        </div>
-        <p
-          style={{
-            fontSize: 16,
-            lineHeight: 1.45,
-            color: "var(--muted)",
-            margin: "12px 12px 0",
-          }}
-        >
-          We’ve kept everything you’ve shared so far. There’s no rush to finish —
-          come back whenever you’re ready and pick up right where you left off.
-        </p>
-      </div>
-      <button
-        type="button"
-        className="btn warm"
-        style={{ width: "100%", justifyContent: "center", marginTop: 20 }}
-        onClick={onResume}
-      >
-        Pick up where I left off <Icon name={IconName.Chev} size={16} c="#fff" />
-      </button>
-      <QuietSpaceCard onEnter={onEnterQuietSpace} />
     </Screen>
   );
 }

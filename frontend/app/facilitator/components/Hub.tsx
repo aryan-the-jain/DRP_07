@@ -4,7 +4,7 @@
 // Two presentations from the same component:
 //   variant="card"   — a pop-up card (the profile you get when you click a face)
 //   variant="docked" — the in-place slide-over (used on /facilitator/profile)
-// The header mirrors the summary pop-up; the tabs carry notification dots.
+// The header mirrors the summary pop-up.
 
 import { Fragment, useState } from "react";
 import { dayLabelFor, isNewDay } from "../../lib/format";
@@ -21,7 +21,6 @@ function HubTabButton({
   accent,
   tab,
   setTab,
-  dot,
 }: {
   id: HubTab;
   icon: IconName;
@@ -29,7 +28,6 @@ function HubTabButton({
   accent: string;
   tab: HubTab;
   setTab: (t: HubTab) => void;
-  dot?: boolean;
 }) {
   const on = tab === id;
   return (
@@ -47,17 +45,16 @@ function HubTabButton({
       }}
     >
       <Icon name={icon} size={17} c={on ? accent : "var(--muted)"} /> {label}
-      {dot && <span className="dot" style={{ background: accent }} />}
     </div>
   );
 }
 
-function HubTabs({ tab, setTab, m }: { tab: HubTab; setTab: (t: HubTab) => void; m: Person }) {
+function HubTabs({ tab, setTab }: { tab: HubTab; setTab: (t: HubTab) => void }) {
   return (
     <div className="row">
       <HubTabButton id="about" icon="person" label="About" accent="var(--calm)" tab={tab} setTab={setTab} />
-      <HubTabButton id="message" icon="bubbleLines" label="Message" accent="var(--warm)" tab={tab} setTab={setTab} dot={m.unread > 0} />
-      <HubTabButton id="reflections" icon="note" label="Reflections" accent="var(--sky)" tab={tab} setTab={setTab} dot={m.reflections.length > 0} />
+      <HubTabButton id="message" icon="bubbleLines" label="Message" accent="var(--warm)" tab={tab} setTab={setTab} />
+      <HubTabButton id="reflections" icon="note" label="Reflections" accent="var(--sky)" tab={tab} setTab={setTab} />
     </div>
   );
 }
@@ -141,11 +138,11 @@ function DMThread({ m, onSend }: { m: Person; onSend?: (body: string) => void })
   return (
     <div className="stack" style={{ flex: 1, minHeight: 0 }}>
       <div className="scroll" style={{ flex: 1, padding: "18px 20px" }}>
-        <PrivacyNote>Private — only the two of you, and only during a session.</PrivacyNote>
+        <PrivacyNote>private · only you two</PrivacyNote>
         <div className="stack" style={{ gap: 13 }}>
           {m.dm.length === 0 && (
             <div className="sk thin soft dash" style={{ padding: 20, textAlign: "center", color: "var(--muted)", fontSize: 15.5 }}>
-              No messages yet — you could say hello.
+              No messages yet - you could say hello.
             </div>
           )}
           {m.dm.map((b, i) => (
@@ -205,11 +202,11 @@ function DMThread({ m, onSend }: { m: Person; onSend?: (body: string) => void })
 function ReflectionList({ m }: { m: Person }) {
   return (
     <div className="scroll" style={{ flex: 1, padding: "18px 20px" }}>
-      <PrivacyNote icon="note">Private — shared with you alone, not with the group.</PrivacyNote>
+      <PrivacyNote icon="note">private · only you two</PrivacyNote>
       <div className="stack" style={{ gap: 13 }}>
         {m.reflections.length === 0 && (
           <div className="sk thin soft dash" style={{ padding: "22px 16px", textAlign: "center", color: "var(--muted)", fontSize: 15.5 }}>
-            Nothing shared yet — that’s okay.
+            Nothing shared yet.
           </div>
         )}
         {m.reflections.map((r, i) => (
@@ -250,7 +247,7 @@ export function Hub({
   const body = (
     <>
       <ProfileHeader m={person} onClose={onClose} backLabel={backLabel} backChev={backChev} />
-      <HubTabs tab={tab} setTab={setTab} m={person} />
+      <HubTabs tab={tab} setTab={setTab} />
       {tab === "about" && <ProfileAbout m={person} />}
       {tab === "message" && <DMThread m={person} onSend={onSend} />}
       {tab === "reflections" && <ReflectionList m={person} />}

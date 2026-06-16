@@ -8,7 +8,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { withFid } from "../../lib/identity";
 import { dayLabelFor, formatMessageTime, isNewDay } from "../../lib/format";
+import { BrandMark } from "../../components/DesignPrimitives";
 import { Avatar, DashRule, Icon } from "./Primitives";
 import { ConfirmPopup, Overlay } from "./Overlays";
 import { Hub, type HubTab } from "./Hub";
@@ -375,9 +377,9 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
           </span>
           <span style={{ fontSize: 15.5, maxWidth: 420, lineHeight: 1.5 }}>
             {groupName ? `${groupName} will` : "The group will"} meet again at its
-            usual time next week — the room stays gently closed until then.
+            usual time next week - the room stays closed until then.
           </span>
-          <button className="btn warm" onClick={() => router.push("/facilitator")}>
+          <button className="btn warm" onClick={() => router.push(withFid("/facilitator"))}>
             Back to your groups
           </button>
         </div>
@@ -392,6 +394,12 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
       <header className="shrink-0 border-b-2 border-dashed border-line bg-card">
         <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <BrandMark />
+            <span
+              aria-hidden
+              className="hidden sm:block"
+              style={{ width: 1, height: 34, background: "var(--line)" }}
+            />
             <div>
               <p className="leader">tonight&apos;s room</p>
               <h1 className="h-title text-2xl text-ink sm:text-[28px]">{groupName}</h1>
@@ -416,7 +424,7 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
           <div className="mx-auto flex max-w-3xl flex-col gap-5">
             {messages.length === 0 ? (
               <div className="sk thin soft dash bg-paper p-6 text-center text-[15px] leading-relaxed text-muted">
-                No messages yet. You can open gently when you’re ready.
+                No messages yet.
               </div>
             ) : (
               messages.map((m, i) => {
@@ -611,7 +619,7 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
               onConfirm={async () => {
                 // Closing the session removes everyone still in the room.
                 await endSession(apiUrl, groupId).catch(() => {});
-                router.push("/facilitator");
+                router.push(withFid("/facilitator"));
               }}
             />
           )}

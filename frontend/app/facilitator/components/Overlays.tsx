@@ -561,7 +561,7 @@ export function GroupDetailsPopup({
           <div className="row" style={{ padding: "13px 22px" }}>
             <div style={{ flex: 1 }} />
             <button className="btn warm" onClick={onInvite}>
-              <Icon name="mail" size={16} c="#fff" /> Invite someone
+              <Icon name="mail" size={16} c="#fff" /> Add someone
             </button>
           </div>
         </>
@@ -649,7 +649,7 @@ export function GroupPlaceCard({
 
       <div className="row" style={{ gap: 10 }}>
         <button className="btn warm sm" style={{ flex: 1, justifyContent: "center" }} onClick={onInvite}>
-          <Icon name="mail" size={14} c="#fff" /> Invite {personName}
+          <Icon name="mail" size={14} c="#fff" /> Add {personName}
         </button>
         <button className="btn ghost sm" style={{ flex: 1, justifyContent: "center" }} onClick={onDetails} title="See who's inside">
           <Icon name="eye" size={15} c="var(--muted)" /> Group details
@@ -709,7 +709,7 @@ export function GroupInviteCard({
         </p>
       )}
       <button className="btn warm sm" style={{ justifyContent: "center" }} onClick={onInvite}>
-        <Icon name="mail" size={14} c="#fff" /> Invite {personName}
+        <Icon name="mail" size={14} c="#fff" /> Add {personName}
       </button>
     </div>
   );
@@ -764,7 +764,7 @@ export function PlacePopup({
         <div className="stack" style={{ gap: 10 }}>
           {groups.length === 0 && (
             <div className="sk thin soft" style={{ padding: "18px 16px", textAlign: "center", color: "var(--muted)", fontSize: 15.5, borderStyle: "dashed" }}>
-              You don’t have any groups yet — create one first.
+              You don’t have any groups yet - create one first.
             </div>
           )}
           {groups.map((c) => (
@@ -776,7 +776,7 @@ export function PlacePopup({
                 <span style={{ fontSize: 13.5, color: "var(--muted)" }}>{c.when}</span>
               </div>
               <button className="btn warm sm" onClick={() => onPlace(c.groupId)}>
-                <Icon name="mail" size={14} c="#fff" /> Invite
+                <Icon name="mail" size={14} c="#fff" /> Add
               </button>
             </div>
           ))}
@@ -834,15 +834,12 @@ export function MessagePopup({
       </div>
       <DashRule />
       <div className="scroll" style={{ flex: 1, padding: "16px 18px" }}>
-        <div className="row" style={{ gap: 8, justifyContent: "center", marginBottom: 14, color: "var(--faint)", fontSize: 12.5 }}>
-          <Icon name="lock" size={13} c="var(--faint)" /> messages live only during a session
-        </div>
         {m.dm.length === 0 && (
           <div
             className="sk thin soft"
             style={{ padding: "20px 16px", textAlign: "center", color: "var(--muted)", fontSize: 15.5, borderStyle: "dashed" }}
           >
-            No messages yet — you could say hello.
+            No messages yet - you could say hello.
           </div>
         )}
         <div className="stack" style={{ gap: 12 }}>
@@ -883,11 +880,11 @@ export function MessagePopup({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
-            placeholder={`Reply gently to ${m.name}…`}
+            placeholder={`Reply to ${m.name}…`}
           />
         ) : (
           <div className="well row" style={{ flex: 1, padding: "10px 14px", color: "var(--faint)", fontSize: 15.5 }}>
-            Reply gently to {m.name}…
+            Reply to {m.name}…
           </div>
         )}
         <button className="btn warm icon" onClick={submit} disabled={onSend ? !draft.trim() : undefined}>
@@ -929,7 +926,7 @@ export function ReflectionsPopup({ person, onClose }: { person: Person; onClose:
       <div className="scroll" style={{ padding: "16px 20px" }}>
         <div className="row" style={{ gap: 9, marginBottom: 14, color: "var(--sky-ink)", fontSize: 14, lineHeight: 1.4 }}>
           <Icon name="note" size={15} c="var(--sky)" style={{ marginTop: 1 }} />
-          <span>{m.name} chose to share these with you. They aren’t shown to the group.</span>
+          <span>{m.name} chose to share these with you.</span>
         </div>
         <div className="stack" style={{ gap: 12 }}>
           {m.reflections.length === 0 && (
@@ -937,7 +934,7 @@ export function ReflectionsPopup({ person, onClose }: { person: Person; onClose:
               className="sk thin soft"
               style={{ padding: "20px 16px", textAlign: "center", color: "var(--muted)", fontSize: 15.5, borderStyle: "dashed" }}
             >
-              Nothing shared yet — that’s okay.
+              Nothing shared yet.
             </div>
           )}
           {m.reflections.map((r, i) => (

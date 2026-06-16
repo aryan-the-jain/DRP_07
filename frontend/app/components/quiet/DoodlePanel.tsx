@@ -210,7 +210,7 @@ export function DoodlePanel({
         <div className="text-center">
           <h3 className="h-title text-2xl text-ink">A little space to draw</h3>
           <p className="mx-auto mt-1 max-w-md text-[15px] leading-relaxed text-muted">
-            No words needed — just move your hand. There&apos;s nothing to get
+            No words needed - there&apos;s nothing to get
             right.
           </p>
         </div>
@@ -285,7 +285,7 @@ export function DoodlePanel({
 
         {justKept && (
           <p className="mt-3 text-center text-sm text-calm-ink animate-fadeIn">
-            Kept — it&apos;s in your collection below.
+            Kept - it&apos;s in your collection below.
           </p>
         )}
       </div>

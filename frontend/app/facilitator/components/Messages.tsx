@@ -409,7 +409,7 @@ export function MessagesView() {
                 Pick a conversation
               </span>
               <span style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.5 }}>
-                Choose someone on the left to read their messages and reflections, or reach out to start a new one.
+                Choose someone on the left to read their messages and reflections, or reach out to start a new conversation.
               </span>
             </div>
           </div>

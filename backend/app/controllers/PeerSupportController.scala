@@ -28,6 +28,9 @@ class PeerSupportController @Inject() (
   def participantInfo(participantId: Int): Action[AnyContent] =
     peerSupportRepository.participantInfo(participantId).returnOk()
 
+  def people: Action[AnyContent] =
+    peerSupportRepository.allPeople().returnOk()
+
   def messages(groupId: Int): Action[AnyContent] =
     peerSupportRepository.groupMessages(groupId).returnOk()
 

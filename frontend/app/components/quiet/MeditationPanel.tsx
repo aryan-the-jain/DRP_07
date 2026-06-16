@@ -54,7 +54,7 @@ export function MeditationPanel({ apiUrl }: { apiUrl: string }) {
   if (isLoading) {
     return (
       <div className="sk thin soft bg-paper p-6 text-center text-[15px] text-muted">
-        Finding gentle playlists…
+        Finding calming playlists…
       </div>
     );
   }
@@ -63,7 +63,7 @@ export function MeditationPanel({ apiUrl }: { apiUrl: string }) {
     return (
       <div className="sk thin soft bg-paper p-6 text-center">
         <p className="text-[15px] leading-relaxed text-muted">
-          We couldn&apos;t load these just now.
+          We couldn&apos;t load the playlists just now. 
         </p>
         <button
           type="button"
@@ -87,7 +87,8 @@ export function MeditationPanel({ apiUrl }: { apiUrl: string }) {
   return (
     <div className="space-y-4">
       <p className="text-[15px] leading-relaxed text-muted">
-        A few gentle playlists to rest with, chosen by your facilitator.
+        {/* TODO: are these hardcoded by us or actually chosen by the facilitator? */}
+        A few calming playlists to rest with, chosen by your facilitator.
       </p>
 
       <div className="space-y-3">
@@ -144,7 +145,7 @@ export function MeditationPanel({ apiUrl }: { apiUrl: string }) {
       </div>
 
       <p className="text-center text-xs leading-relaxed text-muted">
-        These open in Spotify. Come back to the room whenever you&apos;re ready.
+        These open in Spotify. You can come back later at any time.
       </p>
     </div>
   );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useWithPid } from "../../lib/identity";
 import { SubTab } from "../../lib/nav";
 
 // The horizontal sub-tab pill row shown at the top of a group's content area.
@@ -17,6 +18,7 @@ export function GroupTabs({
   ariaLabel: string;
 }) {
   const pathname = usePathname();
+  const withPid = useWithPid();
 
   return (
     <div
@@ -29,7 +31,7 @@ export function GroupTabs({
         return (
           <Link
             key={tab.href}
-            href={tab.href}
+            href={withPid(tab.href)}
             role="tab"
             aria-selected={isActive}
             data-metric-id={tab.metricId}

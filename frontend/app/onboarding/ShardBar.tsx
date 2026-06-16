@@ -19,7 +19,8 @@ export type ShardStep = {
 export const ONBOARDING_SECTIONS: ShardStep[] = [
   { label: "About you", desc: "a few basics" },
   { label: "A bit more", desc: "the lighter stuff" },
-  { label: "In your time", desc: "only if you want" },
+  //TODO: anything better than 'In your time'?
+  { label: "In your time", desc: "only if you feel ready" },
 ];
 
 enum ShardState {

@@ -26,6 +26,7 @@ export type Participant = {
   hobbies: string[];
   fact: string;
   role: string;
+  culturalBackground: string | null;
 };
 
 export type GroupMessage = {

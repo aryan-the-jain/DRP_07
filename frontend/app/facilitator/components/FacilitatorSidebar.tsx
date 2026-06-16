@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
 import { BrandMark, IconName, LineIcon } from "../../components/DesignPrimitives";
+import { useWithFid } from "../../lib/identity";
 import { apiBase, fetchArrivals } from "../lib/api";
 
 // The facilitator-side shell. It mirrors the participant SidebarLayout style
@@ -41,6 +42,7 @@ function isActive(pathname: string, href: string): boolean {
 
 export function FacilitatorSidebar({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const withFid = useWithFid();
   const [collapsed, setCollapsed] = useState(false);
   // How many people are waiting to be placed — shown as a badge on Arrivals.
   const [arrivalsCount, setArrivalsCount] = useState(0);
@@ -140,7 +142,7 @@ export function FacilitatorSidebar({ children }: { children: ReactNode }) {
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={withFid(item.href)}
                 aria-current={active ? "page" : undefined}
                 aria-label={
                   count > 0

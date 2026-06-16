@@ -53,7 +53,7 @@ export function ResourcesPanel({ apiUrl }: { apiUrl: string }) {
     return (
       <div className="sk thin soft bg-paper p-6 text-center">
         <p className="text-[15px] leading-relaxed text-muted">
-          We couldn&apos;t load these just now.
+          We couldn&apos;t load the resources just now.
         </p>
         <button
           type="button"
@@ -69,6 +69,7 @@ export function ResourcesPanel({ apiUrl }: { apiUrl: string }) {
   if (links.length === 0) {
     return (
       <div className="sk thin soft dash bg-paper p-6 text-center text-[15px] leading-relaxed text-muted">
+        {/* TODO: does the facilitator actually share these or are they hardcoded? */}
         Your facilitator hasn&apos;t shared anything here yet.
       </div>
     );

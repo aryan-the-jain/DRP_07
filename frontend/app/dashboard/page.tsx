@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { LineIcon } from "../components/DesignPrimitives";
 import { ParticipantProfileModal } from "../components/ParticipantProfileModal";
@@ -10,14 +10,37 @@ import { SidebarLayout } from "../components/SidebarLayout";
 import {
   fallbackApiUrl,
   fetchGroup,
+  fetchParticipantGroupId,
   fetchParticipants,
   fetchSessionValid,
+  invalidateGroupId,
   participantId,
   SessionState,
 } from "../lib/api";
+import { withPid } from "../lib/identity";
 import { Participant, SupportGroup } from "../lib/types";
 import { ThisWeekCard } from "./ThisWeekCard";
 import { WeatherCheckIn } from "./WeatherCheckIn";
+
+// Shown when the participant hasn't been added to a group yet — mirrors the
+// reassuring "still finding the right people" moment from onboarding, in the
+// dashboard's card style. The page polls in the background, so this quietly
+// gives way to the real session card once a facilitator adds them.
+function FindingGroupCard() {
+  return (
+    <section className="sk v2 bg-card p-6 text-center sm:p-8">
+      <div className="flex justify-center">
+        <LineIcon name="people" size={42} className="[color:var(--warm)]" />
+      </div>
+      <h2 className="h-title mt-3 text-2xl text-ink">
+        We&apos;re still finding the right people for you.
+      </h2>
+      <p className="mt-2 text-[15px] leading-relaxed text-muted">
+        A good group takes a few of the right people.
+      </p>
+    </section>
+  );
+}
 
 // The dashboard bridges onboarding and the chat room: a calm home base with a
 // warm greeting, a gentle daily check-in, the upcoming session, and a doorway
@@ -31,60 +54,77 @@ export default function DashboardPage() {
   const [group, setGroup] = useState<SupportGroup | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [sessionState, setSessionState] = useState<SessionState | null>(null);
+  // The participant's group placement: undefined while we're still checking,
+  // null when they haven't been added to a group yet, a number once they have.
+  const [groupId, setGroupId] = useState<number | null | undefined>(undefined);
   const [selectedParticipant, setSelectedParticipant] =
     useState<Participant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Load the placed group's details + who's in it + whether the room is open.
+  const loadGroupData = useCallback(async () => {
+    const [groupData, participantsData] = await Promise.all([
+      fetchGroup(apiUrl),
+      fetchParticipants(apiUrl),
+    ]);
+    setGroup(groupData);
+    setParticipants(participantsData);
+    // Failures here just keep the last known room state rather than disrupting the page.
+    fetchSessionValid(apiUrl).then(setSessionState).catch(() => {});
+  }, [apiUrl]);
+
   useEffect(() => {
     let active = true;
 
-    // Defer the load so it doesn't setState synchronously inside the effect
-    // body (matches the chat room's loadRoom pattern).
+    // Defer so we don't setState synchronously inside the effect body (matches
+    // the chat room's loadRoom pattern).
     const timeoutId = window.setTimeout(() => {
       setIsLoading(true);
       setErrorMessage("");
 
-      Promise.all([fetchGroup(apiUrl), fetchParticipants(apiUrl)])
-        .then(([groupData, participantsData]) => {
+      (async () => {
+        try {
+          // Tell "no group" apart from the fallback group — only load a room if placed.
+          const id = await fetchParticipantGroupId(apiUrl);
           if (!active) return;
-          setGroup(groupData);
-          setParticipants(participantsData);
-        })
-        .catch(() => {
+          setGroupId(id);
+          if (id !== null) await loadGroupData();
+        } catch {
           if (active)
             setErrorMessage("We couldn't load your space. Please try again.");
-        })
-        .finally(() => {
+        } finally {
           if (active) setIsLoading(false);
-        });
-
-      // Check (and keep checking) whether the facilitator has opened the room, so the
-      // "Step into the room" button activates the moment they do. Failures are swallowed:
-      // a dropped poll just keeps the last known state rather than disrupting the page.
-      fetchSessionValid(apiUrl)
-        .then((session) => {
-          if (active) setSessionState(session);
-        })
-        .catch(() => {});
+        }
+      })();
     }, 0);
 
     return () => {
       active = false;
       window.clearTimeout(timeoutId);
     };
-  }, [apiUrl]);
+  }, [apiUrl, loadGroupData]);
 
-  // Poll the session flag on a gentle cadence (matching the chat room's message polling).
+  // Gentle 5s poll. While unplaced, watch for the facilitator adding us so the page
+  // updates without a refresh; once placed, keep the "step into the room" gate fresh.
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      fetchSessionValid(apiUrl)
-        .then(setSessionState)
-        .catch(() => {});
+      if (groupId === null) {
+        fetchParticipantGroupId(apiUrl)
+          .then((id) => {
+            if (id === null) return;
+            invalidateGroupId(); // drop the cached fallback now that we're placed
+            setGroupId(id);
+            loadGroupData().catch(() => {});
+          })
+          .catch(() => {});
+      } else if (typeof groupId === "number") {
+        fetchSessionValid(apiUrl).then(setSessionState).catch(() => {});
+      }
     }, 5000);
 
     return () => window.clearInterval(intervalId);
-  }, [apiUrl]);
+  }, [apiUrl, groupId, loadGroupData]);
 
   // Close the profile modal on Escape, matching the chat room.
   useEffect(() => {
@@ -107,7 +147,7 @@ export default function DashboardPage() {
             the warm "Step into the room" CTA. */}
         <div className="mb-6 flex justify-end">
           <Link
-            href="/onboarding"
+            href={withPid("/onboarding?edit=1")}
             className="btn sm [border-color:var(--line)] [color:var(--warm-ink)]"
           >
             <LineIcon name="user" size={15} />
@@ -138,24 +178,29 @@ export default function DashboardPage() {
                       : "It's good to have you here."}
                   </h1>
                   <p className="mt-2 text-[15px] leading-relaxed text-muted">
+                    {/* TODO: is this redundant? */}
                     This is your calm corner. Take a breath, see how you&apos;re
-                    doing, and step in whenever you feel ready — there&apos;s no
+                    doing, prepare for your meeting, or step into the quiet space - there&apos;s no
                     rush.
                   </p>
                 </div>
 
                 <WeatherCheckIn />
 
-                <ThisWeekCard
-                  group={group}
-                  participants={participants}
-                  isSessionValid={sessionState?.isSessionNow ?? null}
-                  sessionClosedForWeek={
-                    sessionState?.sessionClosedForWeek ?? false
-                  }
-                  onOpenProfile={setSelectedParticipant}
-                  onEnterRoom={() => router.push("/")}
-                />
+                {groupId === null ? (
+                  <FindingGroupCard />
+                ) : (
+                  <ThisWeekCard
+                    group={group}
+                    participants={participants}
+                    isSessionValid={sessionState?.isSessionNow ?? null}
+                    sessionClosedForWeek={
+                      sessionState?.sessionClosedForWeek ?? false
+                    }
+                    onOpenProfile={setSelectedParticipant}
+                    onEnterRoom={() => router.push(withPid("/room"))}
+                  />
+                )}
               </>
             )}
         </div>

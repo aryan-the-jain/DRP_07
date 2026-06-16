@@ -1,9 +1,9 @@
 // Facilitator API client — mirrors app/lib/api.ts (participant side): resolve the base
 // URL from NEXT_PUBLIC_API_URL with a localhost fallback, throw on non-2xx, return JSON.
 //
-// Single-facilitator prototype: the facilitator is the seeded participant with role
-// FACILITATOR (Sean), and the in-session room is the one live group — both hardcoded here
-// exactly as the participant app hardcodes its participant/group ids.
+// The facilitator is whoever was chosen on the control panel ("/"), carried in the URL
+// as `?fid=<id>`; `facilitatorId` resolves it (falling back to the seeded facilitator).
+// The groups list is scoped to that facilitator, so their dashboard only shows their groups.
 
 import type {
   FacGroupResponse,
@@ -12,10 +12,13 @@ import type {
   GroupMessageResponse,
   InboxEntryResponse,
 } from "./data";
+import { currentFacilitatorId } from "../../lib/identity";
 
 export const fallbackApiUrl = "http://localhost:9000";
-export const facilitatorId = 8; // seeded "Sean", role FACILITATOR
-export const liveGroupId = 1; // the seeded Friday Group
+export const facilitatorId = currentFacilitatorId();
+// Fallback "live group" used only when a room is opened without a specific groupId;
+// real navigation always passes the facilitator's own group.
+export const liveGroupId = 1;
 
 export function apiBase(): string {
   return process.env.NEXT_PUBLIC_API_URL ?? fallbackApiUrl;
@@ -43,8 +46,12 @@ async function send<T>(
 }
 
 // ---- reads ----
+// Scoped to the chosen facilitator so the dashboard only shows their own groups.
 export function fetchGroups(apiUrl: string): Promise<FacGroupResponse[]> {
-  return getJson(`${apiUrl}/facilitator/groups`, "Could not load your groups.");
+  return getJson(
+    `${apiUrl}/facilitator/groups?facilitatorId=${facilitatorId}`,
+    "Could not load your groups.",
+  );
 }
 
 export function fetchArrivals(apiUrl: string): Promise<FacParticipantResponse[]> {
@@ -114,7 +121,12 @@ export type GroupInput = {
 };
 
 export function createGroup(apiUrl: string, input: GroupInput): Promise<FacGroupResponse> {
-  return send(`${apiUrl}/facilitator/groups`, "POST", input, "Could not create the group.");
+  return send(
+    `${apiUrl}/facilitator/groups?facilitatorId=${facilitatorId}`,
+    "POST",
+    input,
+    "Could not create the group.",
+  );
 }
 
 export function updateGroup(

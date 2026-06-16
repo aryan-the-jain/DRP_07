@@ -19,7 +19,15 @@ case class ReturnParticipant(
     age: Option[String],
     hobbies: List[String],
     fact: String,
-    role: Role
+    role: Role,
+    culturalBackground: Option[String]
+)
+
+// The control-panel roster: everyone in the database, split by role so the
+// landing page can offer "become this facilitator" / "become this participant".
+case class ReturnPeople(
+    participants: Seq[ReturnParticipant],
+    facilitators: Seq[ReturnParticipant]
 )
 
 case class ReturnGroupMessage(
