@@ -275,8 +275,9 @@ export function OnboardingSurvey() {
     };
   }, [apiUrl]);
 
-  // `markComplete` refreshes the onboarding time — true only when genuinely finishing
-  // the survey (last section) outside of edit mode. Pauses and edits pass false.
+  // `markComplete` refreshes the "last updated" onboarding time the facilitator sees.
+  // Both finishing the survey and "finish & come back later" stamp it (outside of edit
+  // mode, which leaves the time untouched, so a later profile tweak doesn't reset it).
   const persist = async (markComplete = false): Promise<boolean> => {
     setSaving(true);
     setSaveError(null);
@@ -376,10 +377,11 @@ export function OnboardingSurvey() {
 
   // Both "finish & come back later" actions — the survey footer's confirm dialog
   // and the first-section pause popup — save what's been shared and head to the
-  // dashboard, where the "still finding your group" card takes over.
+  // dashboard, where the "still finding your group" card takes over. We stamp the
+  // onboarding time so the facilitator sees this latest update, not just full finishes.
   const finishToDashboard = async () => {
     setPendingSection(null);
-    if (await persist()) router.push(withPid("/dashboard"));
+    if (await persist(true)) router.push(withPid("/dashboard"));
   };
   const onPauseContinue = () => {
     if (pendingSection !== null) setSection(pendingSection);

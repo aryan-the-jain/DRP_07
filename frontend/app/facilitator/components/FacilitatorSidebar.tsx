@@ -7,6 +7,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { BrandMark, IconName, LineIcon } from "../../components/DesignPrimitives";
 import { useWithFid } from "../../lib/identity";
 import { apiBase, fetchArrivals } from "../lib/api";
+import { POLL_INTERVAL_MS } from "../../lib/pollIntervals";
 
 // The facilitator-side shell. It mirrors the participant SidebarLayout style
 // (collapsible "alongside" rail + content area) but with the facilitator's own
@@ -61,7 +62,7 @@ export function FacilitatorSidebar({ children }: { children: ReactNode }) {
           /* keep the last known count */
         });
     const timeoutId = window.setTimeout(load, 0);
-    const intervalId = window.setInterval(load, 10000);
+    const intervalId = window.setInterval(load, POLL_INTERVAL_MS);
     return () => {
       active = false;
       window.clearTimeout(timeoutId);

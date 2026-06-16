@@ -53,6 +53,10 @@ export default function ControlPanel() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
+  // Keep the front door uncluttered: show only a handful of participants. The
+  // facilitator list is short, so it stays as-is.
+  const PARTICIPANT_LIMIT = 3;
+
   useEffect(() => {
     let active = true;
     fetchPeople(apiUrl)
@@ -123,13 +127,20 @@ export default function ControlPanel() {
 
             {/* Participants */}
             <section>
-              <div className="mb-3 flex items-center gap-2">
-                <LineIcon name="user" size={18} className="[color:var(--warm)]" />
-                <h2 className="leader [color:var(--warm)]">Participants</h2>
+              <div className="mb-3 flex items-baseline justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <LineIcon name="user" size={18} className="[color:var(--warm)]" />
+                  <h2 className="leader [color:var(--warm)]">Participants</h2>
+                </div>
+                {people && people.participants.length > PARTICIPANT_LIMIT && (
+                  <p className="text-[12.5px] text-muted">
+                    Showing {PARTICIPANT_LIMIT} of {people.participants.length}
+                  </p>
+                )}
               </div>
               {people && people.participants.length > 0 ? (
                 <ul className="flex flex-col gap-3">
-                  {people.participants.map((person) => (
+                  {people.participants.slice(0, PARTICIPANT_LIMIT).map((person) => (
                     <PersonCard key={person.id} person={person}>
                       <a
                         href={`/onboarding/intro?pid=${person.id}`}

@@ -13,12 +13,12 @@ import {
   fetchParticipants,
   sendMessage,
 } from "../lib/api";
+import { POLL_INTERVAL_MS } from "../lib/pollIntervals";
 import { GroupMessage, Participant, SupportGroup } from "../lib/types";
 
 // A private, one-to-one conversation with the facilitator. It lives inside the
 // sidebar shell: only this window changes when "Message {facilitator}" is
 // pressed, while the sidebar keeps the options from wherever the visitor came.
-const MESSAGE_POLL_INTERVAL_MS = 5000;
 
 export default function FacilitatorMessagePage() {
   const apiUrl = useMemo(() => {
@@ -77,7 +77,7 @@ export default function FacilitatorMessagePage() {
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       void loadMessages().catch(() => {});
-    }, MESSAGE_POLL_INTERVAL_MS);
+    }, POLL_INTERVAL_MS);
     return () => window.clearInterval(intervalId);
   }, [loadMessages]);
 

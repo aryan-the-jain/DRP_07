@@ -18,6 +18,7 @@ import {
   SessionState,
 } from "../lib/api";
 import { withPid } from "../lib/identity";
+import { POLL_INTERVAL_MS } from "../lib/pollIntervals";
 import { Participant, SupportGroup } from "../lib/types";
 import { ThisWeekCard } from "./ThisWeekCard";
 import { WeatherCheckIn } from "./WeatherCheckIn";
@@ -119,9 +120,28 @@ export default function DashboardPage() {
           })
           .catch(() => {});
       } else if (typeof groupId === "number") {
-        fetchSessionValid(apiUrl).then(setSessionState).catch(() => {});
+        // Re-check placement, not just the room gate: if the facilitator closed or
+        // removed the group, fall back to the unplaced view without a manual refresh.
+        fetchParticipantGroupId(apiUrl)
+          .then((id) => {
+            if (id === groupId) {
+              fetchSessionValid(apiUrl).then(setSessionState).catch(() => {});
+              return;
+            }
+            // Placement changed: dropped from the group, or moved to another one.
+            invalidateGroupId();
+            setGroupId(id);
+            if (id === null) {
+              setGroup(null);
+              setParticipants([]);
+              setSessionState(null);
+            } else {
+              loadGroupData().catch(() => {});
+            }
+          })
+          .catch(() => {});
       }
-    }, 5000);
+    }, POLL_INTERVAL_MS);
 
     return () => window.clearInterval(intervalId);
   }, [apiUrl, groupId, loadGroupData]);

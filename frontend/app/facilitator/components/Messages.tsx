@@ -13,6 +13,7 @@ import { useSearchParams } from "next/navigation";
 import { Avatar, Icon } from "./Primitives";
 import { Hub, type HubTab } from "./Hub";
 import { buildGlobalFeed, PrivateFeedItem } from "./PrivateFeed";
+import { POLL_INTERVAL_MS } from "../../lib/pollIntervals";
 import {
   dmsFrom,
   isFacilitator,
@@ -210,7 +211,7 @@ export function MessagesView() {
 
   useEffect(() => {
     if (groups.length === 0) return;
-    const id = setInterval(refreshInbox, 9000);
+    const id = setInterval(refreshInbox, POLL_INTERVAL_MS);
     return () => clearInterval(id);
   }, [groups, refreshInbox]);
 

@@ -15,6 +15,7 @@ import { Avatar, DashRule, Icon } from "./Primitives";
 import { ConfirmPopup, Overlay } from "./Overlays";
 import { Hub, type HubTab } from "./Hub";
 import { buildPrivateFeed, PrivateFeedItem, type FeedItem } from "./PrivateFeed";
+import { POLL_INTERVAL_MS } from "../../lib/pollIntervals";
 import {
   dmsFrom,
   personFromParticipant,
@@ -303,7 +304,7 @@ export function ChatDrawer({ groupId = liveGroupId }: { groupId?: number }) {
     const id = setInterval(() => {
       loadMessages();
       loadInbox();
-    }, 5000);
+    }, POLL_INTERVAL_MS);
     return () => clearInterval(id);
   }, [loadMessages, loadInbox]);
 

@@ -23,6 +23,7 @@ import {
 import { GroupDetailPopup } from "./GroupDetail";
 import { groupCardFrom, HOBBY_ICON, personFromParticipant, type GroupCard, type Person } from "../lib/data";
 import { apiBase, fetchArrivals, fetchGroups, fetchParticipant, placeParticipant } from "../lib/api";
+import { POLL_INTERVAL_MS } from "../../lib/pollIntervals";
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
@@ -371,17 +372,32 @@ export function OnboardingList() {
 
   useEffect(() => {
     let active = true;
-    fetchArrivals(apiUrl)
-      .then((ar) => {
-        if (!active) return;
-        setArrivals(ar.map(personFromParticipant));
-        setStatus("ready");
-      })
-      .catch(() => {
-        if (active) setStatus("error");
-      });
+    const load = () =>
+      fetchArrivals(apiUrl)
+        .then((ar) => {
+          if (!active) return;
+          // Oldest onboarding first, so whoever has waited longest to be placed
+          // sits at the top of the list.
+          const oldestFirst = [...ar].sort(
+            (a, b) =>
+              new Date(a.onboardingTime).getTime() -
+              new Date(b.onboardingTime).getTime(),
+          );
+          setArrivals(oldestFirst.map(personFromParticipant));
+          setStatus("ready");
+        })
+        .catch(() => {
+          // Keep the last good list on a dropped poll; only show an error if the
+          // very first load failed.
+          if (active) setStatus((s) => (s === "loading" ? "error" : s));
+        });
+    load();
+    // Poll so newly-onboarded arrivals (and their refreshed "onboarded … ago" times)
+    // appear without the facilitator refreshing the page.
+    const intervalId = window.setInterval(load, POLL_INTERVAL_MS);
     return () => {
       active = false;
+      window.clearInterval(intervalId);
     };
   }, [apiUrl]);
 

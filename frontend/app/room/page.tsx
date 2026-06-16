@@ -15,11 +15,8 @@ import {
   sendMessage,
 } from "../lib/api";
 import { withPid } from "../lib/identity";
+import { POLL_INTERVAL_MS } from "../lib/pollIntervals";
 import { GroupMessage, Participant, SupportGroup } from "../lib/types";
-
-// How often to refresh the conversation so other people's messages appear
-// without a manual refresh. Gentle cadence to match the calm tone.
-const MESSAGE_POLL_INTERVAL_MS = 5000;
 
 // Messages carry no stable id, so compare by content to avoid replacing state
 // (and re-scrolling) when a poll returns the same conversation.
@@ -112,7 +109,7 @@ export default function Home() {
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       void loadMessages().catch(() => {});
-    }, MESSAGE_POLL_INTERVAL_MS);
+    }, POLL_INTERVAL_MS);
 
     return () => window.clearInterval(intervalId);
   }, [loadMessages]);
@@ -129,7 +126,7 @@ export default function Home() {
           if (!session.isSessionNow) setSessionEnded(true);
         })
         .catch(() => {});
-    }, MESSAGE_POLL_INTERVAL_MS);
+    }, POLL_INTERVAL_MS);
 
     return () => window.clearInterval(intervalId);
   }, [apiUrl, sessionEnded]);
