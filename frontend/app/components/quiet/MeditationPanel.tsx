@@ -87,8 +87,7 @@ export function MeditationPanel({ apiUrl }: { apiUrl: string }) {
   return (
     <div className="space-y-4">
       <p className="text-[15px] leading-relaxed text-muted">
-        {/* TODO: are these hardcoded by us or actually chosen by the facilitator? */}
-        A few calming playlists to rest with, chosen by your facilitator.
+        A few calming playlists to rest with.
       </p>
 
       <div className="space-y-3">

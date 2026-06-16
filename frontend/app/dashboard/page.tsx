@@ -178,7 +178,6 @@ export default function DashboardPage() {
                       : "It's good to have you here."}
                   </h1>
                   <p className="mt-2 text-[15px] leading-relaxed text-muted">
-                    {/* TODO: is this redundant? */}
                     This is your calm corner. Take a breath, see how you&apos;re
                     doing, prepare for your meeting, or step into the quiet space - there&apos;s no
                     rush.

@@ -50,7 +50,6 @@ export function Screen({ children }: { children: ReactNode }) {
   );
 }
 
-//TODO: change this to dashboard
 // The "quiet space is open" calm card — shared by the submit and saved screens.
 // Ported from StateFinding in wf-invitations.jsx.
 export function QuietSpaceCard({

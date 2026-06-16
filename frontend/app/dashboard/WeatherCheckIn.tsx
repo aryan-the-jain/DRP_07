@@ -526,7 +526,6 @@ export function WeatherCheckIn() {
               maxWidth: 560,
             }}
           >
-          {/* TODO: is this good enough? */}
             Some days are bright, some are stormy, most sit somewhere in between.
             Pick the sky that feels closest - grief moves like weather, and it
             always passes through.

@@ -20,7 +20,7 @@ export const ONBOARDING_SECTIONS: ShardStep[] = [
   { label: "About you", desc: "a few basics" },
   { label: "A bit more", desc: "the lighter stuff" },
   //TODO: anything better than 'In your time'?
-  { label: "In your time", desc: "only if you feel ready" },
+  { label: "When you’re ready", desc: "no rush" },
 ];
 
 enum ShardState {
@@ -69,7 +69,7 @@ function Shard({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        width: 96,
+        width: 110,
         flex: "0 0 auto",
         background: "transparent",
         border: "none",

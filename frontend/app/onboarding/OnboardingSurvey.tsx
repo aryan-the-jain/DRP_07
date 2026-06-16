@@ -693,7 +693,6 @@ function SectionAbout({
         q="What would you like us to call you?"
         needed
         why="it’s the name your group and facilitator will see."
-        //TODO: do we need to show this? use="Your real name is never shown."
       >
         <TextField
           id="callName"
@@ -770,8 +769,6 @@ function SectionMore({
         q="Got a fact about yourself?"
         optional
         why="it helps you to find people with common interests."
-        //TODO: do we need this? Every question in this section is shared with everyone
-        //use="Shared with your group and facilitator to help you connect."
       >
         <UnderlineField
           id="fact"

@@ -69,8 +69,7 @@ export function ResourcesPanel({ apiUrl }: { apiUrl: string }) {
   if (links.length === 0) {
     return (
       <div className="sk thin soft dash bg-paper p-6 text-center text-[15px] leading-relaxed text-muted">
-        {/* TODO: does the facilitator actually share these or are they hardcoded? */}
-        Your facilitator hasn&apos;t shared anything here yet.
+        There's nothing here yet.
       </div>
     );
   }

@@ -10,8 +10,7 @@ export default function ResourcesPage() {
   return (
     <QuietSpaceFrame
       heading="Resources"
-      // TODO: same as before, is this actually shared by the facilitator?
-      description="Helpful links shared by your facilitator - take a look whenever you're ready."
+      description="Helpful links to external support - take a look whenever you're ready."
     >
       <ResourcesPanel apiUrl={apiUrl} />
     </QuietSpaceFrame>
