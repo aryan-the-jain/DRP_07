@@ -51,7 +51,7 @@ export function MessageList({
       {isLoading ? (
         <div className="flex h-full min-h-[14rem] flex-col items-center justify-center gap-2 text-muted">
           <span className="scrawl text-xl text-faint">settling in…</span>
-          <span className="text-sm">Loading the Friday Group</span>
+          <span className="text-sm">Loading the group</span>
         </div>
       ) : (
         <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -62,7 +62,7 @@ export function MessageList({
           {visibleMessages.length === 0 ? (
             <div className="sk thin soft dash bg-paper p-6 text-center text-[15px] leading-relaxed text-muted">
               {activeTab === "group"
-                ? "No messages yet. You can start gently when you are ready."
+                ? "No messages yet. You can start chatting when you feel ready."
                 : `No private messages yet. You can write to ${facilitatorName} here when you are ready.`}
             </div>
           ) : (

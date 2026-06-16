@@ -64,11 +64,11 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
 
 // Shown (active) when the visitor is in the group room.
 export const GROUP_ITEM: NavGroup = {
-  href: "/",
+  href: "/room",
   label: "The group",
   subtitle: "today's session",
   icon: "people",
-  match: "/",
+  match: "/room",
 };
 
 // The doorway from the room into the quiet space. It lands on free writing —
@@ -84,7 +84,7 @@ export const STEP_INTO_QUIET_ITEM: NavGroup = {
 
 // Shown at the top of the quiet-space sidebar.
 export const BACK_TO_GROUP_ITEM: NavGroup = {
-  href: "/",
+  href: "/room",
   label: "Back to group",
   icon: "arrowLeft",
 };

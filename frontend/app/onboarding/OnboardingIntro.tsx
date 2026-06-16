@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 
 import { BrandMark } from "../components/DesignPrimitives";
+import { withPid } from "../lib/identity";
 import { Icon, IconName } from "./Icon";
 
 // The opening page of the survey flow: a warm welcome, an upfront "why we ask ·
@@ -18,12 +19,12 @@ const COC_GROUP: Guideline[] = [
   {
     icon: IconName.Heart,
     t: "Lead with kindness",
-    d: "Everyone here is carrying something. Be gentle, be patient — there’s no “further along” in grief.",
+    d: "Everyone here is carrying something - be gentle and patient",
   },
   {
     icon: IconName.Shield,
     t: "What’s shared here, stays here",
-    d: "Hold each other’s stories in confidence. Nothing from your circle is repeated outside it.",
+    d: "Hold each other’s stories in confidence. Nothing from your group meetings should be repeated outside it.",
   },
   {
     icon: IconName.Quiet,
@@ -41,7 +42,7 @@ const COC_ADVISOR: Guideline[] = [
   {
     icon: IconName.Chat,
     t: "A trained listener, here for you",
-    d: "Your wellbeing advisor is a real person trained to support you — there to listen, never to judge.",
+    d: "Your facilitator is a real person trained to support you - there to listen, never to judge.",
   },
   {
     icon: IconName.Heart,
@@ -173,7 +174,7 @@ function CodeOfConductModal({
                 lineHeight: 1.4,
               }}
             >
-              A few small promises everyone keeps, so this stays a safe and gentle
+              A few small promises everyone keeps, so this stays a safe
               place to be.
             </div>
           </div>
@@ -216,8 +217,8 @@ function CodeOfConductModal({
           >
             <Icon name={IconName.Heart} size={20} c="var(--calm)" />
             <span style={{ fontSize: 15.5, color: "var(--calm-ink)", lineHeight: 1.4 }}>
-              If you ever feel unsafe, you can leave a conversation at any time —
-              and we’ll always show you where to find urgent help.
+              If you ever feel unsafe or overwhelmed, you can leave a conversation at any time -
+              we’ll always show you where to find urgent help.
             </span>
           </div>
         </div>
@@ -358,8 +359,8 @@ export function OnboardingIntro() {
                 maxWidth: 640,
               }}
             >
-              Before you step in, a few gentle questions help us shape this around
-              you. There’s no rush, nothing is a test, and you can pause whenever
+              Before you step in, a few questions help us shape this around
+              you. There’s no rush, you can skip most of the questions, and you can pause whenever
               you need to.
             </p>
 
@@ -379,20 +380,20 @@ export function OnboardingIntro() {
                 }}
               >
                 <WhyPoint icon={IconName.People} title="To introduce you well">
-                  We use your answers once, to gently place you with a small group
+                  We use your answers to place you with a small group
                   who’ve been through something similar.
                 </WhyPoint>
                 <WhyPoint icon={IconName.Heart} title="So we can support you">
-                  Your wellbeing advisor sees what you’re comfortable sharing, so
+                  Your facilitator sees what you’re comfortable sharing, so
                   they know how to be there for you.
                 </WhyPoint>
                 <WhyPoint icon={IconName.Shield} title="You stay in control">
-                  Your real name is never shown, and nothing is shared with a group
-                  unless you choose to share it.
+                  You don&apos;t have to answer every question. This isn&apos;t a
+                  test, feel free to skip some of the questions.
                 </WhyPoint>
                 <WhyPoint icon={IconName.Quiet} title="At your own pace">
-                  It takes about five minutes — but you can stop after the basics
-                  and finish the rest whenever you’re ready.
+                  It takes about five minutes - but you can stop after the basics
+                  and come back to finish the rest whenever you’re ready.
                 </WhyPoint>
               </div>
             </div>
@@ -405,7 +406,7 @@ export function OnboardingIntro() {
               <span className="wbar" />
               <span>
                 <b>You don’t have to answer everything.</b> Skip anything that
-                doesn’t feel right — it won’t hold anything up. The more you feel
+                doesn’t feel right - it won’t hold anything up. The more you feel
                 able to share, the more likely we are to match you with people who
                 truly understand, but only ever share what feels okay.
               </span>
@@ -459,7 +460,7 @@ export function OnboardingIntro() {
                   lineHeight: 1.4,
                 }}
               >
-                I’ve read and agree to our{" "}
+                I’ve read and agree to the{" "}
                 <span
                   onClick={() => setModal(true)}
                   style={{
@@ -472,7 +473,7 @@ export function OnboardingIntro() {
                 >
                   community guidelines
                 </span>{" "}
-                — how we keep this a safe, kind place.
+                - how we keep this a safe, warm place.
               </div>
               <button
                 type="button"
@@ -500,7 +501,7 @@ export function OnboardingIntro() {
             type="button"
             className="btn warm"
             disabled={!agreed}
-            onClick={() => router.push("/onboarding")}
+            onClick={() => router.push(withPid("/onboarding"))}
             style={{
               fontSize: 16.5,
               opacity: agreed ? 1 : 0.42,
@@ -508,7 +509,7 @@ export function OnboardingIntro() {
               filter: agreed ? "none" : "grayscale(0.3)",
             }}
           >
-            Begin, gently <Icon name={IconName.Chev} size={16} c="#fff" />
+            Begin <Icon name={IconName.Chev} size={16} c="#fff" />
           </button>
         </div>
       </div>

@@ -20,8 +20,10 @@ class FacilitatorController @Inject() (
     executionContext: ExecutionContext
 ) extends Controller(cc, executionContext) {
 
-  def groups: Action[AnyContent] =
-    facilitatorRepository.groups().returnOk()
+  /* When a facilitatorId is given, only that facilitator's groups are returned,
+     so the dashboard reflects whoever was chosen on the control panel. */
+  def groups(facilitatorId: Option[Int]): Action[AnyContent] =
+    facilitatorRepository.groups(facilitatorId).returnOk()
 
   def arrivals: Action[AnyContent] =
     facilitatorRepository.arrivals().returnOk()
@@ -32,8 +34,10 @@ class FacilitatorController @Inject() (
   def inbox(groupId: Int): Action[AnyContent] =
     facilitatorRepository.inbox(groupId).returnOk()
 
-  def createGroup: Action[JsValue] = createNew(
-    facilitatorRepository.createGroup,
+  // The creating facilitator is added to the new group as its FACILITATOR member, so
+  // it shows up in their (facilitator-scoped) groups list.
+  def createGroup(facilitatorId: Option[Int]): Action[JsValue] = createNew(
+    facilitatorRepository.createGroup(_, facilitatorId),
     (g: JsonCreateGroup) =>
       g.name.trim.nonEmpty && validSchedule(g.dayOfWeek, g.scheduledTime) &&
         validDuration(g.scheduledDurationMinutes)

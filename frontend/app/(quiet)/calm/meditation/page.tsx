@@ -12,7 +12,7 @@ export default function MeditationPage() {
   return (
     <QuietSpaceFrame
       heading="Guided Meditation"
-      description="A few gentle playlists to rest with, chosen by your facilitator."
+      description="A few calming playlists to rest with."
     >
       <GroupTabs tabs={CALM_TABS} ariaLabel="Feel calm" />
 

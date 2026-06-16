@@ -50,11 +50,11 @@ function Candidate({
       </div>
       {invited ? (
         <span className="chip calm">
-          <Icon name="check" size={13} c="var(--calm-ink)" /> invited
+          <Icon name="check" size={13} c="var(--calm-ink)" /> added
         </span>
       ) : (
         <button className="btn warm sm" onClick={onInvite}>
-          <Icon name="plus" size={14} c="#fff" /> Invite
+          <Icon name="plus" size={14} c="#fff" /> Add
         </button>
       )}
     </div>
@@ -118,7 +118,7 @@ export function InvitePanel({
         </div>
         <div className="stack" style={{ gap: 2, flex: 1 }}>
           <span className="h-title" style={{ fontSize: 21, color: "var(--ink)" }}>
-            Invite to {group.name}
+            Add to {group.name}
           </span>
           <span style={{ fontSize: 13.5, color: "var(--muted)" }}>{group.when}</span>
         </div>

@@ -10,6 +10,7 @@ import {
   fetchGroup,
   fetchParticipants,
 } from "../lib/api";
+import { useWithPid } from "../lib/identity";
 import {
   BACK_TO_GROUP_ITEM,
   GROUP_ITEM,
@@ -47,7 +48,7 @@ type Zone = "dashboard" | "room" | "quiet" | "message";
 export type MessageOrigin = "dashboard" | "room" | "quiet";
 
 function zoneForPath(pathname: string): Zone {
-  if (pathname === "/") return "room";
+  if (pathname === "/room") return "room";
   if (pathname.startsWith("/message-facilitator")) return "message";
   if (/^\/(write|calm|draw|resources)(\/|$)/.test(pathname)) return "quiet";
   return "dashboard";
@@ -100,11 +101,12 @@ function SidebarNavLink({
   collapsed: boolean;
   pathname: string;
 }) {
+  const withPid = useWithPid();
   const base = item.match ?? item.href;
   const active = pathname === base || pathname.startsWith(`${base}/`);
   return (
     <Link
-      href={item.href}
+      href={withPid(item.href)}
       aria-current={active ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       data-metric-id={item.metricId}
@@ -139,6 +141,7 @@ export function SidebarLayout({
 }) {
   const pathname = usePathname();
   const zone = zoneForPath(pathname);
+  const withPid = useWithPid();
 
   const [collapsed, setCollapsed] = useState(false);
   const [quietRoomOpen, setQuietRoomOpen] = useState(true);
@@ -227,7 +230,7 @@ export function SidebarLayout({
   // quiet / dashboard); combined with the stored world that's enough to mirror
   // the right sidebar. If we're already messaging, preserve the arrival origin.
   const dockOrigin = zone === "message" ? messageOrigin : zone;
-  const dockHref = `/message-facilitator?from=${dockOrigin}`;
+  const dockHref = withPid(`/message-facilitator?from=${dockOrigin}`);
   const dockLabel = facilitatorName
     ? `Message ${facilitatorName.split(" ")[0]}`
     : "Message the facilitator";

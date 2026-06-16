@@ -24,10 +24,15 @@ class OnboardingRepository @Inject() (executionContext: ExecutionContext)
 
   def saveOnboarding(
       participantId: Int,
-      onboardingInfo: UpdateOnboarding
+      onboardingInfo: UpdateOnboarding,
+      markComplete: Boolean = false
   ): Future[Option[ReturnOnboarding]] = {
-    val query =
-      querier.insertNewOnboardingInformation(participantId, onboardingInfo)
+    val query = querier.insertNewOnboardingInformation(
+      participantId,
+      onboardingInfo,
+      markComplete,
+      getCurrentTime()
+    )
     db.run(query).flatMap {
       case 0 => Future.successful(None)
       case _ => onboarding(participantId)

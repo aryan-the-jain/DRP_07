@@ -9,7 +9,7 @@ export default function BreathePage() {
   return (
     <QuietSpaceFrame
       heading="Slow Your Breathing"
-      description="Follow the circle if it helps. There's no rush — let your breath find its own pace."
+      description="Follow the circle if it helps. There's no rush - let your breath find its own pace."
     >
       <GroupTabs tabs={CALM_TABS} ariaLabel="Feel calm" />
 

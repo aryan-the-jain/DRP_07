@@ -49,7 +49,7 @@ export function ParticipantPopover({
             <div>
               <p className="leader">In the room</p>
               <p className="mt-1 text-sm text-muted">
-                Tap someone to learn a little about them.
+                Tap on someone&apos;s profile to learn a little about them.
               </p>
             </div>
 

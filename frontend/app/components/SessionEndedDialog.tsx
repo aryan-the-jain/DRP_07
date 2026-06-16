@@ -26,11 +26,11 @@ export function SessionEndedDialog({
           />
           <div className="space-y-1.5">
             <h3 id="session-ended-title" className="h-title text-2xl text-ink">
-              The session has gently closed
+              The session has ended
             </h3>
             <p className="text-[15px] leading-relaxed text-muted">
               {facilitatorName} has ended the meeting for now. In the meantime you
-              can step into the quiet room to reflect, or message {facilitatorName}{" "}
+              can step into the quiet space to reflect, or message {facilitatorName}{" "}
               privately.
             </p>
           </div>

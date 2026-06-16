@@ -145,7 +145,7 @@ export function useQuietSpace(apiUrl: string) {
       setIsReflectionShared(true);
     } catch {
       setQuietSpaceError(
-        "We couldn't share this with the facilitator. Your writing is safe here — please try again.",
+        "We couldn't share this with the facilitator. Please try again.",
       );
     } finally {
       setIsSharingReflection(false);

@@ -413,7 +413,7 @@ function PreviousThoughtsModal({
             <p className="py-6 text-center text-[15px] text-muted">{error}</p>
           ) : newestFirst.length === 0 ? (
             <div className="sk thin soft dash bg-paper p-6 text-center text-[15px] leading-6 text-muted">
-              No thoughts kept yet — this is where they&apos;ll gather, gently, over time.
+              No thoughts kept yet — this is where they&apos;ll gather over time.
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
@@ -456,7 +456,7 @@ export function WeatherCheckIn() {
     try {
       setHistory(await fetchIcebreakers(apiUrl));
     } catch {
-      setHistoryError("We couldn't reach your kept thoughts just now.");
+      setHistoryError("We couldn't reach your kept thoughts just now. Please try again.");
     } finally {
       setHistoryLoading(false);
     }
@@ -478,7 +478,7 @@ export function WeatherCheckIn() {
       setSaved(true);
       void loadHistory();
     } catch {
-      setSaveError("We couldn't keep that just now — please try again.");
+      setSaveError("We couldn't keep that just now. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -527,7 +527,7 @@ export function WeatherCheckIn() {
             }}
           >
             Some days are bright, some are stormy, most sit somewhere in between.
-            Pick the sky that feels closest — grief moves like weather, and it
+            Pick the sky that feels closest - grief moves like weather, and it
             always passes through.
           </div>
         </div>
@@ -581,11 +581,22 @@ export function WeatherCheckIn() {
             </span>
           </div>
 
-          <div className="h-title" style={{ fontSize: 20, margin: "8px 0 3px" }}>
-            What made you feel that way?
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 11,
+              margin: "8px 0 3px", 
+            }}
+          >
+            <div className="h-title" style={{ fontSize: 20}}>
+              What made you feel that way?
+            </div>
+            <OptionalBadge />
           </div>
           <div style={{ fontSize: 13.5, color: "var(--faint)", marginBottom: 10 }}>
-            Only you can see this. A word, a memory, a whole paragraph — or nothing
+            Only you can see this. You can type a word, a memory, a whole paragraph - or nothing
             at all.
           </div>
           <textarea

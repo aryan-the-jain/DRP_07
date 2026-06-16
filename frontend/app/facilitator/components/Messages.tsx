@@ -13,6 +13,7 @@ import { useSearchParams } from "next/navigation";
 import { Avatar, Icon } from "./Primitives";
 import { Hub, type HubTab } from "./Hub";
 import { buildGlobalFeed, PrivateFeedItem } from "./PrivateFeed";
+import { POLL_INTERVAL_MS } from "../../lib/pollIntervals";
 import {
   dmsFrom,
   isFacilitator,
@@ -210,7 +211,7 @@ export function MessagesView() {
 
   useEffect(() => {
     if (groups.length === 0) return;
-    const id = setInterval(refreshInbox, 9000);
+    const id = setInterval(refreshInbox, POLL_INTERVAL_MS);
     return () => clearInterval(id);
   }, [groups, refreshInbox]);
 
@@ -409,7 +410,7 @@ export function MessagesView() {
                 Pick a conversation
               </span>
               <span style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.5 }}>
-                Choose someone on the left to read their messages and reflections, or reach out to start a new one.
+                Choose someone on the left to read their messages and reflections, or reach out to start a new conversation.
               </span>
             </div>
           </div>

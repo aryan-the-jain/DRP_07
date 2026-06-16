@@ -1,249 +1,169 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { ChatRoom } from "./components/ChatRoom";
-import { SessionEndedDialog } from "./components/SessionEndedDialog";
-import { SidebarLayout } from "./components/SidebarLayout";
-import {
-  fallbackApiUrl,
-  fetchGroup,
-  fetchGroupMessages,
-  fetchParticipants,
-  fetchSessionValid,
-  sendMessage,
-} from "./lib/api";
-import { GroupMessage, Participant, SupportGroup } from "./lib/types";
+import { AvatarCircle, BrandMark, LineIcon } from "./components/DesignPrimitives";
+import { fallbackApiUrl } from "./lib/api";
+import { fetchPeople, People } from "./lib/people";
+import { Participant } from "./lib/types";
 
-// How often to refresh the conversation so other people's messages appear
-// without a manual refresh. Gentle cadence to match the calm tone.
-const MESSAGE_POLL_INTERVAL_MS = 5000;
+// The control panel — the app's front door. There is no auth in this prototype, so
+// instead you "become" any participant or facilitator seeded in the database. The
+// chosen person is carried onward in the URL (`?pid=` / `?fid=`), and because these
+// links are plain anchors the destination loads fresh as that person.
+//
+// Participant cards offer two ways in: the full onboarding flow, or straight to the
+// dashboard. Facilitator cards drop you into their dashboard.
 
-// Messages carry no stable id, so compare by content to avoid replacing state
-// (and re-scrolling) when a poll returns the same conversation.
-function sameMessages(a: GroupMessage[], b: GroupMessage[]) {
-  if (a.length !== b.length) {
-    return false;
-  }
-  return a.every(
-    (message, index) =>
-      message.id === b[index].id &&
-      message.body === b[index].body &&
-      message.createdAt === b[index].createdAt,
+function PersonCard({
+  person,
+  children,
+}: {
+  person: Participant;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="sk v2 flex flex-col gap-3 bg-card p-4">
+      <div className="flex items-center gap-3">
+        <AvatarCircle
+          initials={person.initials}
+          tone={person.role === "facilitator" ? "calm" : "warm"}
+        />
+        <div className="min-w-0">
+          <p className="truncate text-[15px] font-semibold text-ink">
+            {person.displayName}
+          </p>
+          {person.pronouns && (
+            <p className="truncate text-[12.5px] text-muted">{person.pronouns}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </li>
   );
 }
 
-export default function Home() {
-  const router = useRouter();
-  const [group, setGroup] = useState<SupportGroup | null>(null);
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [isParticipantListHovered, setIsParticipantListHovered] =
-    useState(false);
-  const [isParticipantListPinned, setIsParticipantListPinned] = useState(false);
-  const [selectedParticipant, setSelectedParticipant] =
-    useState<Participant | null>(null);
-  const [messages, setMessages] = useState<GroupMessage[]>([]);
-  const [messageBody, setMessageBody] = useState("");
+export default function ControlPanel() {
+  const apiUrl = useMemo(
+    () => process.env.NEXT_PUBLIC_API_URL ?? fallbackApiUrl,
+    [],
+  );
+
+  const [people, setPeople] = useState<People | null>(null);
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  // Set once the facilitator closes the room while we're in it: the chat is over and the
-  // farewell popup takes over.
-  const [sessionEnded, setSessionEnded] = useState(false);
-  const participantListRef = useRef<HTMLDivElement | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const isParticipantListOpen =
-    isParticipantListHovered || isParticipantListPinned;
 
-  const apiUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_URL ?? fallbackApiUrl;
-  }, []);
+  // Keep the front door uncluttered: show only a handful of participants. The
+  // facilitator list is short, so it stays as-is.
+  const PARTICIPANT_LIMIT = 3;
 
-  const loadMessages = useCallback(async () => {
-    const next = await fetchGroupMessages(apiUrl);
-    setMessages((previous) => (sameMessages(previous, next) ? previous : next));
+  useEffect(() => {
+    let active = true;
+    fetchPeople(apiUrl)
+      .then((data) => {
+        if (active) setPeople(data);
+      })
+      .catch(() => {
+        if (active) setError("We couldn't load the people. Is the server running?");
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [apiUrl]);
 
-  const loadRoom = useCallback(async () => {
-    setIsLoading(true);
-    setErrorMessage("");
-
-    try {
-      const [groupData, participantsData, session] = await Promise.all([
-        fetchGroup(apiUrl),
-        fetchParticipants(apiUrl),
-        fetchSessionValid(apiUrl),
-      ]);
-
-      // The room is only joinable once the facilitator has opened it. If it isn't open,
-      // send the participant gently back home rather than showing a stale chat.
-      if (!session.isSessionNow) {
-        router.replace("/dashboard");
-        return;
-      }
-
-      setGroup(groupData);
-      setParticipants(participantsData);
-      await loadMessages();
-    } catch {
-      setErrorMessage("We could not load the group room. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiUrl, loadMessages, router]);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void loadRoom();
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [loadRoom]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ block: "end" });
-  }, [messages]);
-
-  // Poll so other people's messages appear without a manual refresh. Errors are
-  // swallowed: a dropped poll just keeps the last good conversation rather than
-  // surfacing an error mid-session.
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      void loadMessages().catch(() => {});
-    }, MESSAGE_POLL_INTERVAL_MS);
-
-    return () => window.clearInterval(intervalId);
-  }, [loadMessages]);
-
-  // Watch for the facilitator closing the room. We only reach the room when the session is
-  // open, so a poll that comes back closed means they've ended it — show the farewell
-  // popup and stop polling.
-  useEffect(() => {
-    if (sessionEnded) return;
-
-    const intervalId = window.setInterval(() => {
-      fetchSessionValid(apiUrl)
-        .then((session) => {
-          if (!session.isSessionNow) setSessionEnded(true);
-        })
-        .catch(() => {});
-    }, MESSAGE_POLL_INTERVAL_MS);
-
-    return () => window.clearInterval(intervalId);
-  }, [apiUrl, sessionEnded]);
-
-  useEffect(() => {
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setIsParticipantListHovered(false);
-        setIsParticipantListPinned(false);
-        setSelectedParticipant(null);
-      }
-    }
-
-    window.addEventListener("keydown", closeOnEscape);
-
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, []);
-
-  useEffect(() => {
-    function closeParticipantListOnOutsideClick(event: MouseEvent) {
-      if (
-        isParticipantListPinned &&
-        participantListRef.current &&
-        !participantListRef.current.contains(event.target as Node)
-      ) {
-        setIsParticipantListPinned(false);
-      }
-    }
-
-    document.addEventListener("mousedown", closeParticipantListOnOutsideClick);
-
-    return () =>
-      document.removeEventListener(
-        "mousedown",
-        closeParticipantListOnOutsideClick,
-      );
-  }, [isParticipantListPinned]);
-
-  function openParticipantProfile(participant: Participant) {
-    setSelectedParticipant(participant);
-    setIsParticipantListHovered(false);
-    setIsParticipantListPinned(false);
-  }
-
-  function closeParticipantProfile() {
-    setSelectedParticipant(null);
-  }
-
-  // FIXED: Shifted lookup logic from names to backend participant IDs
-  function findParticipantById(id: number) {
-    if (id === undefined || id === null) return undefined;
-
-    return participants.find((p) => p.id === id);
-  }
-
-  async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const trimmedMessage = messageBody.trim();
-
-    if (!trimmedMessage) {
-      setErrorMessage("Please type a message before sending.");
-      return;
-    }
-
-    setIsSending(true);
-    setErrorMessage("");
-
-    try {
-      await sendMessage(apiUrl, "messages", trimmedMessage);
-
-      setMessageBody("");
-      await loadMessages();
-    } catch {
-      setErrorMessage("Your message could not be sent. Please try again.");
-    } finally {
-      setIsSending(false);
-    }
-  }
-
-  function handleExit() {
-    // Leaving the room returns the participant to their dashboard home base.
-    router.push("/dashboard");
-  }
-
   return (
-    <SidebarLayout>
-      <ChatRoom
-        group={group}
-        participants={participants}
-        messages={messages}
-        isLoading={isLoading}
-        isSending={isSending}
-        errorMessage={errorMessage}
-        messageBody={messageBody}
-        selectedParticipant={selectedParticipant}
-        isParticipantListOpen={isParticipantListOpen}
-        isParticipantListPinned={isParticipantListPinned}
-        participantListRef={participantListRef}
-        messagesEndRef={messagesEndRef}
-        findParticipantById={findParticipantById}
-        onParticipantListHoverChange={setIsParticipantListHovered}
-        onParticipantListPinnedChange={setIsParticipantListPinned}
-        onOpenParticipantProfile={openParticipantProfile}
-        onCloseParticipantProfile={closeParticipantProfile}
-        onExit={handleExit}
-        onSendMessage={handleSendMessage}
-        onMessageBodyChange={setMessageBody}
-      />
-      {sessionEnded && (
-        <SessionEndedDialog
-          facilitatorName={group?.facilitatorName ?? "your facilitator"}
-          onContinue={() => router.push("/dashboard")}
-        />
-      )}
-    </SidebarLayout>
+    <main className="min-h-screen bg-paper text-ink">
+      <div className="mx-auto w-full max-w-4xl px-6 py-12 sm:px-10">
+        <header className="flex flex-col items-center text-center">
+          <BrandMark />
+          <h1 className="h-title mt-1 text-3xl text-ink sm:text-4xl">
+            Who would you like to be?
+          </h1>
+          <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-muted">
+            Choose someone to step into their view.
+          </p>
+        </header>
+
+        {isLoading ? (
+          <p className="py-16 text-center text-[15px] text-muted">
+            Gathering everyone…
+          </p>
+        ) : error ? (
+          <div
+            role="alert"
+            className="sk thin soft mx-auto mt-10 max-w-md bg-paper px-4 py-3 text-center text-[15px] text-warm-ink"
+          >
+            {error}
+          </div>
+        ) : (
+          <div className="mt-10 grid gap-10 md:grid-cols-2">
+            {/* Facilitators */}
+            <section>
+              <div className="mb-3 flex items-center gap-2">
+                <LineIcon name="people" size={18} className="[color:var(--calm)]" />
+                <h2 className="leader [color:var(--calm)]">Facilitators</h2>
+              </div>
+              {people && people.facilitators.length > 0 ? (
+                <ul className="flex flex-col gap-3">
+                  {people.facilitators.map((person) => (
+                    <PersonCard key={person.id} person={person}>
+                      <a
+                        href={`/facilitator?fid=${person.id}`}
+                        className="btn calm sm"
+                      >
+                        <LineIcon name="arrowLeft" size={15} style={{ transform: "rotate(180deg)" }} />
+                        Open facilitator view
+                      </a>
+                    </PersonCard>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[14px] text-muted">No facilitators yet.</p>
+              )}
+            </section>
+
+            {/* Participants */}
+            <section>
+              <div className="mb-3 flex items-baseline justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <LineIcon name="user" size={18} className="[color:var(--warm)]" />
+                  <h2 className="leader [color:var(--warm)]">Participants</h2>
+                </div>
+                {people && people.participants.length > PARTICIPANT_LIMIT && (
+                  <p className="text-[12.5px] text-muted">
+                    Showing {PARTICIPANT_LIMIT} of {people.participants.length}
+                  </p>
+                )}
+              </div>
+              {people && people.participants.length > 0 ? (
+                <ul className="flex flex-col gap-3">
+                  {people.participants.slice(0, PARTICIPANT_LIMIT).map((person) => (
+                    <PersonCard key={person.id} person={person}>
+                      <a
+                        href={`/onboarding/intro?pid=${person.id}`}
+                        className="btn warm sm"
+                      >
+                        Start onboarding
+                      </a>
+                      <a
+                        href={`/dashboard?pid=${person.id}`}
+                        className="btn ghost sm"
+                      >
+                        Open dashboard
+                      </a>
+                    </PersonCard>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[14px] text-muted">No participants yet.</p>
+              )}
+            </section>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

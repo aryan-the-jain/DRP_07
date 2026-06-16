@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { withFid } from "../../lib/identity";
 import { formatTimeSince } from "../../lib/format";
 import { Avatar, DashRule, Field, Icon, SoftLabel, type IconName } from "./Primitives";
 import { CircleBadge, CloseBtn, ConfirmPopup, HobbyChips, LostCategory, LostChip, Overlay, PopBlock } from "./Overlays";
@@ -363,8 +364,8 @@ function GroupNoteSections({ groupId }: { groupId: number }) {
         loaded={loaded}
         onSave={saveReason}
         minHeight={140}
-        placeholder="Why did you start this group? What were you hoping to make room for — and what would you want to remember on a hard week?"
-        empty="Note why you started this group — something to ground yourself before a session."
+        placeholder="Why did you start this group? What were you hoping to make room for - and what would you want to remember?"
+        empty="Note why you started this group - something to ground yourself before a session."
       />
       <DetailSection
         icon="note"
@@ -671,7 +672,7 @@ export function GroupDetailPopup({
       <div className="row" style={{ padding: "13px 24px" }}>
         <div style={{ flex: 1 }} />
         <button className="btn warm" onClick={onInvite}>
-          <Icon name="mail" size={16} c="#fff" /> Invite {personName}
+          <Icon name="mail" size={16} c="#fff" /> Add {personName}
         </button>
       </div>
     </div>
@@ -750,7 +751,7 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
     setDeleting(true);
     try {
       await deleteGroup(apiUrl, groupId);
-      router.push("/facilitator");
+      router.push(withFid("/facilitator"));
     } catch {
       setDeleting(false);
       close();
@@ -766,7 +767,7 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
           {/* Slim, calm back link — matches the arrivals page. */}
           <button
             className="btn ghost sm"
-            onClick={() => router.push("/facilitator")}
+            onClick={() => router.push(withFid("/facilitator"))}
             style={{ border: "none", padding: "3px 6px", marginLeft: -6, marginBottom: 16, color: "var(--muted)" }}
           >
             <Icon name="back" size={15} c="var(--muted)" /> Back to my groups
@@ -789,9 +790,9 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
 
                 <div className="row" style={{ gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                   <button className="btn warm sm" onClick={() => setModal({ type: "invite" })}>
-                    <Icon name="mail" size={15} c="#fff" /> Invite someone
+                    <Icon name="mail" size={15} c="#fff" /> Add someone
                   </button>
-                  <button className="btn ghost sm" onClick={() => router.push(`/facilitator/groups/${groupId}/edit`)}>
+                  <button className="btn ghost sm" onClick={() => router.push(withFid(`/facilitator/groups/${groupId}/edit`))}>
                     <Icon name="pen" size={15} c="var(--muted)" /> Edit details
                   </button>
                   <button
@@ -892,10 +893,9 @@ export function GroupDetailPage({ groupId }: { groupId: number }) {
               icon="x"
               accent="var(--red)"
               title={`Close ${group.name}?`}
-              body="The group closes and everyone in it is gently let know and returned home. Nothing they've shared is deleted — only the group stops meeting."
+              body="The group closes and the meetings stop. This can't be undone, are you sure you want to close it?"
               confirm={deleting ? "Closing…" : "Close group"}
               cancel="Keep it"
-              caption="this can't be undone — members see a soft goodbye, never a sudden cut-off"
               onClose={close}
               onConfirm={confirmDelete}
             />

@@ -23,9 +23,20 @@ class OnboardingController @Inject() (
       .map(result => Ok(Json.toJson(result)))
   }
 
-  def saveOnboarding(participantId: Int): Action[JsValue] = createNew(
-    onboardingRepository.saveOnboarding(participantId, _),
-    (onboarding: UpdateOnboarding) =>
-      onboarding.callName.trim.nonEmpty && onboarding.age.isDefined
-  )
+  /* `?completed=true` marks this as a genuine finish of the onboarding flow, which
+     refreshes the participant's onboarding time. The dashboard's "Update profile"
+     path omits it, so editing a profile doesn't count as re-onboarding. */
+  def saveOnboarding(participantId: Int): Action[JsValue] =
+    Action.async(parse.json) { req =>
+      val completed = req.getQueryString("completed").contains("true")
+      req.body.validate[UpdateOnboarding] match {
+        case JsSuccess(onboarding, _)
+            if onboarding.callName.trim.nonEmpty && onboarding.age.isDefined =>
+          onboardingRepository
+            .saveOnboarding(participantId, onboarding, completed)
+            .map(saved => Created(Json.toJson(saved)))
+        case _ =>
+          Future.successful(BadRequest(Json.obj("error" -> "Message failed")))
+      }
+    }
 }

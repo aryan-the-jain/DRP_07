@@ -9,10 +9,14 @@ import {
   SupportGroup,
   SupportLink,
 } from "./types";
+import { currentParticipantId } from "./identity";
 
 // Fallback group used only if we can't resolve the participant's real group below.
 export const groupId = 1;
-export const participantId = 1;
+// Who's using the participant app — resolved from the `?pid=` chosen on the control
+// panel (falls back to the seeded participant). Read once at module load; the control
+// panel enters with a full page load, so this reflects the chosen person.
+export const participantId = currentParticipantId();
 export const fallbackApiUrl = "http://localhost:9000";
 
 // Resolve the participant's group from their (currently hardcoded) participantId, so the
@@ -39,6 +43,30 @@ export function resolveGroupId(apiUrl: string): Promise<number> {
   return groupIdPromise;
 }
 
+// Drop the cached group lookup so the next resolveGroupId re-fetches. Used by the
+// dashboard once a previously-unplaced participant gets added to a group, so the
+// cached fallback (groupId = 1) doesn't stick.
+export function invalidateGroupId() {
+  groupIdPromise = null;
+}
+
+// The participant's real group placement, with no fallback and no caching — returns
+// null when they haven't been added to a group yet. The dashboard uses this (rather
+// than resolveGroupId) to tell "no group" apart from "group 1", and polls it so the
+// page updates the moment a facilitator adds them.
+export async function fetchParticipantGroupId(
+  apiUrl: string,
+): Promise<number | null> {
+  const response = await fetch(
+    `${apiUrl}/facilitator/participants/${participantId}`,
+  );
+  if (!response.ok) {
+    throw new Error("Could not check your group placement.");
+  }
+  const data = (await response.json()) as { groupId: number | null };
+  return typeof data.groupId === "number" ? data.groupId : null;
+}
+
 function sortMessages(messages: GroupMessage[]) {
   return [...messages].sort(
     (first, second) =>
@@ -51,7 +79,7 @@ export async function fetchGroup(apiUrl: string): Promise<SupportGroup> {
   const response = await fetch(`${apiUrl}/groups/${await resolveGroupId(apiUrl)}`);
 
   if (!response.ok) {
-    throw new Error("Could not load Friday Group.");
+    throw new Error("Could not load the group.");
   }
 
   return response.json();
@@ -61,7 +89,7 @@ export async function fetchParticipants(apiUrl: string): Promise<Participant[]> 
   const response = await fetch(`${apiUrl}/groups/${await resolveGroupId(apiUrl)}/participants`);
 
   if (!response.ok) {
-    throw new Error("Could not load Friday Group.");
+    throw new Error("Could not load the group.");
   }
 
   return response.json();
@@ -256,9 +284,14 @@ export async function fetchOnboarding(
 export async function saveOnboarding(
   apiUrl: string,
   payload: OnboardingPayload,
+  // True only when finishing the full onboarding flow (not a profile edit from the
+  // dashboard), which is what refreshes the participant's onboarding time.
+  completed = false,
 ): Promise<OnboardingResponse> {
   const response = await fetch(
-    `${apiUrl}/participants/${participantId}/onboarding`,
+    `${apiUrl}/participants/${participantId}/onboarding${
+      completed ? "?completed=true" : ""
+    }`,
     {
       method: "PATCH",
       headers: {

@@ -10,7 +10,8 @@ import play.api.http.MediaRange.parse
 import repositories.tables.{
   SupportGroupsTable,
   GroupParticipantsTable,
-  ParticipantsTable
+  ParticipantsTable,
+  GrieversTable
 }
 
 class GroupQueries(
@@ -18,6 +19,10 @@ class GroupQueries(
     private val groupParticipants: TableQuery[GroupParticipantsTable],
     private val participants: TableQuery[ParticipantsTable]
 ) {
+  // Cultural background lives on the griever row, joined in below. Left-joined so
+  // members without one (e.g. the facilitator) are still returned.
+  private val grievers = TableQuery[GrieversTable]
+
   /* Returns the group name, facilitator name, conversation duration, day and
    * time given groupId. */
   def selectGroup(groupId: Int): Query[
@@ -58,7 +63,8 @@ class GroupQueries(
         Rep[Option[String]],
         Rep[List[String]],
         Rep[String],
-        Rep[Role]
+        Rep[Role],
+        Rep[Option[Option[String]]]
     ),
     (
         Int,
@@ -68,24 +74,31 @@ class GroupQueries(
         Option[String],
         List[String],
         String,
-        Role
+        Role,
+        Option[Option[String]]
     ),
     Seq
   ] = {
     val ps = for
       gp <- groupParticipants if gp.groupId === groupId
       p <- participants if gp.participantId === p.participantId
-    yield (
-      p.participantId,
-      p.name,
-      p.pronouns,
-      p.initials,
-      p.age,
-      p.hobbies,
-      p.fact,
-      p.role
-    )
-    ps.sortBy(p => (p._8.desc, p._2.asc))
+    yield p
+    ps.joinLeft(grievers)
+      .on(_.participantId === _.grieverId)
+      .map { case (p, g) =>
+        (
+          p.participantId,
+          p.name,
+          p.pronouns,
+          p.initials,
+          p.age,
+          p.hobbies,
+          p.fact,
+          p.role,
+          g.map(_.culturalBackground)
+        )
+      }
+      .sortBy(p => (p._8.desc, p._2.asc))
   }
 
   /* Returns the list of all groups that the given user is in. */
@@ -117,7 +130,8 @@ class GroupQueries(
         Rep[Option[String]],
         Rep[List[String]],
         Rep[String],
-        Rep[Role]
+        Rep[Role],
+        Rep[Option[Option[String]]]
     ),
     (
         Int,
@@ -127,32 +141,68 @@ class GroupQueries(
         Option[String],
         List[String],
         String,
-        Role
+        Role,
+        Option[Option[String]]
     ),
     Seq
   ] = {
-    for p <- participants if p.participantId === participantId
-    yield (
-      p.participantId,
-      p.name,
-      p.pronouns,
-      p.initials,
-      p.age,
-      p.hobbies,
-      p.fact,
-      p.role
-    )
+    participants
+      .filter(_.participantId === participantId)
+      .joinLeft(grievers)
+      .on(_.participantId === _.grieverId)
+      .map { case (p, g) =>
+        (
+          p.participantId,
+          p.name,
+          p.pronouns,
+          p.initials,
+          p.age,
+          p.hobbies,
+          p.fact,
+          p.role,
+          g.map(_.culturalBackground)
+        )
+      }
   }
 
-  /* The current session flag together with the schedule and the last close
-   * time, so callers can work out whether this week's session already ran. */
+  /* Every participant in the database (any role), with their cultural background
+   * left-joined in. Used by the control panel to list everyone you can become. */
+  def selectAllParticipantInfo = {
+    participants
+      .joinLeft(grievers)
+      .on(_.participantId === _.grieverId)
+      .map { case (p, g) =>
+        (
+          p.participantId,
+          p.name,
+          p.pronouns,
+          p.initials,
+          p.age,
+          p.hobbies,
+          p.fact,
+          p.role,
+          g.map(_.culturalBackground)
+        )
+      }
+      .sortBy(_._2.asc)
+  }
+
+  /* The current session flag together with the schedule (day, time, duration)
+   * and the last close time, so callers can work out whether this week's
+   * session already ran and whether its scheduled end has passed. */
   def selectSessionState(groupId: Int): Query[
-    (Rep[Boolean], Rep[DayOfWeek], Rep[LocalTime], Rep[Option[LocalDateTime]]),
-    (Boolean, DayOfWeek, LocalTime, Option[LocalDateTime]),
+    (
+        Rep[Boolean],
+        Rep[DayOfWeek],
+        Rep[LocalTime],
+        Rep[Int],
+        Rep[Option[LocalDateTime]]
+    ),
+    (Boolean, DayOfWeek, LocalTime, Int, Option[LocalDateTime]),
     Seq
   ] =
     for g <- groups if g.groupId === groupId
-    yield (g.hasSessionNow, g.day, g.time, g.lastSessionEndedAt)
+    yield (g.hasSessionNow, g.day, g.time, g.duration, g.lastSessionEndedAt)
 
   def startSession(
       groupId: Int

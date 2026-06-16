@@ -6,6 +6,7 @@ import models.*
 import repositories.Instances.given
 
 import repositories.tables.{GrieversTable, ParticipantsTable}
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext
 
 // TODO: What is the difference between fun fact and hobbies?
@@ -32,7 +33,9 @@ class OnboardingQueries(
 
   def insertNewOnboardingInformation(
       participantId: Int,
-      update: UpdateOnboarding
+      update: UpdateOnboarding,
+      markComplete: Boolean,
+      now: LocalDateTime
   ) = {
 
     val participantUpdate =
@@ -75,9 +78,20 @@ class OnboardingQueries(
           )
         )
 
+    // Only a genuine completion of the onboarding flow refreshes the timestamp;
+    // a profile edit leaves the original onboarding time untouched.
+    val timeUpdate =
+      if markComplete then
+        grieversTable
+          .filter(_.grieverId === participantId)
+          .map(_.onboardingTime)
+          .update(now)
+      else DBIO.successful(0)
+
     (for {
       p <- participantUpdate
       g <- grieverUpdate
+      _ <- timeUpdate
     } yield p + g).transactionally
   }
 }

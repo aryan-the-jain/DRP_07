@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { withFid } from "../../lib/identity";
 import { Avatar, DashRule, Icon, Logo, SoftLabel } from "./Primitives";
 import { CircleBadge, FullProfilePopup, LostChip, Overlay } from "./Overlays";
 import { groupCardFrom, HOBBY_ICON, personFromParticipant, type GroupCard, type Person } from "../lib/data";
@@ -109,7 +110,7 @@ export function GroupRoster({ groupId }: { groupId: number }) {
   return (
     <div className="stack" style={{ minHeight: "100%", background: "var(--paper)", position: "relative" }}>
       <div className="row" style={{ padding: "15px 26px", gap: 14 }}>
-        <button className="btn ghost sm" onClick={() => router.push("/facilitator")}>
+        <button className="btn ghost sm" onClick={() => router.push(withFid("/facilitator"))}>
           <Icon name="back" size={16} c="var(--muted)" /> Your groups
         </button>
         <div style={{ flex: 1 }} />

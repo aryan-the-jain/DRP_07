@@ -8,6 +8,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { withFid } from "../../lib/identity";
 import { Avatar, DashRule, Field, Icon, SoftLabel } from "./Primitives";
 import {
   ConfirmPopup,
@@ -22,6 +23,7 @@ import {
 import { GroupDetailPopup } from "./GroupDetail";
 import { groupCardFrom, HOBBY_ICON, personFromParticipant, type GroupCard, type Person } from "../lib/data";
 import { apiBase, fetchArrivals, fetchGroups, fetchParticipant, placeParticipant } from "../lib/api";
+import { POLL_INTERVAL_MS } from "../../lib/pollIntervals";
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
@@ -179,7 +181,7 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
             {/* Slim, calm back link — returns to wherever they came from (?from). */}
             <button
               className="btn ghost sm"
-              onClick={() => router.push(backTo)}
+              onClick={() => router.push(withFid(backTo))}
               style={{ border: "none", padding: "3px 6px", marginLeft: -6, marginBottom: 16, color: "var(--muted)" }}
             >
               <Icon name="back" size={15} c="var(--muted)" /> {backLabel}
@@ -234,7 +236,7 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
             </div>
 
             <div className="row" style={{ marginTop: 20 }}>
-              <button className="btn ghost" onClick={() => router.push(backTo)}>
+              <button className="btn ghost" onClick={() => router.push(withFid(backTo))}>
                 <Icon name="clock" size={16} c="var(--muted)" /> Set aside for now
               </button>
             </div>
@@ -280,9 +282,6 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
             <span className="h-title" style={{ fontSize: 21, color: "var(--ink)" }}>
               Bring {m.name} into a group
             </span>
-            <span style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.4 }}>
-              An invite is a gentle ask, never an assignment.
-            </span>
           </div>
           <div className="scroll" style={{ flex: 1, padding: "8px 18px 18px" }}>
             <div className="stack" style={{ gap: 12 }}>
@@ -291,7 +290,7 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
                   className="sk thin soft"
                   style={{ padding: "18px 16px", textAlign: "center", color: "var(--muted)", fontSize: 15, borderStyle: "dashed" }}
                 >
-                  You don’t have any groups yet — start one below.
+                  You don’t have any groups yet - start one below.
                 </div>
               ) : (
                 groups.map((c) => (
@@ -308,7 +307,7 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
               {/* start a new group — mirrors the trailing card on the home panel */}
               <div
                 className="sk dash soft"
-                onClick={() => router.push(`/facilitator/groups/new?returnTo=${encodeURIComponent(selfPath)}`)}
+                onClick={() => router.push(withFid(`/facilitator/groups/new?returnTo=${encodeURIComponent(selfPath)}`))}
                 style={{
                   padding: 22,
                   display: "flex",
@@ -326,7 +325,7 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
                 </div>
                 <span style={{ fontSize: 16, color: "var(--muted)" }}>Start a new group</span>
                 <span style={{ fontSize: 13.5, color: "var(--faint)", textAlign: "center", maxWidth: 180 }}>
-                  for a new day, a new focus, or an overflowing group
+                  for a new day, a new focus, or new users
                 </span>
               </div>
             </div>
@@ -349,13 +348,13 @@ export function OnboardingCard({ participantId, from }: { participantId: number;
             <ConfirmPopup
               icon="mail"
               accent="var(--calm)"
-              title="Invitation sent"
-              body={`${m.name} will see a gentle invitation to ${modal.group.name}. They can read more, accept, or say “maybe later”.`}
+              title={`${m.name} added`}
+              body={`${m.name} is now part of ${modal.group.name}. They'll see the group next time they open the app.`}
               confirm="Close"
               cancel={null}
-              caption="you’ll see if they accept — no pressure on them either way"
-              onClose={() => router.push(backTo)}
-              onConfirm={() => router.push(backTo)}
+              caption="they're in — no further action needed"
+              onClose={() => router.push(withFid(backTo))}
+              onConfirm={() => router.push(withFid(backTo))}
             />
           )}
         </Overlay>
@@ -373,17 +372,32 @@ export function OnboardingList() {
 
   useEffect(() => {
     let active = true;
-    fetchArrivals(apiUrl)
-      .then((ar) => {
-        if (!active) return;
-        setArrivals(ar.map(personFromParticipant));
-        setStatus("ready");
-      })
-      .catch(() => {
-        if (active) setStatus("error");
-      });
+    const load = () =>
+      fetchArrivals(apiUrl)
+        .then((ar) => {
+          if (!active) return;
+          // Oldest onboarding first, so whoever has waited longest to be placed
+          // sits at the top of the list.
+          const oldestFirst = [...ar].sort(
+            (a, b) =>
+              new Date(a.onboardingTime).getTime() -
+              new Date(b.onboardingTime).getTime(),
+          );
+          setArrivals(oldestFirst.map(personFromParticipant));
+          setStatus("ready");
+        })
+        .catch(() => {
+          // Keep the last good list on a dropped poll; only show an error if the
+          // very first load failed.
+          if (active) setStatus((s) => (s === "loading" ? "error" : s));
+        });
+    load();
+    // Poll so newly-onboarded arrivals (and their refreshed "onboarded … ago" times)
+    // appear without the facilitator refreshing the page.
+    const intervalId = window.setInterval(load, POLL_INTERVAL_MS);
     return () => {
       active = false;
+      window.clearInterval(intervalId);
     };
   }, [apiUrl]);
 
@@ -402,8 +416,8 @@ export function OnboardingList() {
             )}
           </div>
           <p style={{ fontSize: 15.5, color: "var(--muted)", margin: "12px 0 20px", maxWidth: 580, lineHeight: 1.5 }}>
-            Everyone who has finished onboarding and is waiting for the right group. Open anyone to read their full
-            arrival and bring them into a group.
+            Everyone who has finished onboarding and is waiting to be placed. Open anyone to read their full
+            profile and bring them into a group.
           </p>
 
           {status === "loading" && <Centered>Loading…</Centered>}
@@ -420,7 +434,7 @@ export function OnboardingList() {
           {status === "ready" && arrivals.length > 0 && (
             <div className="stack" style={{ gap: 12 }}>
               {arrivals.map((m) => (
-                <ArrivalRow key={m.id} m={m} onPlace={() => router.push(`/facilitator/arrivals/${m.id}`)} />
+                <ArrivalRow key={m.id} m={m} onPlace={() => router.push(withFid(`/facilitator/arrivals/${m.id}`))} />
               ))}
             </div>
           )}

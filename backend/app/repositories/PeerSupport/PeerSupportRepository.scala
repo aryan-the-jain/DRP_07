@@ -39,17 +39,54 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext)
         )
       }
 
+  // The left join yields cultural background as a nested Option (Option-from-join
+  // of an already-optional column), so flatten it before building the response.
+  private def toReturnParticipant(
+      row: (
+          Int,
+          String,
+          Option[String],
+          String,
+          Option[String],
+          List[String],
+          String,
+          Role,
+          Option[Option[String]]
+      )
+  ): ReturnParticipant =
+    ReturnParticipant(
+      row._1,
+      row._2,
+      row._3,
+      row._4,
+      row._5,
+      row._6,
+      row._7,
+      row._8,
+      row._9.flatten
+    )
+
   def participantsForGroup(
       groupId: Int
   ): Future[Seq[ReturnParticipant]] =
     db.run(groupQuerier.selectParticipants(groupId).result)
-      .map(_.map(ReturnParticipant.apply))
+      .map(_.map(toReturnParticipant))
 
   def participantInfo(
       participantId: Int
   ): Future[Seq[ReturnParticipant]] =
     db.run(groupQuerier.selectParticipantInfo(participantId).result)
-      .map(_.map(ReturnParticipant.apply))
+      .map(_.map(toReturnParticipant))
+
+  /* Everyone in the database, split by role for the control panel. */
+  def allPeople(): Future[ReturnPeople] =
+    db.run(groupQuerier.selectAllParticipantInfo.result)
+      .map(_.map(toReturnParticipant))
+      .map { all =>
+        val (facilitators, participants) =
+          all.partition(_.role == Role.FACILITATOR)
+        ReturnPeople(participants, facilitators)
+      }
 
   def groupMessages(groupId: Int): Future[Seq[ReturnGroupMessage]] =
     db.run(groupMessageQuerier.selectMessagesFromParticipant(groupId).result)
@@ -73,11 +110,16 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext)
 
   def isValidSessionNow(groupId: Int): Future[ReturnIsSessionNow] = {
     val query = groupQuerier.selectSessionState(groupId)
-    db.run(query.result.head).map { case (isNow, day, _, lastEnded) =>
-      ReturnIsSessionNow(
-        isNow,
-        SessionWeek.closedForWeek(day, lastEnded, getCurrentTime())
-      )
+    db.run(query.result.head).map {
+      case (isNow, day, time, duration, lastEnded) =>
+        val now = getCurrentTime()
+        // Joinable only while the facilitator has the room open AND the meeting's
+        // scheduled end hasn't passed — the clock auto-closes a room the
+        // facilitator forgot to end, instead of leaving it open indefinitely.
+        ReturnIsSessionNow(
+          isNow && !SessionWeek.pastScheduledEnd(day, time, duration, now),
+          SessionWeek.closedForWeek(day, lastEnded, now)
+        )
     }
   }
 
@@ -91,7 +133,7 @@ class PeerSupportRepository @Inject() (executionContext: ExecutionContext)
       .result
       .headOption
       .flatMap {
-        case Some((_, day, _, lastEnded))
+        case Some((_, day, _, _, lastEnded))
             if !SessionWeek.closedForWeek(day, lastEnded, now) =>
           groupQuerier.startSession(groupId).map(Right(_))
         case Some(_) => DBIO.successful(Left("sessionClosedForWeek"))

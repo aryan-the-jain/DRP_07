@@ -43,6 +43,28 @@ object SessionWeek {
         ended.toLocalDate.minusDays(daysSinceMeetingDay).plusDays(7)
       now.toLocalDate.isBefore(reopenDay)
     }
+
+  /* True once this meeting day's scheduled end time has passed. The facilitator
+     flag is the authority for starting and (early) ending a session, but the
+     clock provides the upper bound: if the facilitator never ends the room, it
+     closes itself at the scheduled end so a forgotten end-session can't leave it
+     joinable indefinitely. Anchored to the meeting day (not the scheduled
+     minute) to match how opening works — the facilitator may open the room any
+     time on the meeting day, so the room stays joinable on that day right up to
+     the scheduled finish. */
+  def pastScheduledEnd(
+      day: DayOfWeek,
+      time: LocalTime,
+      durationMinutes: Int,
+      now: LocalDateTime
+  ): Boolean = {
+    val daysSinceMeetingDay = (now.getDayOfWeek.getValue - day.getValue + 7) % 7
+    val scheduledEnd = now.toLocalDate
+      .minusDays(daysSinceMeetingDay)
+      .atTime(time)
+      .plusMinutes(durationMinutes.toLong)
+    now.isAfter(scheduledEnd)
+  }
 }
 
 case class Participant(
