@@ -2,11 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 
 import { fetchMeditationPlaylists } from "../../lib/api";
 import { MeditationPlaylist } from "../../lib/types";
-import { LineIcon } from "../DesignPrimitives";
+import { LineIcon, SpotifyLogo } from "../DesignPrimitives";
 
-// Spotify brand green — used only on the playlist icon + Open button to signal
-// that the link leaves the app for Spotify. Everything else stays in palette.
-const SPOTIFY_GREEN = "#1db954";
+const SPOTIFY_GREEN = "#00ce7c";
 
 function isSpotifyPlaylistUrl(url: string) {
   try {
@@ -107,13 +105,7 @@ export function MeditationPanel({ apiUrl }: { apiUrl: string }) {
               rel="noopener noreferrer"
               className="sk thin soft flex items-center gap-3 bg-card p-4 transition hover:[border-color:var(--calm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-calm"
             >
-              <span
-                aria-hidden="true"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
-                style={{ background: SPOTIFY_GREEN }}
-              >
-                <LineIcon name="spotify" size={18} />
-              </span>
+              <SpotifyLogo size={36} className="shrink-0" />
 
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] font-semibold text-ink">
